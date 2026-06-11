@@ -1,0 +1,38 @@
+uploads = []
+outputs = []
+
+[[generated]]
+id = "hR1pH_VxHHz1hnnZ1jKhF"
+uri = "file://artifacts/pawmate/public/hero.png"
+type = "image"
+title = "Couple walking dog in park at sunset"
+
+[[generated]]
+id = "zQcn0IbbcHwiKM6EmCFAk"
+uri = "file://artifacts/pawmate/public/profile1.png"
+type = "image"
+title = "Woman holding cat indoors"
+
+[[generated]]
+id = "jqxAqX9rfDZGCwwfkElRV"
+uri = "file://artifacts/pawmate/public/profile2.png"
+type = "image"
+title = "Man with dog in coffee shop"
+
+[[generated]]
+id = "j2e8wlkLNpyXhLUSCtF2Y"
+uri = "file://artifacts/pawmate/public/profile3.png"
+type = "image"
+title = "Woman laughing with golden retriever"
+
+[[generated]]
+id = "2LXDaBEADKg0SRP31Y0X8"
+uri = "file://artifacts/pawmate/public/pet1.png"
+type = "image"
+title = "Cute fluffy dog face"
+
+[[generated]]
+id = "ZZxL6-MXKFRf3gslmeF5v"
+uri = "file://artifacts/pawmate/public/pet2.png"
+type = "image"
+title = "Elegant siamese cat"

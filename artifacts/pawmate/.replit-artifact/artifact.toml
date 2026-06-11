@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Pawmate"
+version = "1.0.0"
+id = "artifacts/pawmate"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 25089
+
+[services.development]
+run = "pnpm --filter @workspace/pawmate run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/pawmate", "run", "build" ]
+publicDir = "artifacts/pawmate/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "25089"
+BASE_PATH = "/"
