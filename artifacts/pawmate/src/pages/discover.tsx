@@ -74,9 +74,9 @@ export default function Discover() {
       {/* Filters Bar */}
       <div className="sticky top-20 z-40 bg-background/90 backdrop-blur-md border-b border-border py-4">
         <div className="container mx-auto px-4 md:px-8">
-          <div className="flex flex-wrap gap-4 items-center">
+          <div className="flex flex-row overflow-x-auto no-scrollbar pb-2 -mb-2 gap-4 items-center">
             <Select defaultValue="all">
-              <SelectTrigger className="w-[140px] rounded-full bg-card" data-testid="filter-species">
+              <SelectTrigger className="w-[140px] shrink-0 rounded-full bg-card" data-testid="filter-species">
                 <SelectValue placeholder="Species" />
               </SelectTrigger>
               <SelectContent>

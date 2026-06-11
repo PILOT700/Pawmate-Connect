@@ -1,35 +1,50 @@
 import { motion } from "framer-motion";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Heart, Shield, Users } from "lucide-react";
+import { ArrowRight, Heart, Shield, Users, Quote, MapPin } from "lucide-react";
+
+const petCommunityData = [
+  { pet: "Biscuit", breed: "Golden Retriever", owner: "Clara", age: 31, city: "Portland", tags: ["Outdoor lover", "Dog park regular"], image: "/pet-card-1.png" },
+  { pet: "Fig", breed: "Orange Tabby", owner: "Marcus", age: 38, city: "Austin", tags: ["Homebody", "Work from home"], image: "/pet-card-2.png" },
+  { pet: "Scout", breed: "Border Collie", owner: "Nadia", age: 29, city: "Denver", tags: ["Morning person", "Trail runner"], image: "/pet-card-3.png" }
+];
 
 export default function Home() {
   return (
     <div className="flex flex-col min-h-screen">
       {/* Hero Section */}
-      <section className="relative pt-24 pb-32 overflow-hidden bg-background">
+      <section className="relative pt-20 pb-32 overflow-hidden bg-background">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-amber-100/40 via-background to-background pointer-events-none" />
+        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03] mix-blend-overlay pointer-events-none" />
+        
         <div className="container mx-auto px-4 md:px-8 relative z-10">
-          <div className="grid md:grid-cols-2 gap-12 items-center">
+          <div className="grid md:grid-cols-2 gap-12 lg:gap-16 items-center">
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, ease: "easeOut" }}
-              className="max-w-2xl"
+              className="max-w-2xl pt-8"
             >
-              <h1 className="font-serif text-5xl md:text-7xl font-semibold leading-[1.1] text-foreground mb-6">
+              <h1 className="font-serif text-4xl md:text-6xl lg:text-7xl font-semibold leading-[1.05] text-foreground mb-6">
                 Find connections that include the <span className="text-primary italic">whole</span> family.
               </h1>
-              <p className="text-lg md:text-xl text-muted-foreground mb-10 leading-relaxed font-light">
+              <p className="text-lg md:text-xl text-muted-foreground mb-10 leading-relaxed font-light max-w-xl">
                 A warm, intimate community where your pet is your personality. For adults who want meaningful connections grounded in a shared love of animals.
               </p>
-              <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex flex-col sm:flex-row gap-4 relative">
                 <Link href="/create-profile" data-testid="hero-cta-start">
-                  <Button size="lg" className="w-full sm:w-auto rounded-full px-8 text-base bg-primary text-primary-foreground hover:bg-primary/90 h-14">
-                    Join Pawmate <ArrowRight className="ml-2 w-5 h-5" />
-                  </Button>
+                  <motion.div
+                    animate={{ boxShadow: ["0 0 0 0 rgba(106,168,89,0)", "0 0 0 10px rgba(106,168,89,0.15)", "0 0 0 20px rgba(106,168,89,0)"] }}
+                    transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+                    className="rounded-full w-full sm:w-auto"
+                  >
+                    <Button size="lg" className="w-full sm:w-auto rounded-full px-8 text-base bg-primary text-primary-foreground hover:bg-primary/90 h-14 shadow-lg shadow-primary/20">
+                      Join Pawmate <ArrowRight className="ml-2 w-5 h-5" />
+                    </Button>
+                  </motion.div>
                 </Link>
                 <Link href="/login" data-testid="hero-cta-login">
-                  <Button size="lg" variant="outline" className="w-full sm:w-auto rounded-full px-8 text-base h-14">
+                  <Button size="lg" variant="outline" className="w-full sm:w-auto rounded-full px-8 text-base h-14 bg-white/50 backdrop-blur-sm border-border/50">
                     Sign In
                   </Button>
                 </Link>
@@ -40,25 +55,25 @@ export default function Home() {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
-              className="relative"
+              className="relative mt-8 md:mt-0"
             >
-              <div className="aspect-[4/5] md:aspect-square rounded-3xl overflow-hidden shadow-2xl relative">
+              <div className="aspect-[4/5] md:aspect-square rounded-[2rem] overflow-hidden shadow-2xl relative">
                 <img 
                   src="/hero.png" 
                   alt="Couple walking dog in park" 
-                  className="object-cover w-full h-full"
+                  className="object-cover w-full h-full scale-[1.02]"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/10"></div>
               </div>
               
-              {/* Floating Badge */}
+              {/* Floating Badge Bottom Left */}
               <motion.div 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.6 }}
-                className="absolute -bottom-6 -left-6 md:-left-12 bg-card p-4 rounded-2xl shadow-xl flex items-center gap-4 border border-border/50 backdrop-blur-sm"
+                initial={{ opacity: 0, y: 20, rotate: -2 }}
+                animate={{ opacity: 1, y: 0, rotate: 0 }}
+                transition={{ duration: 0.8, delay: 0.6 }}
+                className="hidden md:flex absolute -bottom-6 -left-12 bg-card/95 backdrop-blur-md p-4 rounded-2xl shadow-xl items-center gap-4 border border-white/40"
               >
-                <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-primary/20">
+                <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-white shadow-sm">
                   <img src="/pet1.png" alt="Pet avatar" className="w-full h-full object-cover" />
                 </div>
                 <div>
@@ -69,78 +84,156 @@ export default function Home() {
                   <Heart className="w-4 h-4 text-accent-foreground fill-accent-foreground" />
                 </div>
               </motion.div>
+
+              {/* Floating Badge Top Right */}
+              <motion.div 
+                initial={{ opacity: 0, y: -20, rotate: 2 }}
+                animate={{ opacity: 1, y: 0, rotate: 0 }}
+                transition={{ duration: 0.8, delay: 0.8 }}
+                className="hidden md:flex absolute -top-8 -right-8 bg-card/95 backdrop-blur-md py-3 px-4 rounded-2xl shadow-xl items-center gap-3 border border-white/40 z-20"
+              >
+                <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center">
+                  <Heart className="w-4 h-4 text-amber-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-foreground">Perfect match!</p>
+                </div>
+              </motion.div>
             </motion.div>
           </div>
         </div>
       </section>
 
       {/* How it works */}
-      <section id="how-it-works" className="py-24 bg-secondary/30">
-        <div className="container mx-auto px-4 md:px-8">
-          <div className="text-center max-w-2xl mx-auto mb-16">
+      <section id="how-it-works" className="py-24 bg-card relative overflow-hidden">
+        <div className="container mx-auto px-4 md:px-8 relative z-10">
+          <div className="text-center max-w-2xl mx-auto mb-20">
             <h2 className="font-serif text-3xl md:text-5xl font-semibold text-foreground mb-4">Meaningful by design</h2>
-            <p className="text-muted-foreground text-lg">We built Pawmate differently. No swiping fatigue, just intentional connections.</p>
+            <p className="text-muted-foreground text-lg font-light">We built Pawmate differently. No swiping fatigue, just intentional connections.</p>
           </div>
           
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="bg-card p-8 rounded-[2rem] shadow-sm border border-card-border/50">
-              <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mb-6">
-                <Users className="w-6 h-6 text-primary" />
+          <div className="relative">
+            {/* Connector Line (Desktop) */}
+            <div className="hidden md:block absolute top-12 left-[15%] right-[15%] h-px bg-border/60 z-0"></div>
+
+            <div className="grid md:grid-cols-3 gap-8 md:gap-12 relative z-10">
+              <div className="flex flex-col items-center text-center">
+                <div className="w-24 h-24 rounded-full bg-amber-50 flex items-center justify-center mb-6 shadow-sm border border-amber-100/50">
+                  <span className="font-serif text-4xl text-amber-700 italic">1</span>
+                </div>
+                <h3 className="text-xl font-medium text-foreground mb-3">Authentic Profiles</h3>
+                <p className="text-muted-foreground leading-relaxed font-light">Showcase your lifestyle and your pet's personality. We focus on who you are, not just what you look like.</p>
               </div>
-              <h3 className="text-xl font-medium text-foreground mb-3">Authentic Profiles</h3>
-              <p className="text-muted-foreground leading-relaxed">Showcase your lifestyle and your pet's personality. We focus on who you are, not just what you look like.</p>
-            </div>
-            <div className="bg-card p-8 rounded-[2rem] shadow-sm border border-card-border/50">
-              <div className="w-14 h-14 rounded-full bg-accent/10 flex items-center justify-center mb-6">
-                <Heart className="w-6 h-6 text-accent-foreground" />
+              <div className="flex flex-col items-center text-center">
+                <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center mb-6 shadow-sm border border-primary/20">
+                  <span className="font-serif text-4xl text-primary italic">2</span>
+                </div>
+                <h3 className="text-xl font-medium text-foreground mb-3">Intentional Matching</h3>
+                <p className="text-muted-foreground leading-relaxed font-light">Connect over shared interests, pet compatibility, and lifestyle alignment. Quality over quantity.</p>
               </div>
-              <h3 className="text-xl font-medium text-foreground mb-3">Intentional Matching</h3>
-              <p className="text-muted-foreground leading-relaxed">Connect over shared interests, pet compatibility, and lifestyle alignment. Quality over quantity.</p>
-            </div>
-            <div className="bg-card p-8 rounded-[2rem] shadow-sm border border-card-border/50">
-              <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mb-6">
-                <Shield className="w-6 h-6 text-primary" />
+              <div className="flex flex-col items-center text-center">
+                <div className="w-24 h-24 rounded-full bg-accent/10 flex items-center justify-center mb-6 shadow-sm border border-accent/20">
+                  <span className="font-serif text-4xl text-accent-foreground italic">3</span>
+                </div>
+                <h3 className="text-xl font-medium text-foreground mb-3">Safe Community</h3>
+                <p className="text-muted-foreground leading-relaxed font-light">A moderated space that values kindness and respect. Comfortable, secure, and genuine.</p>
               </div>
-              <h3 className="text-xl font-medium text-foreground mb-3">Safe & Respectful</h3>
-              <p className="text-muted-foreground leading-relaxed">A moderated community that values kindness and respect. A comfortable space to explore connections.</p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Trust / Testimonial */}
-      <section id="testimonials" className="py-24 bg-background">
+      {/* Meet the community */}
+      <section className="py-24 bg-background">
         <div className="container mx-auto px-4 md:px-8">
-          <div className="bg-primary/5 rounded-[3rem] p-8 md:p-16 flex flex-col md:flex-row items-center gap-12 border border-primary/10">
-            <div className="md:w-1/2">
-              <h2 className="font-serif text-3xl md:text-5xl font-semibold text-foreground mb-6">"We met at the dog park, but Pawmate made the introduction."</h2>
-              <p className="text-lg text-muted-foreground mb-8 italic">"I was tired of generic dating apps. Pawmate felt different—calmer, more genuine. Seeing someone's relationship with their pet tells you so much about their character."</p>
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-full overflow-hidden">
+          <div className="flex justify-between items-end mb-12">
+            <div>
+              <h2 className="font-serif text-3xl md:text-5xl font-semibold text-foreground mb-4">Meet the community</h2>
+              <p className="text-muted-foreground text-lg font-light">Genuine people and their best friends.</p>
+            </div>
+            <Link href="/discover" className="hidden md:flex items-center text-primary font-medium hover:text-primary/80 transition-colors">
+              View more <ArrowRight className="ml-2 w-4 h-4" />
+            </Link>
+          </div>
+
+          <div className="flex overflow-x-auto md:grid md:grid-cols-3 gap-6 pb-8 -mx-4 px-4 md:mx-0 md:px-0 snap-x">
+            {petCommunityData.map((item, idx) => (
+              <motion.div 
+                key={idx}
+                whileHover={{ y: -8, scale: 1.01 }}
+                transition={{ duration: 0.3 }}
+                className="min-w-[280px] md:min-w-0 bg-card rounded-3xl border border-border/40 overflow-hidden shadow-sm hover:shadow-xl hover:border-primary/20 snap-center flex flex-col"
+              >
+                <div className="h-[240px] md:h-[280px] relative overflow-hidden">
+                  <img src={item.image} alt={item.pet} className="w-full h-full object-cover" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
+                  <div className="absolute bottom-4 left-4 right-4 text-white">
+                    <h3 className="font-serif text-3xl font-medium leading-tight">{item.pet}</h3>
+                    <p className="text-white/90 text-sm">{item.breed}</p>
+                  </div>
+                </div>
+                <div className="p-6 flex-grow flex flex-col justify-between bg-[#FCFBF8]">
+                  <div className="mb-6">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="font-medium text-foreground">{item.owner}, {item.age}</span>
+                    </div>
+                    <div className="flex items-center text-muted-foreground text-sm gap-1">
+                      <MapPin className="w-3.5 h-3.5" />
+                      {item.city}
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {item.tags.map((tag, i) => (
+                      <span key={i} className="text-xs px-3 py-1 bg-secondary text-secondary-foreground rounded-full border border-border/50">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+          
+          <div className="mt-4 md:hidden text-center">
+            <Link href="/discover" className="inline-flex items-center text-primary font-medium">
+              View more profiles <ArrowRight className="ml-2 w-4 h-4" />
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Trust / Testimonial */}
+      <section id="testimonials" className="py-24 bg-card relative overflow-hidden">
+        <Quote className="absolute top-12 left-12 w-48 h-48 text-primary/5 -rotate-12 pointer-events-none" />
+        <div className="container mx-auto px-4 md:px-8 relative z-10">
+          <div className="bg-[#FAF8F5] rounded-[3rem] p-8 md:p-16 flex flex-col md:flex-row items-center gap-16 border border-border/60 shadow-sm">
+            <div className="md:w-1/2 relative">
+              <h2 className="font-serif text-3xl md:text-5xl font-semibold text-foreground mb-8 leading-tight">
+                "We met at the dog park, but Pawmate made the introduction."
+              </h2>
+              <p className="text-xl md:text-2xl text-muted-foreground mb-10 italic font-serif leading-relaxed text-foreground/80">
+                "I was tired of generic dating apps. Pawmate felt different—calmer, more genuine. Seeing someone's relationship with their pet tells you so much about their character."
+              </p>
+              <div className="flex items-center gap-5">
+                <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-white shadow-md">
                   <img src="/profile3.png" alt="Sarah" className="w-full h-full object-cover" />
                 </div>
                 <div>
-                  <p className="font-medium text-foreground">Sarah & Bella (Golden Retriever)</p>
+                  <p className="font-medium text-foreground text-lg">Sarah & Bella</p>
                   <p className="text-sm text-muted-foreground">Found their pack in Seattle</p>
                 </div>
               </div>
             </div>
-            <div className="md:w-1/2 grid grid-cols-2 gap-4">
-              <div className="space-y-4 pt-8">
-                <div className="aspect-square rounded-2xl overflow-hidden">
-                  <img src="/profile1.png" alt="Community member" className="w-full h-full object-cover" />
-                </div>
-                <div className="aspect-[4/3] rounded-2xl overflow-hidden">
-                  <img src="/pet2.png" alt="Community pet" className="w-full h-full object-cover" />
-                </div>
+            
+            <div className="md:w-1/2 w-full h-[400px] md:h-[500px] relative">
+              <div className="absolute top-0 right-0 w-[60%] h-[60%] rounded-3xl overflow-hidden shadow-xl border-4 border-white z-20">
+                <img src="/pet2.png" alt="Community pet" className="w-full h-full object-cover" />
               </div>
-              <div className="space-y-4">
-                <div className="aspect-[4/3] rounded-2xl overflow-hidden">
-                  <img src="/profile2.png" alt="Community member" className="w-full h-full object-cover" />
-                </div>
-                <div className="aspect-square rounded-2xl overflow-hidden bg-secondary flex items-center justify-center p-6 text-center">
-                  <p className="font-serif text-2xl text-foreground font-medium">Join our growing community.</p>
-                </div>
+              <div className="absolute bottom-10 left-0 w-[55%] h-[55%] rounded-3xl overflow-hidden shadow-lg border-4 border-white z-30">
+                <img src="/profile1.png" alt="Community member" className="w-full h-full object-cover" />
+              </div>
+              <div className="absolute bottom-0 right-[15%] w-[40%] h-[40%] rounded-3xl overflow-hidden shadow-md border-4 border-white z-10">
+                <img src="/profile2.png" alt="Community member" className="w-full h-full object-cover" />
               </div>
             </div>
           </div>
@@ -148,12 +241,24 @@ export default function Home() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-24 bg-card text-center border-t border-border">
-        <div className="container mx-auto px-4 max-w-3xl">
-          <h2 className="font-serif text-4xl md:text-5xl font-semibold text-foreground mb-6">Ready to find your pack?</h2>
-          <p className="text-lg text-muted-foreground mb-10">Create your profile today and start connecting with people who share your love for animals.</p>
+      <section className="py-32 relative overflow-hidden bg-gradient-to-b from-amber-50/50 to-primary/10">
+        <div className="container mx-auto px-4 max-w-3xl text-center relative z-10">
+          <div className="flex justify-center -space-x-4 mb-8">
+            <div className="w-16 h-16 rounded-full overflow-hidden border-4 border-white shadow-sm z-30">
+              <img src="/profile1.png" alt="Avatar" className="w-full h-full object-cover" />
+            </div>
+            <div className="w-16 h-16 rounded-full overflow-hidden border-4 border-white shadow-sm z-20">
+              <img src="/pet1.png" alt="Avatar" className="w-full h-full object-cover" />
+            </div>
+            <div className="w-16 h-16 rounded-full overflow-hidden border-4 border-white shadow-sm z-10">
+              <img src="/profile2.png" alt="Avatar" className="w-full h-full object-cover" />
+            </div>
+          </div>
+          
+          <h2 className="font-serif text-4xl md:text-6xl font-semibold text-foreground mb-6">Ready to find your pack?</h2>
+          <p className="text-xl text-muted-foreground mb-12 font-light max-w-xl mx-auto">Create your profile today and start connecting with people who share your love for animals.</p>
           <Link href="/create-profile" data-testid="footer-cta-start">
-            <Button size="lg" className="rounded-full px-10 text-base bg-primary text-primary-foreground hover:bg-primary/90 h-14">
+            <Button size="lg" className="rounded-full px-12 text-lg bg-primary text-primary-foreground hover:bg-primary/90 h-16 shadow-xl shadow-primary/20">
               Get Started for Free
             </Button>
           </Link>

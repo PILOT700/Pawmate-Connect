@@ -36,3 +36,21 @@ id = "ZZxL6-MXKFRf3gslmeF5v"
 uri = "file://artifacts/pawmate/public/pet2.png"
 type = "image"
 title = "Elegant siamese cat"
+
+[[generated]]
+id = "6ojh7EPumHyE6jSmCOYsN"
+uri = "file://artifacts/pawmate/public/pet-card-1.png"
+type = "image"
+title = "Golden Retriever named Biscuit"
+
+[[generated]]
+id = "OKR5wdw1Kq3TNcK9XqSXl"
+uri = "file://artifacts/pawmate/public/pet-card-2.png"
+type = "image"
+title = "Orange Tabby Cat named Fig"
+
+[[generated]]
+id = "DN7-l7Rt0qlBGT2S-qsBA"
+uri = "file://artifacts/pawmate/public/pet-card-3.png"
+type = "image"
+title = "Border Collie named Scout"
