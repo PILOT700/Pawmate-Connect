@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Heart, Shield, Users, Quote, MapPin } from "lucide-react";
+import { ArrowRight, Heart, Shield, Users, Quote, MapPin, PawPrint } from "lucide-react";
 
 const petCommunityData = [
   { pet: "Biscuit", breed: "Golden Retriever", owner: "Clara", age: 31, city: "Portland", tags: ["Outdoor lover", "Dog park regular"], image: "/pet-card-1.png" },
@@ -12,96 +12,79 @@ const petCommunityData = [
 export default function Home() {
   return (
     <div className="flex flex-col min-h-screen">
-      {/* Hero Section */}
-      <section className="relative pt-20 pb-32 overflow-hidden bg-background">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-amber-100/40 via-background to-background pointer-events-none" />
-        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03] mix-blend-overlay pointer-events-none" />
-        
-        <div className="container mx-auto px-4 md:px-8 relative z-10">
-          <div className="grid md:grid-cols-2 gap-12 lg:gap-16 items-center">
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, ease: "easeOut" }}
-              className="max-w-2xl pt-8"
-            >
-              <h1 className="font-serif text-4xl md:text-6xl lg:text-7xl font-semibold leading-[1.05] text-foreground mb-6">
-                Find connections that include the <span className="text-primary italic">whole</span> family.
-              </h1>
-              <p className="text-lg md:text-xl text-muted-foreground mb-10 leading-relaxed font-light max-w-xl">
-                A warm, intimate community where your pet is your personality. For adults who want meaningful connections grounded in a shared love of animals.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4 relative">
-                <Link href="/create-profile" data-testid="hero-cta-start">
-                  <motion.div
-                    animate={{ boxShadow: ["0 0 0 0 rgba(106,168,89,0)", "0 0 0 10px rgba(106,168,89,0.15)", "0 0 0 20px rgba(106,168,89,0)"] }}
-                    transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
-                    className="rounded-full w-full sm:w-auto"
-                  >
-                    <Button size="lg" className="w-full sm:w-auto rounded-full px-8 text-base bg-primary text-primary-foreground hover:bg-primary/90 h-14 shadow-lg shadow-primary/20">
-                      Join Pawmate <ArrowRight className="ml-2 w-5 h-5" />
-                    </Button>
-                  </motion.div>
-                </Link>
-                <Link href="/login" data-testid="hero-cta-login">
-                  <Button size="lg" variant="outline" className="w-full sm:w-auto rounded-full px-8 text-base h-14 bg-white/50 backdrop-blur-sm border-border/50">
-                    Sign In
-                  </Button>
-                </Link>
-              </div>
-            </motion.div>
-            
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
-              className="relative mt-8 md:mt-0"
-            >
-              <div className="aspect-[4/5] md:aspect-square rounded-[2rem] overflow-hidden shadow-2xl relative">
-                <img 
-                  src="/hero.png" 
-                  alt="Couple walking dog in park" 
-                  className="object-cover w-full h-full scale-[1.02]"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/10"></div>
-              </div>
-              
-              {/* Floating Badge Bottom Left */}
-              <motion.div 
-                initial={{ opacity: 0, y: 20, rotate: -2 }}
-                animate={{ opacity: 1, y: 0, rotate: 0 }}
-                transition={{ duration: 0.8, delay: 0.6 }}
-                className="hidden md:flex absolute -bottom-6 -left-12 bg-card/95 backdrop-blur-md p-4 rounded-2xl shadow-xl items-center gap-4 border border-white/40"
-              >
-                <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-white shadow-sm">
-                  <img src="/pet1.png" alt="Pet avatar" className="w-full h-full object-cover" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-foreground">Matched with Charlie</p>
-                  <p className="text-xs text-muted-foreground">3 miles away</p>
-                </div>
-                <div className="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center ml-2">
-                  <Heart className="w-4 h-4 text-accent-foreground fill-accent-foreground" />
-                </div>
-              </motion.div>
+      {/* Hero Section — full-width cinematic */}
+      <section className="relative w-full overflow-hidden" style={{ height: "calc(100vh - 4.5rem)" }}>
+        {/* Background image */}
+        <img
+          src="/hero-couples.png"
+          alt="Two couples walking toward each other in a sun-dappled park with their pets"
+          className="absolute inset-0 w-full h-full object-cover object-center"
+        />
 
-              {/* Floating Badge Top Right */}
-              <motion.div 
-                initial={{ opacity: 0, y: -20, rotate: 2 }}
-                animate={{ opacity: 1, y: 0, rotate: 0 }}
-                transition={{ duration: 0.8, delay: 0.8 }}
-                className="hidden md:flex absolute -top-8 -right-8 bg-card/95 backdrop-blur-md py-3 px-4 rounded-2xl shadow-xl items-center gap-3 border border-white/40 z-20"
-              >
-                <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center">
-                  <Heart className="w-4 h-4 text-amber-600" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-foreground">Perfect match!</p>
-                </div>
-              </motion.div>
-            </motion.div>
-          </div>
+        {/* Layered gradient overlay: dark at edges, lighter in centre for text legibility */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-black/20" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/30 via-transparent to-black/30" />
+
+        {/* Centered text content */}
+        <div className="relative z-10 h-full flex flex-col items-center justify-center text-center px-4">
+          <motion.div
+            initial={{ opacity: 0, y: 28 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.9, ease: "easeOut" }}
+            className="max-w-3xl"
+          >
+            <h1 className="font-serif text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-semibold leading-[1.08] text-white mb-5 drop-shadow-sm">
+              Connections that start with paws
+            </h1>
+
+            {/* Decorative paw divider */}
+            <div className="flex items-center justify-center gap-4 mb-5">
+              <span className="block w-16 h-px bg-white/40" />
+              <PawPrint className="w-5 h-5 text-white/70" />
+              <span className="block w-16 h-px bg-white/40" />
+            </div>
+
+            <p className="text-base sm:text-lg md:text-xl text-white/85 mb-10 leading-relaxed font-light max-w-xl mx-auto">
+              For pet lovers seeking meaningful relationships, friendship, and shared moments.
+            </p>
+
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link href="/create-profile" data-testid="hero-cta-start">
+                <Button
+                  size="lg"
+                  className="w-full sm:w-auto rounded-full px-10 text-base h-13 bg-primary text-primary-foreground hover:bg-primary/90 shadow-xl shadow-black/20 font-medium"
+                >
+                  Join Pawmate
+                </Button>
+              </Link>
+              <Link href="/#how-it-works" data-testid="hero-cta-learn">
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="w-full sm:w-auto rounded-full px-10 text-base h-13 bg-white/10 border-white/50 text-white hover:bg-white/20 backdrop-blur-sm font-medium"
+                >
+                  Learn more
+                </Button>
+              </Link>
+            </div>
+          </motion.div>
         </div>
+
+        {/* Subtle scroll-down indicator */}
+        <motion.div
+          className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-1"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1.2, duration: 0.6 }}
+        >
+          <motion.div
+            animate={{ y: [0, 6, 0] }}
+            transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+            className="w-5 h-8 rounded-full border-2 border-white/40 flex items-start justify-center pt-1.5"
+          >
+            <span className="block w-1 h-1.5 rounded-full bg-white/60" />
+          </motion.div>
+        </motion.div>
       </section>
 
       {/* How it works */}
