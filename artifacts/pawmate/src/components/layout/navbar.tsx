@@ -93,7 +93,7 @@ export function Navbar() {
                       <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-rose-400 border-2 border-background" />
                     )}
                   </button>
-                  <Link href="/profile/me" data-testid="link-nav-profile">
+                  <Link href="/settings" data-testid="link-nav-profile">
                     <Button variant="ghost" size="icon" className="rounded-full bg-secondary">
                       <User className="w-5 h-5 text-foreground" />
                     </Button>
@@ -164,6 +164,7 @@ export function Navbar() {
                   </Link>
                   <Link href="/messages" className="text-base font-medium text-foreground py-1.5 border-b border-border/40" onClick={() => setMobileMenuOpen(false)}>Messages</Link>
                   <Link href="/profile/me" className="text-base font-medium text-foreground py-1.5 border-b border-border/40" onClick={() => setMobileMenuOpen(false)}>My Profile</Link>
+                  <Link href="/settings" className="text-base font-medium text-foreground py-1.5 border-b border-border/40" onClick={() => setMobileMenuOpen(false)}>Settings</Link>
                 </>
               )}
             </motion.div>

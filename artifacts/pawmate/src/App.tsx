@@ -11,6 +11,7 @@ import Profile from "@/pages/profile";
 import Messages from "@/pages/messages";
 import CreateProfile from "@/pages/create-profile";
 import LikedProfiles from "@/pages/liked-profiles";
+import Settings from "@/pages/settings";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient();
@@ -28,6 +29,7 @@ function Router() {
           <Route path="/messages" component={Messages} />
           <Route path="/create-profile" component={CreateProfile} />
           <Route path="/liked" component={LikedProfiles} />
+          <Route path="/settings" component={Settings} />
           <Route component={NotFound} />
         </Switch>
       </main>
