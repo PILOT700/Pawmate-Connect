@@ -49,7 +49,7 @@ export default function Home() {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link href="/create-profile" data-testid="hero-cta-start">
+              <Link href="/onboarding" data-testid="hero-cta-start">
                 <Button
                   size="lg"
                   className="w-full sm:w-auto rounded-full px-10 text-base h-13 bg-primary text-primary-foreground hover:bg-primary/90 shadow-xl shadow-black/20 font-medium"

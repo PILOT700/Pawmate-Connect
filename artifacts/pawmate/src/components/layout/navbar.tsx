@@ -51,7 +51,7 @@ export function Navbar() {
                       Log in
                     </Button>
                   </Link>
-                  <Link href="/login" data-testid="link-get-started">
+                  <Link href="/onboarding" data-testid="link-get-started">
                     <Button className="rounded-full px-5 h-9 font-medium bg-primary text-primary-foreground hover:bg-primary/90">
                       Sign up
                     </Button>
@@ -151,7 +151,7 @@ export function Navbar() {
                     <Link href="/login" onClick={() => setMobileMenuOpen(false)}>
                       <Button variant="outline" className="w-full h-11 text-base rounded-full">Log in</Button>
                     </Link>
-                    <Link href="/login" onClick={() => setMobileMenuOpen(false)}>
+                    <Link href="/onboarding" onClick={() => setMobileMenuOpen(false)}>
                       <Button className="w-full h-11 text-base rounded-full bg-primary text-primary-foreground">Sign up</Button>
                     </Link>
                   </div>
