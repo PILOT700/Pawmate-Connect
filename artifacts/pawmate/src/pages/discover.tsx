@@ -1,9 +1,10 @@
 import { Link } from "wouter";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Heart, MapPin, X, Bookmark } from "lucide-react";
 import { useState } from "react";
+import { MatchCelebrationModal } from "@/components/match-celebration-modal";
 
 const mockProfiles = [
   {
@@ -62,11 +63,39 @@ const mockProfiles = [
   }
 ];
 
+type Profile = typeof mockProfiles[number];
+
 export default function Discover() {
   const [profiles, setProfiles] = useState(mockProfiles);
+  const [likedIds, setLikedIds] = useState<Set<string>>(new Set());
+  const [matchProfile, setMatchProfile] = useState<Profile | null>(null);
+  const [matchOpen, setMatchOpen] = useState(false);
 
-  const handleAction = (id: string) => {
+  const handleSkip = (id: string) => {
     setProfiles(prev => prev.filter(p => p.id !== id));
+  };
+
+  const handleLike = (profile: Profile) => {
+    setLikedIds(prev => new Set([...prev, profile.id]));
+    // ~60% chance of a mutual match for demo purposes
+    const isMatch = Math.random() < 0.6;
+    if (isMatch) {
+      // Small delay so the heart animation plays first
+      setTimeout(() => {
+        setMatchProfile(profile);
+        setMatchOpen(true);
+      }, 420);
+    } else {
+      setProfiles(prev => prev.filter(p => p.id !== profile.id));
+    }
+  };
+
+  const handleCloseMatch = () => {
+    setMatchOpen(false);
+    if (matchProfile) {
+      setProfiles(prev => prev.filter(p => p.id !== matchProfile.id));
+      setMatchProfile(null);
+    }
   };
 
   return (
@@ -122,83 +151,107 @@ export default function Discover() {
             </div>
             <h2 className="font-serif text-2xl text-foreground mb-2">You're all caught up!</h2>
             <p className="text-muted-foreground">Check back later for more potential matches.</p>
-            <Button className="mt-6 rounded-full" onClick={() => setProfiles(mockProfiles)} data-testid="btn-refresh-profiles">
+            <Button
+              className="mt-6 rounded-full"
+              onClick={() => { setProfiles(mockProfiles); setLikedIds(new Set()); }}
+              data-testid="btn-refresh-profiles"
+            >
               Refresh Profiles
             </Button>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {profiles.map((profile, idx) => (
-              <motion.div
-                key={profile.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: idx * 0.1 }}
-                className="group relative bg-card rounded-[2rem] border border-card-border overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col"
-              >
-                <Link href={`/profile/${profile.id}`} className="block relative aspect-[4/5] overflow-hidden" data-testid={`link-profile-${profile.id}`}>
-                  <img 
-                    src={profile.image} 
-                    alt={profile.name} 
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-transparent"></div>
-                  
-                  <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
-                    <h3 className="font-serif text-3xl font-medium mb-1">{profile.name}, {profile.age}</h3>
-                    <div className="flex items-center text-white/90 text-sm gap-1">
-                      <MapPin className="w-4 h-4" />
-                      <span>{profile.city}</span>
-                    </div>
-                  </div>
+            <AnimatePresence mode="popLayout">
+              {profiles.map((profile, idx) => {
+                const isLiked = likedIds.has(profile.id);
+                return (
+                  <motion.div
+                    key={profile.id}
+                    layout
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.88, transition: { duration: 0.25 } }}
+                    transition={{ duration: 0.4, delay: idx * 0.05 }}
+                    className="group relative bg-card rounded-[2rem] border border-card-border overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col"
+                  >
+                    <Link href={`/profile/${profile.id}`} className="block relative aspect-[4/5] overflow-hidden" data-testid={`link-profile-${profile.id}`}>
+                      <img
+                        src={profile.image}
+                        alt={profile.name}
+                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-transparent" />
 
-                  {/* Pet Badge overlay */}
-                  <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-md rounded-2xl p-2 pr-4 flex items-center gap-3 shadow-lg">
-                    <div className="w-10 h-10 rounded-full overflow-hidden border border-border/50">
-                      <img src={profile.pet.image} alt={profile.pet.name} className="w-full h-full object-cover" />
-                    </div>
-                    <div>
-                      <p className="text-xs font-semibold text-foreground leading-tight">{profile.pet.name}</p>
-                      <p className="text-[10px] text-muted-foreground leading-tight">{profile.pet.breed}</p>
-                    </div>
-                  </div>
-                </Link>
+                      <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
+                        <h3 className="font-serif text-3xl font-medium mb-1">{profile.name}, {profile.age}</h3>
+                        <div className="flex items-center text-white/90 text-sm gap-1">
+                          <MapPin className="w-4 h-4" />
+                          <span>{profile.city}</span>
+                        </div>
+                      </div>
 
-                <div className="p-6 flex-grow flex flex-col justify-between">
-                  <p className="text-muted-foreground text-sm line-clamp-3 mb-6">"{profile.bio}"</p>
-                  
-                  <div className="flex items-center justify-between gap-4 mt-auto">
-                    <Button 
-                      variant="outline" 
-                      size="icon" 
-                      className="w-14 h-14 rounded-full border-border hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30 transition-colors"
-                      onClick={() => handleAction(profile.id)}
-                      data-testid={`btn-skip-${profile.id}`}
-                    >
-                      <X className="w-6 h-6" />
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="icon" 
-                      className="w-12 h-12 rounded-full border-border hover:bg-secondary transition-colors"
-                      data-testid={`btn-save-${profile.id}`}
-                    >
-                      <Bookmark className="w-5 h-5 text-foreground" />
-                    </Button>
-                    <Button 
-                      className="w-14 h-14 rounded-full bg-accent text-accent-foreground hover:bg-accent/90 border border-accent-foreground/10 shadow-sm"
-                      onClick={() => handleAction(profile.id)}
-                      data-testid={`btn-like-${profile.id}`}
-                    >
-                      <Heart className="w-6 h-6 fill-current" />
-                    </Button>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
+                      {/* Pet Badge */}
+                      <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-md rounded-2xl p-2 pr-4 flex items-center gap-3 shadow-lg">
+                        <div className="w-10 h-10 rounded-full overflow-hidden border border-border/50">
+                          <img src={profile.pet.image} alt={profile.pet.name} className="w-full h-full object-cover" />
+                        </div>
+                        <div>
+                          <p className="text-xs font-semibold text-foreground leading-tight">{profile.pet.name}</p>
+                          <p className="text-[10px] text-muted-foreground leading-tight">{profile.pet.breed}</p>
+                        </div>
+                      </div>
+                    </Link>
+
+                    <div className="p-6 flex-grow flex flex-col justify-between">
+                      <p className="text-muted-foreground text-sm line-clamp-3 mb-6">"{profile.bio}"</p>
+
+                      <div className="flex items-center justify-between gap-4 mt-auto">
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="w-14 h-14 rounded-full border-border hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30 transition-colors"
+                          onClick={() => handleSkip(profile.id)}
+                          data-testid={`btn-skip-${profile.id}`}
+                        >
+                          <X className="w-6 h-6" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="w-12 h-12 rounded-full border-border hover:bg-secondary transition-colors"
+                          data-testid={`btn-save-${profile.id}`}
+                        >
+                          <Bookmark className="w-5 h-5 text-foreground" />
+                        </Button>
+                        <motion.div whileTap={{ scale: 0.88 }} whileHover={{ scale: 1.06 }}>
+                          <Button
+                            className={`w-14 h-14 rounded-full shadow-sm transition-colors ${
+                              isLiked
+                                ? "bg-rose-400 text-white hover:bg-rose-500 border border-rose-300"
+                                : "bg-accent text-accent-foreground hover:bg-accent/90 border border-accent-foreground/10"
+                            }`}
+                            onClick={() => handleLike(profile)}
+                            data-testid={`btn-like-${profile.id}`}
+                          >
+                            <Heart className={`w-6 h-6 ${isLiked ? "fill-white" : "fill-current"}`} />
+                          </Button>
+                        </motion.div>
+                      </div>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </AnimatePresence>
           </div>
         )}
       </div>
+
+      {/* Match Celebration Modal */}
+      <MatchCelebrationModal
+        open={matchOpen}
+        profile={matchProfile}
+        onClose={handleCloseMatch}
+      />
     </div>
   );
 }
