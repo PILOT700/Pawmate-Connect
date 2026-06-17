@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { Menu, X, Bell, User, PawPrint } from "lucide-react";
+import { Menu, X, Bell, User, PawPrint, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -63,6 +63,14 @@ export function Navbar() {
                   data-testid="link-nav-discover"
                 >
                   Discover
+                </Link>
+                <Link
+                  href="/liked"
+                  className={`text-sm font-medium transition-colors flex items-center gap-1.5 ${location === "/liked" ? "text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                  data-testid="link-nav-liked"
+                >
+                  <Heart className={`w-3.5 h-3.5 ${location === "/liked" ? "fill-current text-primary" : ""}`} />
+                  Liked
                 </Link>
                 <Link
                   href="/messages"
@@ -141,6 +149,9 @@ export function Navbar() {
               ) : (
                 <>
                   <Link href="/discover" className="text-base font-medium text-foreground py-1.5 border-b border-border/40" onClick={() => setMobileMenuOpen(false)}>Discover</Link>
+                  <Link href="/liked" className="text-base font-medium text-foreground py-1.5 border-b border-border/40 flex items-center gap-2" onClick={() => setMobileMenuOpen(false)}>
+                    <Heart className="w-4 h-4 text-primary" /> Liked
+                  </Link>
                   <Link href="/messages" className="text-base font-medium text-foreground py-1.5 border-b border-border/40" onClick={() => setMobileMenuOpen(false)}>Messages</Link>
                   <Link href="/profile/me" className="text-base font-medium text-foreground py-1.5 border-b border-border/40" onClick={() => setMobileMenuOpen(false)}>My Profile</Link>
                 </>
