@@ -3,6 +3,7 @@ import { Link, useLocation } from "wouter";
 import { Menu, X, Bell, User, PawPrint, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
+import { NotificationsDrawer } from "@/components/notifications-drawer";
 
 const publicNavLinks = [
   { label: "How it works", href: "/#how-it-works" },
@@ -15,8 +16,10 @@ const publicNavLinks = [
 export function Navbar() {
   const [location] = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
 
   const isLoggedIn = location !== "/" && location !== "/login" && location !== "/create-profile";
+  const unreadCount = 3;
 
   return (
     <>
@@ -80,9 +83,16 @@ export function Navbar() {
                   Messages
                 </Link>
                 <div className="flex items-center gap-3 ml-3">
-                  <Button variant="ghost" size="icon" className="rounded-full" data-testid="btn-notifications">
+                  <button
+                    onClick={() => setNotifOpen(true)}
+                    className="relative w-9 h-9 flex items-center justify-center rounded-full hover:bg-secondary transition-colors"
+                    data-testid="btn-notifications"
+                  >
                     <Bell className="w-5 h-5 text-muted-foreground" />
-                  </Button>
+                    {unreadCount > 0 && (
+                      <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-rose-400 border-2 border-background" />
+                    )}
+                  </button>
                   <Link href="/profile/me" data-testid="link-nav-profile">
                     <Button variant="ghost" size="icon" className="rounded-full bg-secondary">
                       <User className="w-5 h-5 text-foreground" />
@@ -160,6 +170,8 @@ export function Navbar() {
           )}
         </AnimatePresence>
       </nav>
+
+      <NotificationsDrawer open={notifOpen} onClose={() => setNotifOpen(false)} />
     </>
   );
 }
