@@ -60,3 +60,9 @@ id = "eTaA9J6-DvBcrXfL1JqcD"
 uri = "file://attached_assets/generated_images/two_couples_walking_toward_7e20.png"
 type = "image"
 title = "generated_image"
+
+[[generated]]
+id = "bNNXew8sj4BpAGm4e2e0d"
+uri = "file://attached_assets/generated_images/wide_cinematic_park_scene_c899.png"
+type = "image"
+title = "generated_image"
