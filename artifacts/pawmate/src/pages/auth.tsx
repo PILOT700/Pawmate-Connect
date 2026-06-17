@@ -4,45 +4,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { PawPrint, Eye, EyeOff, AlertCircle } from "lucide-react";
+import { PawPrint, Eye, EyeOff } from "lucide-react";
 import { motion } from "framer-motion";
-import { useAuth } from "@/contexts/auth-context";
 
 export default function Auth() {
   const [, setLocation] = useLocation();
-  const { signIn, signUp } = useAuth();
-
-  const [signInData, setSignInData] = useState({ email: "", password: "" });
-  const [registerData, setRegisterData] = useState({ name: "", email: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
-  const handleSignIn = async (e: React.FormEvent) => {
+  const handleAuth = (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
-    setLoading(true);
-    const { error } = await signIn(signInData.email, signInData.password);
-    setLoading(false);
-    if (error) {
-      setError(error.message);
-    } else {
-      setLocation("/discover");
-    }
-  };
-
-  const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    setLoading(true);
-    const { error } = await signUp(registerData.email, registerData.password, registerData.name);
-    setLoading(false);
-    if (error) {
-      setError(error.message);
-    } else {
-      setSuccessMsg("Check your email to confirm your account, then sign in.");
-    }
+    setLocation("/discover");
   };
 
   return (
@@ -61,36 +32,14 @@ export default function Auth() {
           <p className="text-muted-foreground mt-2 text-sm">Find connections that start with paws.</p>
         </div>
 
-        {error && (
-          <motion.div
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex items-start gap-3 bg-destructive/10 border border-destructive/20 text-destructive rounded-xl px-4 py-3 mb-5 text-sm"
-          >
-            <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
-            <span>{error}</span>
-          </motion.div>
-        )}
-
-        {successMsg && (
-          <motion.div
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-primary/10 border border-primary/20 text-primary rounded-xl px-4 py-3 mb-5 text-sm text-center"
-          >
-            {successMsg}
-          </motion.div>
-        )}
-
-        <Tabs defaultValue="signin" className="w-full" onValueChange={() => { setError(null); setSuccessMsg(null); }}>
+        <Tabs defaultValue="signin" className="w-full">
           <TabsList className="grid w-full grid-cols-2 mb-8 h-11 bg-secondary rounded-full p-1">
             <TabsTrigger value="signin" className="rounded-full text-sm" data-testid="tab-signin">Sign In</TabsTrigger>
             <TabsTrigger value="register" className="rounded-full text-sm" data-testid="tab-register">Create Account</TabsTrigger>
           </TabsList>
 
-          {/* Sign In */}
           <TabsContent value="signin">
-            <form onSubmit={handleSignIn} className="space-y-4">
+            <form onSubmit={handleAuth} className="space-y-4">
               <div className="space-y-1.5">
                 <Label htmlFor="signin-email" className="text-sm font-medium">Email</Label>
                 <Input
@@ -99,8 +48,6 @@ export default function Auth() {
                   placeholder="hello@example.com"
                   className="h-11 bg-background rounded-xl"
                   required
-                  value={signInData.email}
-                  onChange={e => setSignInData(p => ({ ...p, email: e.target.value }))}
                   data-testid="input-signin-email"
                 />
               </div>
@@ -115,8 +62,6 @@ export default function Auth() {
                     type={showPassword ? "text" : "password"}
                     className="h-11 bg-background rounded-xl pr-11"
                     required
-                    value={signInData.password}
-                    onChange={e => setSignInData(p => ({ ...p, password: e.target.value }))}
                     data-testid="input-signin-password"
                   />
                   <button
@@ -133,17 +78,15 @@ export default function Auth() {
               <Button
                 type="submit"
                 className="w-full h-11 rounded-xl bg-primary text-primary-foreground text-sm font-medium mt-2"
-                disabled={loading}
                 data-testid="btn-signin-submit"
               >
-                {loading ? "Signing in…" : "Sign In"}
+                Sign In
               </Button>
             </form>
           </TabsContent>
 
-          {/* Create Account */}
           <TabsContent value="register">
-            <form onSubmit={handleRegister} className="space-y-4">
+            <form onSubmit={handleAuth} className="space-y-4">
               <div className="space-y-1.5">
                 <Label htmlFor="register-name" className="text-sm font-medium">First Name</Label>
                 <Input
@@ -151,8 +94,6 @@ export default function Auth() {
                   placeholder="Sarah"
                   className="h-11 bg-background rounded-xl"
                   required
-                  value={registerData.name}
-                  onChange={e => setRegisterData(p => ({ ...p, name: e.target.value }))}
                   data-testid="input-register-name"
                 />
               </div>
@@ -164,8 +105,6 @@ export default function Auth() {
                   placeholder="hello@example.com"
                   className="h-11 bg-background rounded-xl"
                   required
-                  value={registerData.email}
-                  onChange={e => setRegisterData(p => ({ ...p, email: e.target.value }))}
                   data-testid="input-register-email"
                 />
               </div>
@@ -178,9 +117,6 @@ export default function Auth() {
                     placeholder="At least 6 characters"
                     className="h-11 bg-background rounded-xl pr-11"
                     required
-                    minLength={6}
-                    value={registerData.password}
-                    onChange={e => setRegisterData(p => ({ ...p, password: e.target.value }))}
                     data-testid="input-register-password"
                   />
                   <button
@@ -201,10 +137,9 @@ export default function Auth() {
               <Button
                 type="submit"
                 className="w-full h-11 rounded-xl bg-primary text-primary-foreground text-sm font-medium mt-2"
-                disabled={loading}
                 data-testid="btn-register-submit"
               >
-                {loading ? "Creating account…" : "Create Account"}
+                Create Account
               </Button>
             </form>
           </TabsContent>
