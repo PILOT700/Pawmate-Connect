@@ -5,11 +5,14 @@ import { Heart, MapPin, MessageCircle, ArrowLeft } from "lucide-react";
 import { motion } from "framer-motion";
 import { CompatibilityScore } from "@/components/compatibility-score";
 import type { CompatibilityInput } from "@/components/compatibility-score";
+import { StoryStrip } from "@/components/story-strip";
+import type { Story } from "@/components/story-viewer";
 
 const PROFILES: Record<string, {
   id: string; name: string; age: number; city: string; image: string; bio: string;
   lifestyle: string[]; lookingFor: string;
   pet: { name: string; species: string; breed: string; age: string; image: string; traits: string[] };
+  stories: Story[];
 }> = {
   "1": {
     id: "1", name: "Eleanor", age: 31, city: "San Francisco",
@@ -17,7 +20,13 @@ const PROFILES: Record<string, {
     bio: "Slow mornings, strong coffee, and finding the sunniest spot in the apartment. Looking for someone to share quiet Sundays with. I work as an illustrator and mostly just draw pictures of other people's pets.",
     lifestyle: ["Morning person", "Homebody", "Coffee enthusiast", "Creative"],
     lookingFor: "Friendship",
-    pet: { name: "Oliver", species: "Cat", breed: "Orange Tabby", age: "4 years", image: "/pet2.png", traits: ["Cuddly", "Vocal", "Treat-motivated"] }
+    pet: { name: "Oliver", species: "Cat", breed: "Orange Tabby", age: "4 years", image: "/pet2.png", traits: ["Cuddly", "Vocal", "Treat-motivated"] },
+    stories: [
+      { id: "e1", image: "/profile1.png", caption: "Sunday sketchbook session ☕" },
+      { id: "e2", image: "/pet2.png", caption: "Oliver approves of this spot.", petMoment: true },
+      { id: "e3", image: "/pet-card-1.png", caption: "Golden hour in Dolores Park 🌿" },
+      { id: "e4", image: "/pet-card-2.png", caption: "He insisted on being in the photo.", petMoment: true },
+    ],
   },
   "2": {
     id: "2", name: "James", age: 34, city: "Seattle",
@@ -25,7 +34,13 @@ const PROFILES: Record<string, {
     bio: "Architect by day, amateur chef by night. Buster comes everywhere with me. Hoping to find a hiking partner who doesn't mind a dog setting the pace.",
     lifestyle: ["Outdoorsy", "Foodie", "Early riser", "Active"],
     lookingFor: "Relationship",
-    pet: { name: "Buster", species: "Dog", breed: "French Bulldog", age: "3 years", image: "/pet1.png", traits: ["Playful", "Stubborn", "Loyal"] }
+    pet: { name: "Buster", species: "Dog", breed: "French Bulldog", age: "3 years", image: "/pet1.png", traits: ["Playful", "Stubborn", "Loyal"] },
+    stories: [
+      { id: "j1", image: "/profile2.png", caption: "Morning trail run with Buster 🌄" },
+      { id: "j2", image: "/pet1.png", caption: "He stops for snacks, not for miles.", petMoment: true },
+      { id: "j3", image: "/pet-card-3.png", caption: "Post-hike nap. Hard earned." },
+      { id: "j4", image: "/profile3.png", caption: "Farmers market Sundays are sacred 🍎" },
+    ],
   },
   "3": {
     id: "3", name: "Maya", age: 28, city: "Portland",
@@ -33,7 +48,12 @@ const PROFILES: Record<string, {
     bio: "Always looking for the next adventure. Luna is the goodest girl and loves the beach. Hoping to find someone who's up for spontaneous road trips.",
     lifestyle: ["Outdoorsy", "Adventurous", "Morning person", "Dog lover"],
     lookingFor: "Open to anything",
-    pet: { name: "Luna", species: "Dog", breed: "Golden Retriever", age: "2 years", image: "/pet1.png", traits: ["Energetic", "Friendly", "Loves water"] }
+    pet: { name: "Luna", species: "Dog", breed: "Golden Retriever", age: "2 years", image: "/pet1.png", traits: ["Energetic", "Friendly", "Loves water"] },
+    stories: [
+      { id: "m1", image: "/profile3.png", caption: "Just us and the coast 🌊" },
+      { id: "m2", image: "/pet1.png", caption: "Luna found the waves first.", petMoment: true },
+      { id: "m3", image: "/pet-card-2.png", caption: "She makes friends everywhere she goes 🐾", petMoment: true },
+    ],
   },
   "4": {
     id: "4", name: "David", age: 36, city: "Austin",
@@ -41,7 +61,12 @@ const PROFILES: Record<string, {
     bio: "Tech worker who unplugs by running trails. Milo keeps my pace honest. Looking for a low-key connection with someone who values quality time over quantity.",
     lifestyle: ["Active", "Minimalist", "Coffee enthusiast", "Introvert"],
     lookingFor: "Casual meetups",
-    pet: { name: "Milo", species: "Dog", breed: "Mixed", age: "5 years", image: "/pet1.png", traits: ["Calm", "Loyal", "Trail-tested"] }
+    pet: { name: "Milo", species: "Dog", breed: "Mixed", age: "5 years", image: "/pet1.png", traits: ["Calm", "Loyal", "Trail-tested"] },
+    stories: [
+      { id: "d1", image: "/profile2.png", caption: "5am trail, no regrets ☀️" },
+      { id: "d2", image: "/pet1.png", caption: "Milo hits his stride around mile 3.", petMoment: true },
+      { id: "d3", image: "/pet-card-1.png", caption: "Post-run ritual: cold brew + patio" },
+    ],
   },
   "5": {
     id: "5", name: "Chloe", age: 29, city: "Denver",
@@ -49,7 +74,12 @@ const PROFILES: Record<string, {
     bio: "Bookstore regular. Cleo thinks she runs the place. I just pay the rent. Seeking someone who gets that cats have strong opinions and that's a feature, not a bug.",
     lifestyle: ["Homebody", "Creative", "Bookworm", "Coffee enthusiast"],
     lookingFor: "Friendship",
-    pet: { name: "Cleo", species: "Cat", breed: "Siamese", age: "3 years", image: "/pet2.png", traits: ["Opinionated", "Elegant", "Cuddly on her terms"] }
+    pet: { name: "Cleo", species: "Cat", breed: "Siamese", age: "3 years", image: "/pet2.png", traits: ["Opinionated", "Elegant", "Cuddly on her terms"] },
+    stories: [
+      { id: "c1", image: "/profile1.png", caption: "Found my corner 📖" },
+      { id: "c2", image: "/pet2.png", caption: "Cleo has claimed this chair. I sit on the floor.", petMoment: true },
+      { id: "c3", image: "/pet-card-3.png", caption: "She judges every book I bring home.", petMoment: true },
+    ],
   },
   "6": {
     id: "6", name: "Marcus", age: 33, city: "Chicago",
@@ -57,7 +87,13 @@ const PROFILES: Record<string, {
     bio: "Just looking for someone who loves dogs as much as I do. Rex and I do the lakefront trail every morning. Weekends are for farmers markets and naps.",
     lifestyle: ["Outdoorsy", "Morning person", "Foodie", "Homebody"],
     lookingFor: "Relationship",
-    pet: { name: "Rex", species: "Dog", breed: "Labrador", age: "4 years", image: "/pet1.png", traits: ["Gentle", "Obedient", "Always hungry"] }
+    pet: { name: "Rex", species: "Dog", breed: "Labrador", age: "4 years", image: "/pet1.png", traits: ["Gentle", "Obedient", "Always hungry"] },
+    stories: [
+      { id: "r1", image: "/profile3.png", caption: "Lakefront at sunrise 🌅" },
+      { id: "r2", image: "/pet1.png", caption: "Rex leading the way as always.", petMoment: true },
+      { id: "r3", image: "/pet-card-1.png", caption: "Saturday market haul — Rex got a treat 🐾", petMoment: true },
+      { id: "r4", image: "/profile2.png", caption: "Sometimes we just sit and watch the water." },
+    ],
   },
 };
 
@@ -94,6 +130,16 @@ export default function Profile() {
           animate={{ opacity: 1, y: 0 }}
           className="bg-card rounded-[3rem] p-8 md:p-12 shadow-xl border border-card-border/50"
         >
+          {/* Story Strip */}
+          <div className="mb-8">
+            <h2 className="font-serif text-xl font-medium text-foreground mb-4">Moments</h2>
+            <StoryStrip
+              name={profile.name}
+              avatar={profile.image}
+              stories={profile.stories}
+            />
+          </div>
+
           {/* Name + actions */}
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-10 border-b border-border pb-8">
             <div>
