@@ -1,101 +1,23 @@
-import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "wouter";
-import { X, Heart, MessageCircle, Eye, PawPrint, Check } from "lucide-react";
+import { X, Heart, MessageCircle, Eye, PawPrint, Check, CalendarCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useNotifications, markNotifRead, markAllNotifsRead } from "@/lib/notif-store";
+import type { NotifType } from "@/lib/notif-store";
 
-type NotifType = "match" | "message" | "view";
-
-interface Notification {
-  id: string;
-  type: NotifType;
-  title: string;
-  body: string;
-  time: string;
-  avatar: string;
-  petName?: string;
-  read: boolean;
-  href: string;
-}
-
-const initialNotifications: Notification[] = [
-  {
-    id: "n1",
-    type: "match",
-    title: "It's a mutual match!",
-    body: "You and Eleanor both liked each other. Say hello!",
-    time: "2 min ago",
-    avatar: "/profile1.png",
-    petName: "Oliver",
-    read: false,
-    href: "/messages",
-  },
-  {
-    id: "n2",
-    type: "message",
-    title: "New message from James",
-    body: "\"Hey! Buster and I would love to meet Milo sometime.\"",
-    time: "18 min ago",
-    avatar: "/profile2.png",
-    petName: "Buster",
-    read: false,
-    href: "/messages",
-  },
-  {
-    id: "n3",
-    type: "match",
-    title: "It's a mutual match!",
-    body: "You and Maya both liked each other. Start the conversation.",
-    time: "1 hour ago",
-    avatar: "/profile3.png",
-    petName: "Luna",
-    read: false,
-    href: "/messages",
-  },
-  {
-    id: "n4",
-    type: "view",
-    title: "Someone viewed your profile",
-    body: "A member in San Francisco checked out your profile.",
-    time: "3 hours ago",
-    avatar: "/profile2.png",
-    read: true,
-    href: "/discover",
-  },
-  {
-    id: "n5",
-    type: "message",
-    title: "New message from Chloe",
-    body: "\"Cleo would definitely judge your dog, but in an affectionate way.\"",
-    time: "Yesterday",
-    avatar: "/profile1.png",
-    petName: "Cleo",
-    read: true,
-    href: "/messages",
-  },
-  {
-    id: "n6",
-    type: "view",
-    title: "3 people viewed your profile",
-    body: "Your profile is getting attention this week.",
-    time: "2 days ago",
-    avatar: "/pet1.png",
-    read: true,
-    href: "/discover",
-  },
-];
-
-const typeIcon = {
+const typeIcon: Record<NotifType, React.ReactNode> = {
   match: <Heart className="w-3.5 h-3.5 fill-current" />,
   message: <MessageCircle className="w-3.5 h-3.5" />,
   view: <Eye className="w-3.5 h-3.5" />,
+  playdate: <CalendarCheck className="w-3.5 h-3.5" />,
 };
 
-const typeColor = {
+const typeColor: Record<NotifType, string> = {
   match: "bg-rose-100 text-rose-500",
   message: "bg-primary/15 text-primary",
   view: "bg-secondary text-muted-foreground",
+  playdate: "bg-amber-100 text-amber-600",
 };
 
 interface Props {
@@ -104,23 +26,13 @@ interface Props {
 }
 
 export function NotificationsDrawer({ open, onClose }: Props) {
-  const [notifications, setNotifications] = useState(initialNotifications);
-
+  const notifications = useNotifications();
   const unread = notifications.filter(n => !n.read).length;
-
-  const markAllRead = () =>
-    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-
-  const markRead = (id: string) =>
-    setNotifications(prev =>
-      prev.map(n => (n.id === id ? { ...n, read: true } : n))
-    );
 
   return (
     <AnimatePresence>
       {open && (
         <>
-          {/* Backdrop */}
           <motion.div
             key="backdrop"
             initial={{ opacity: 0 }}
@@ -132,7 +44,6 @@ export function NotificationsDrawer({ open, onClose }: Props) {
             aria-hidden="true"
           />
 
-          {/* Drawer panel */}
           <motion.aside
             key="drawer"
             initial={{ x: "100%", opacity: 0 }}
@@ -143,7 +54,6 @@ export function NotificationsDrawer({ open, onClose }: Props) {
             role="dialog"
             aria-label="Notifications"
           >
-            {/* Header */}
             <div className="flex items-center justify-between px-6 py-5 border-b border-border">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
@@ -160,7 +70,7 @@ export function NotificationsDrawer({ open, onClose }: Props) {
               <div className="flex items-center gap-2">
                 {unread > 0 && (
                   <button
-                    onClick={markAllRead}
+                    onClick={markAllNotifsRead}
                     className="text-xs text-primary hover:text-primary/80 font-medium flex items-center gap-1 transition-colors"
                     data-testid="btn-mark-all-read"
                   >
@@ -179,7 +89,6 @@ export function NotificationsDrawer({ open, onClose }: Props) {
               </div>
             </div>
 
-            {/* Notification list */}
             <ScrollArea className="flex-1">
               {notifications.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-64 text-center px-8">
@@ -200,27 +109,23 @@ export function NotificationsDrawer({ open, onClose }: Props) {
                     >
                       <Link
                         href={n.href}
-                        onClick={() => { markRead(n.id); onClose(); }}
+                        onClick={() => { markNotifRead(n.id); onClose(); }}
                         data-testid={`link-notif-${n.id}`}
                         className={`flex items-start gap-4 px-6 py-4 hover:bg-secondary/40 transition-colors cursor-pointer relative ${!n.read ? "bg-primary/[0.03]" : ""}`}
                       >
-                        {/* Unread dot */}
                         {!n.read && (
                           <span className="absolute left-2.5 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-primary" />
                         )}
 
-                        {/* Avatar */}
                         <div className="relative flex-shrink-0">
                           <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-background shadow-sm">
                             <img src={n.avatar} alt="" className="w-full h-full object-cover" />
                           </div>
-                          {/* Type badge */}
                           <span className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center shadow-sm border border-background ${typeColor[n.type]}`}>
                             {typeIcon[n.type]}
                           </span>
                         </div>
 
-                        {/* Content */}
                         <div className="flex-1 min-w-0">
                           <p className={`text-sm leading-snug mb-0.5 ${!n.read ? "font-semibold text-foreground" : "font-medium text-foreground"}`}>
                             {n.title}
@@ -242,7 +147,6 @@ export function NotificationsDrawer({ open, onClose }: Props) {
               )}
             </ScrollArea>
 
-            {/* Footer */}
             <div className="px-6 py-4 border-t border-border">
               <Link
                 href="/discover"

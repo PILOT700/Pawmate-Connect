@@ -1,10 +1,13 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, Send, Phone, Video, MoreVertical, Paperclip, Smile, ArrowLeft, PawPrint, MapPin, Calendar, Clock, Check, X, ChevronRight, TreePine, Coffee, Waves, Building2, Flower2 } from "lucide-react";
+import { Search, Send, Phone, Video, MoreVertical, Paperclip, Smile, ArrowLeft, PawPrint, MapPin, Calendar, Clock, Check, X, ChevronRight, TreePine, Coffee, Waves, Building2, Flower2, CalendarCheck } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { motion, AnimatePresence } from "framer-motion";
+import { pushNotification } from "@/lib/notif-store";
+
+// ─── Conversations ───────────────────────────────────────────────────────────
 
 const conversations = [
   { id: "1", name: "Eleanor", pet: "Oliver", species: "cat", avatar: "/profile1.png", lastMessage: "That sounds perfect! Let's do Sunday.", time: "10:42 AM", unread: true, online: true },
@@ -15,17 +18,45 @@ const conversations = [
   { id: "6", name: "Marcus", pet: "Rex", species: "dog", avatar: "/profile3.png", lastMessage: "Rex is exhausted now lol", time: "Last week", unread: false, online: false },
 ];
 
-const chatHistory = [
-  { id: 1, sender: "Eleanor", text: "Hi! Your dog is so cute! What breed is Milo?", time: "9:00 AM", isMe: false },
-  { id: 2, sender: "Me", text: "Hey Eleanor! Thank you, he's a mix, mostly terrier we think. Oliver is stunning, I love orange tabbies.", time: "9:15 AM", isMe: true },
-  { id: 3, sender: "Eleanor", text: "Thanks! He's a menace but I love him. Are you guys going to the dog park this weekend?", time: "9:30 AM", isMe: false },
-  { id: 4, sender: "Me", text: "We're actually planning to go to the trails on Saturday morning. You ever take Oliver out?", time: "9:45 AM", isMe: true },
-  { id: 5, sender: "Eleanor", text: "He has a backpack! I've been meaning to try the trails. Mind if we tag along?", time: "10:00 AM", isMe: false },
-  { id: 6, sender: "Me", text: "Not at all, that would be great. Milo loves meeting new friends.", time: "10:15 AM", isMe: true },
-  { id: 7, sender: "Eleanor", text: "Awesome! What time were you thinking?", time: "10:20 AM", isMe: false },
-  { id: 8, sender: "Me", text: "Probably around 9am before it gets too hot.", time: "10:25 AM", isMe: true },
-  { id: 9, sender: "Eleanor", text: "That sounds perfect! Let's do Sunday.", time: "10:42 AM", isMe: false },
+// ─── Message types ────────────────────────────────────────────────────────────
+
+type PlaydateStatus = "proposed" | "accepted" | "declined";
+
+interface TextMessage {
+  id: number | string;
+  kind: "text";
+  sender: string;
+  text: string;
+  time: string;
+  isMe: boolean;
+}
+
+interface PlaydateMessage {
+  id: number | string;
+  kind: "playdate";
+  isMe: true;
+  time: string;
+  date: string;
+  slot: string;
+  place: string;
+  status: PlaydateStatus;
+}
+
+type ChatMessage = TextMessage | PlaydateMessage;
+
+const INITIAL_CHAT: ChatMessage[] = [
+  { id: 1, kind: "text", sender: "Eleanor", text: "Hi! Your dog is so cute! What breed is Milo?", time: "9:00 AM", isMe: false },
+  { id: 2, kind: "text", sender: "Me", text: "Hey Eleanor! Thank you, he's a mix, mostly terrier we think. Oliver is stunning, I love orange tabbies.", time: "9:15 AM", isMe: true },
+  { id: 3, kind: "text", sender: "Eleanor", text: "Thanks! He's a menace but I love him. Are you guys going to the dog park this weekend?", time: "9:30 AM", isMe: false },
+  { id: 4, kind: "text", sender: "Me", text: "We're actually planning to go to the trails on Saturday morning. You ever take Oliver out?", time: "9:45 AM", isMe: true },
+  { id: 5, kind: "text", sender: "Eleanor", text: "He has a backpack! I've been meaning to try the trails. Mind if we tag along?", time: "10:00 AM", isMe: false },
+  { id: 6, kind: "text", sender: "Me", text: "Not at all, that would be great. Milo loves meeting new friends.", time: "10:15 AM", isMe: true },
+  { id: 7, kind: "text", sender: "Eleanor", text: "Awesome! What time were you thinking?", time: "10:20 AM", isMe: false },
+  { id: 8, kind: "text", sender: "Me", text: "Probably around 9am before it gets too hot.", time: "10:25 AM", isMe: true },
+  { id: 9, kind: "text", sender: "Eleanor", text: "That sounds perfect! Let's do Sunday.", time: "10:42 AM", isMe: false },
 ];
+
+// ─── Playdate tab data (existing tab, unchanged) ──────────────────────────────
 
 const LOCATIONS = [
   { id: "park", label: "Dog Park", sublabel: "Dolores Park · 0.4 mi", icon: TreePine, color: "text-emerald-600 bg-emerald-50 border-emerald-200" },
@@ -50,8 +81,8 @@ function getDays() {
   return days;
 }
 
-type PlaydateStatus = "pending" | "confirmed" | "declined";
-interface Playdate {
+type PDTabStatus = "pending" | "confirmed" | "declined";
+interface PlaydateTabItem {
   id: string;
   with: string;
   avatar: string;
@@ -59,10 +90,10 @@ interface Playdate {
   locationSub: string;
   day: string;
   time: string;
-  status: PlaydateStatus;
+  status: PDTabStatus;
 }
 
-const EXISTING_PLAYDATES: Playdate[] = [
+const EXISTING_PLAYDATES: PlaydateTabItem[] = [
   {
     id: "pd1",
     with: "James",
@@ -88,14 +119,14 @@ function PlaydateTab({ chatName, chatAvatar }: PlaydateTabProps) {
   const [selectedLocation, setSelectedLocation] = useState<string | null>(null);
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
-  const [playdates, setPlaydates] = useState<Playdate[]>(EXISTING_PLAYDATES);
+  const [playdates, setPlaydates] = useState<PlaydateTabItem[]>(EXISTING_PLAYDATES);
 
   const locObj = LOCATIONS.find(l => l.id === selectedLocation);
   const dayObj = DAYS.find(d => d.key === selectedDay);
 
   const handleSend = () => {
     if (!locObj || !dayObj || !selectedTime) return;
-    const newPd: Playdate = {
+    const newPd: PlaydateTabItem = {
       id: `pd-${Date.now()}`,
       with: chatName,
       avatar: chatAvatar,
@@ -112,12 +143,12 @@ function PlaydateTab({ chatName, chatAvatar }: PlaydateTabProps) {
   const handleConfirm = (id: string) => setPlaydates(prev => prev.map(p => p.id === id ? { ...p, status: "confirmed" } : p));
   const handleDecline = (id: string) => setPlaydates(prev => prev.filter(p => p.id !== id));
 
-  const statusStyle: Record<PlaydateStatus, string> = {
+  const statusStyle: Record<PDTabStatus, string> = {
     pending: "bg-amber-50 border-amber-200 text-amber-700",
     confirmed: "bg-emerald-50 border-emerald-200 text-emerald-700",
     declined: "bg-rose-50 border-rose-200 text-rose-700",
   };
-  const statusLabel: Record<PlaydateStatus, string> = {
+  const statusLabel: Record<PDTabStatus, string> = {
     pending: "Awaiting response",
     confirmed: "Confirmed ✓",
     declined: "Declined",
@@ -125,8 +156,6 @@ function PlaydateTab({ chatName, chatAvatar }: PlaydateTabProps) {
 
   return (
     <div className="flex-1 overflow-y-auto p-5 md:p-7 space-y-6">
-
-      {/* Scheduled playdates list */}
       {playdates.length > 0 && (
         <div className="space-y-3">
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Upcoming Playdates</p>
@@ -177,10 +206,7 @@ function PlaydateTab({ chatName, chatAvatar }: PlaydateTabProps) {
 
       <Separator className="bg-border/50" />
 
-      {/* Scheduler flow */}
       <AnimatePresence mode="wait">
-
-        {/* IDLE / SENT — CTA */}
         {(step === "idle" || step === "sent") && (
           <motion.div key="idle" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
             {step === "sent" && (
@@ -212,7 +238,6 @@ function PlaydateTab({ chatName, chatAvatar }: PlaydateTabProps) {
           </motion.div>
         )}
 
-        {/* STEP 1 — Location */}
         {step === "location" && (
           <motion.div key="location" initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -24 }} className="space-y-4">
             <div className="flex items-center gap-2">
@@ -260,7 +285,6 @@ function PlaydateTab({ chatName, chatAvatar }: PlaydateTabProps) {
           </motion.div>
         )}
 
-        {/* STEP 2 — Date & Time */}
         {step === "datetime" && (
           <motion.div key="datetime" initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -24 }} className="space-y-5">
             <div className="flex items-center gap-2">
@@ -272,12 +296,10 @@ function PlaydateTab({ chatName, chatAvatar }: PlaydateTabProps) {
                 <h3 className="font-serif text-lg font-semibold text-foreground">Pick a date & time</h3>
               </div>
             </div>
-
-            {/* Day chips */}
             <div>
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Date</p>
               <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
-                {DAYS.map(day => (
+                {getDays().map(day => (
                   <button
                     key={day.key}
                     onClick={() => setSelectedDay(day.key)}
@@ -295,8 +317,6 @@ function PlaydateTab({ chatName, chatAvatar }: PlaydateTabProps) {
                 ))}
               </div>
             </div>
-
-            {/* Time slots */}
             <div>
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Time</p>
               <div className="grid grid-cols-4 gap-2">
@@ -316,7 +336,6 @@ function PlaydateTab({ chatName, chatAvatar }: PlaydateTabProps) {
                 ))}
               </div>
             </div>
-
             <Button
               onClick={() => setStep("confirm")}
               disabled={!selectedDay || !selectedTime}
@@ -328,7 +347,6 @@ function PlaydateTab({ chatName, chatAvatar }: PlaydateTabProps) {
           </motion.div>
         )}
 
-        {/* STEP 3 — Confirm */}
         {step === "confirm" && locObj && dayObj && selectedTime && (
           <motion.div key="confirm" initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -24 }} className="space-y-5">
             <div className="flex items-center gap-2">
@@ -340,8 +358,6 @@ function PlaydateTab({ chatName, chatAvatar }: PlaydateTabProps) {
                 <h3 className="font-serif text-lg font-semibold text-foreground">Review & send</h3>
               </div>
             </div>
-
-            {/* Invite preview card */}
             <div className="bg-gradient-to-br from-primary/5 to-amber-50/50 border border-primary/15 rounded-2xl p-5 space-y-4">
               <div className="flex items-center gap-3">
                 <div className="flex -space-x-3">
@@ -357,9 +373,7 @@ function PlaydateTab({ chatName, chatAvatar }: PlaydateTabProps) {
                   <p className="text-sm font-semibold text-foreground">You + {chatName}</p>
                 </div>
               </div>
-
               <Separator className="bg-border/50" />
-
               <div className="space-y-3">
                 <div className="flex items-center gap-3">
                   <div className={`w-9 h-9 rounded-xl border flex items-center justify-center flex-shrink-0 ${locObj.color}`}>
@@ -382,37 +396,297 @@ function PlaydateTab({ chatName, chatAvatar }: PlaydateTabProps) {
                 </div>
               </div>
             </div>
-
             <div className="flex gap-3">
-              <Button
-                variant="outline"
-                onClick={() => setStep("idle")}
-                className="flex-1 h-11 rounded-full border-border"
-                data-testid="btn-pd-cancel"
-              >
+              <Button variant="outline" onClick={() => setStep("idle")} className="flex-1 h-11 rounded-full border-border" data-testid="btn-pd-cancel">
                 Cancel
               </Button>
-              <Button
-                onClick={handleSend}
-                className="flex-1 h-11 rounded-full bg-primary text-primary-foreground shadow-sm font-medium"
-                data-testid="btn-pd-send-invite"
-              >
+              <Button onClick={handleSend} className="flex-1 h-11 rounded-full bg-primary text-primary-foreground shadow-sm font-medium" data-testid="btn-pd-send-invite">
                 <Send className="w-4 h-4 mr-2" /> Send invite
               </Button>
             </div>
           </motion.div>
         )}
-
       </AnimatePresence>
     </div>
   );
 }
+
+// ─── Playdate Card (in-thread) ────────────────────────────────────────────────
+
+const STATUS_STYLE: Record<PlaydateStatus, { badge: string; label: string }> = {
+  proposed: { badge: "bg-amber-50 border-amber-200 text-amber-700", label: "Proposed" },
+  accepted: { badge: "bg-emerald-50 border-emerald-200 text-emerald-700", label: "Accepted ✓" },
+  declined: { badge: "bg-rose-50 border-rose-200 text-rose-700", label: "Declined" },
+};
+
+interface PlaydateCardProps {
+  msg: PlaydateMessage;
+  chatName: string;
+  chatAvatar: string;
+  onAccept: () => void;
+  onDecline: () => void;
+}
+
+function PlaydateCard({ msg, chatName, chatAvatar, onAccept, onDecline }: PlaydateCardProps) {
+  const s = STATUS_STYLE[msg.status];
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10, scale: 0.97 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      className="w-full max-w-[320px] mx-auto"
+      data-testid={`playdate-card-${msg.id}`}
+    >
+      <div className="bg-gradient-to-br from-amber-50/80 to-primary/5 border border-amber-200/60 rounded-2xl overflow-hidden shadow-sm">
+        {/* Header */}
+        <div className="flex items-center gap-2.5 px-4 py-3 border-b border-amber-200/40 bg-amber-50/60">
+          <div className="w-7 h-7 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
+            <CalendarCheck className="w-3.5 h-3.5 text-amber-600" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-semibold text-amber-800 leading-none">Playdate Request</p>
+            <p className="text-[10px] text-amber-600 mt-0.5">You → {chatName}</p>
+          </div>
+          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border flex-shrink-0 ${s.badge}`}>
+            {s.label}
+          </span>
+        </div>
+
+        {/* Details */}
+        <div className="px-4 py-3 space-y-2">
+          <div className="flex items-center gap-2 text-xs text-foreground">
+            <MapPin className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+            <span className="font-medium">{msg.place}</span>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <Calendar className="w-3.5 h-3.5 flex-shrink-0" />
+              <span>{msg.date}</span>
+            </div>
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <Clock className="w-3.5 h-3.5 flex-shrink-0" />
+              <span>{msg.slot}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Accept / Decline — shown while proposed */}
+        <AnimatePresence>
+          {msg.status === "proposed" && (
+            <motion.div
+              key="actions"
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="px-4 pb-3 flex gap-2"
+            >
+              <p className="sr-only">{chatName}'s response</p>
+              <Button
+                size="sm"
+                className="flex-1 h-8 rounded-full text-xs bg-primary text-primary-foreground"
+                onClick={onAccept}
+                data-testid={`btn-accept-${msg.id}`}
+              >
+                <Check className="w-3 h-3 mr-1" /> Accept
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="flex-1 h-8 rounded-full text-xs border-border"
+                onClick={onDecline}
+                data-testid={`btn-decline-${msg.id}`}
+              >
+                <X className="w-3 h-3 mr-1" /> Decline
+              </Button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+      <p className="text-[10px] text-muted-foreground text-center mt-1.5">{msg.time}</p>
+    </motion.div>
+  );
+}
+
+// ─── Compose panel ────────────────────────────────────────────────────────────
+
+interface ComposePanelProps {
+  chatName: string;
+  chatAvatar: string;
+  onSend: (date: string, slot: string, place: string) => void;
+  onClose: () => void;
+}
+
+function ComposePanel({ chatName, chatAvatar, onSend, onClose }: ComposePanelProps) {
+  const DAYS = getDays();
+  const [selDay, setSelDay] = useState<string | null>(null);
+  const [selTime, setSelTime] = useState<string | null>(null);
+  const [place, setPlace] = useState("");
+  const placeRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => { placeRef.current?.focus(); }, []);
+
+  const dayObj = DAYS.find(d => d.key === selDay);
+  const dateLabel = dayObj ? `${dayObj.short}, ${dayObj.month} ${dayObj.num}` : "";
+  const canSend = !!selDay && !!selTime && place.trim().length > 0;
+
+  return (
+    <motion.div
+      key="compose-panel"
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 16 }}
+      transition={{ duration: 0.2 }}
+      className="border-t border-border bg-card px-4 py-4 space-y-4"
+      data-testid="playdate-compose-panel"
+    >
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center">
+            <CalendarCheck className="w-3.5 h-3.5 text-primary" />
+          </div>
+          <p className="text-sm font-semibold text-foreground">Propose a playdate with {chatName}</p>
+        </div>
+        <button
+          onClick={onClose}
+          className="w-7 h-7 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+          data-testid="btn-close-compose"
+        >
+          <X className="w-4 h-4" />
+        </button>
+      </div>
+
+      {/* Place */}
+      <div>
+        <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block mb-1.5">Place</label>
+        <input
+          ref={placeRef}
+          type="text"
+          value={place}
+          onChange={e => setPlace(e.target.value)}
+          placeholder="e.g. Dolores Park, Wag & Brew café…"
+          className="w-full h-9 px-3 text-sm bg-secondary/60 border border-border/60 rounded-xl focus:outline-none focus:border-primary/40 focus:bg-secondary transition-colors"
+          data-testid="input-pd-place"
+        />
+      </div>
+
+      {/* Date chips */}
+      <div>
+        <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block mb-1.5">Date</label>
+        <div className="flex gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
+          {DAYS.map(day => (
+            <button
+              key={day.key}
+              onClick={() => setSelDay(day.key)}
+              data-testid={`btn-cpd-day-${day.num}`}
+              className={`flex-shrink-0 flex flex-col items-center px-2.5 py-2 rounded-xl border-2 min-w-[48px] transition-all duration-150 ${
+                selDay === day.key
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "border-border bg-secondary/40 text-muted-foreground hover:border-primary/30"
+              }`}
+            >
+              <span className="text-[9px] font-bold uppercase tracking-wide">{day.short}</span>
+              <span className="text-base font-bold leading-none mt-0.5">{day.num}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Time chips */}
+      <div>
+        <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block mb-1.5">Time</label>
+        <div className="flex flex-wrap gap-1.5">
+          {TIMES.map(t => (
+            <button
+              key={t}
+              onClick={() => setSelTime(t)}
+              data-testid={`btn-cpd-time-${t.replace(/\s|:/g, "-")}`}
+              className={`px-3 py-1.5 rounded-xl text-xs font-medium border-2 transition-all duration-150 ${
+                selTime === t
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "border-border bg-secondary/40 text-muted-foreground hover:border-primary/30"
+              }`}
+            >
+              {t}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Send */}
+      <Button
+        onClick={() => canSend && onSend(dateLabel, selTime!, place.trim())}
+        disabled={!canSend}
+        className="w-full h-10 rounded-full bg-primary text-primary-foreground text-sm font-medium shadow-sm"
+        data-testid="btn-send-playdate-card"
+      >
+        <Send className="w-3.5 h-3.5 mr-2" /> Send playdate request to {chatName}
+      </Button>
+    </motion.div>
+  );
+}
+
+// ─── Main Messages page ───────────────────────────────────────────────────────
 
 export default function Messages() {
   const [activeChat, setActiveChat] = useState(conversations[0]);
   const [message, setMessage] = useState("");
   const [showChat, setShowChat] = useState(false);
   const [activeTab, setActiveTab] = useState<"chat" | "playdate">("chat");
+  const [chatMsgs, setChatMsgs] = useState<ChatMessage[]>(INITIAL_CHAT);
+  const [composeOpen, setComposeOpen] = useState(false);
+
+  const now = new Date();
+  const timeStr = `${now.getHours() % 12 || 12}:${String(now.getMinutes()).padStart(2, "0")} ${now.getHours() >= 12 ? "PM" : "AM"}`;
+
+  const handleSendPlaydate = (date: string, slot: string, place: string) => {
+    const newMsg: PlaydateMessage = {
+      id: `pd-${Date.now()}`,
+      kind: "playdate",
+      isMe: true,
+      time: timeStr,
+      date,
+      slot,
+      place,
+      status: "proposed",
+    };
+    setChatMsgs(prev => [...prev, newMsg]);
+    setComposeOpen(false);
+
+    // Notification 1: recipient gets a playdate request
+    pushNotification({
+      type: "playdate",
+      title: `Playdate request sent to ${activeChat.name}`,
+      body: `${place} · ${date} at ${slot}`,
+      time: "Just now",
+      avatar: activeChat.avatar,
+      petName: activeChat.pet,
+      href: "/messages",
+    });
+  };
+
+  const handleRespond = (msgId: string | number, response: "accepted" | "declined") => {
+    setChatMsgs(prev =>
+      prev.map(m =>
+        m.id === msgId && m.kind === "playdate"
+          ? { ...m, status: response }
+          : m
+      )
+    );
+
+    const pd = chatMsgs.find(m => m.id === msgId && m.kind === "playdate") as PlaydateMessage | undefined;
+    if (!pd) return;
+
+    // Notification 2: sender gets the response
+    pushNotification({
+      type: "playdate",
+      title: `${activeChat.name} ${response} your playdate`,
+      body: `${pd.place} · ${pd.date} at ${pd.slot}`,
+      time: "Just now",
+      avatar: activeChat.avatar,
+      petName: activeChat.pet,
+      href: "/messages",
+    });
+  };
 
   return (
     <div className="container mx-auto px-4 md:px-8 py-4 md:py-8 h-[calc(100vh-5rem)]">
@@ -446,7 +720,7 @@ export default function Messages() {
                     ? 'bg-secondary/30 border-l-4 border-l-primary'
                     : 'hover:bg-secondary/20 border-l-4 border-l-transparent'
                 }`}
-                onClick={() => { setActiveChat(chat); setShowChat(true); setActiveTab("chat"); }}
+                onClick={() => { setActiveChat(chat); setShowChat(true); setActiveTab("chat"); setComposeOpen(false); }}
                 data-testid={`btn-chat-${chat.id}`}
               >
                 <div className="relative flex-shrink-0">
@@ -477,7 +751,7 @@ export default function Messages() {
         {/* Right Panel */}
         <div className={`w-full md:w-2/3 flex-col bg-[#FCFBF8] relative ${showChat ? 'flex' : 'hidden md:flex'}`}>
 
-          {/* Header with tab switcher */}
+          {/* Header */}
           <div className="border-b border-border px-4 md:px-6 bg-card shrink-0">
             <div className="h-16 flex items-center justify-between">
               <div className="flex items-center gap-3 md:gap-4">
@@ -528,17 +802,39 @@ export default function Messages() {
           {/* Tab content */}
           <AnimatePresence mode="wait">
             {activeTab === "chat" ? (
-              <motion.div key="chat-tab" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }} className="flex flex-col flex-1 min-h-0">
-                {/* Top Gradient */}
+              <motion.div
+                key="chat-tab"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.18 }}
+                className="flex flex-col flex-1 min-h-0"
+              >
+                {/* Top gradient */}
                 <div className="absolute top-[108px] left-0 right-0 h-6 bg-gradient-to-b from-card to-transparent pointer-events-none z-10" />
 
+                {/* Messages */}
                 <ScrollArea className="flex-1 p-4 md:p-6">
-                  <div className="space-y-6">
+                  <div className="space-y-5">
                     <div className="text-center pb-4 pt-2">
                       <span className="text-[11px] font-medium text-muted-foreground bg-secondary/50 px-3 py-1 rounded-full uppercase tracking-wider">Today</span>
                     </div>
-                    {chatHistory.map((msg, idx) => {
-                      const isLastMsg = idx === chatHistory.length - 1;
+
+                    {chatMsgs.map((msg, idx) => {
+                      if (msg.kind === "playdate") {
+                        return (
+                          <PlaydateCard
+                            key={msg.id}
+                            msg={msg}
+                            chatName={activeChat.name}
+                            chatAvatar={activeChat.avatar}
+                            onAccept={() => handleRespond(msg.id, "accepted")}
+                            onDecline={() => handleRespond(msg.id, "declined")}
+                          />
+                        );
+                      }
+
+                      const isLastMsg = idx === chatMsgs.length - 1;
                       return (
                         <div key={msg.id} className={`flex ${msg.isMe ? 'justify-end' : 'justify-start'}`}>
                           <div className={`flex gap-3 max-w-[85%] md:max-w-[70%] ${msg.isMe ? 'flex-row-reverse' : 'flex-row'}`}>
@@ -553,7 +849,7 @@ export default function Messages() {
                               </div>
                               <div className="flex items-center gap-2 mt-1.5 px-1">
                                 <span className="text-[10px] text-muted-foreground font-medium">{msg.time}</span>
-                                {msg.isMe && isLastMsg && <span className="text-[10px] text-primary font-semibold">Seen</span>}
+                                {msg.isMe && isLastMsg && msg.kind === "text" && <span className="text-[10px] text-primary font-semibold">Seen</span>}
                               </div>
                             </div>
                           </div>
@@ -563,7 +859,34 @@ export default function Messages() {
                   </div>
                 </ScrollArea>
 
+                {/* Compose panel (slides up) */}
+                <AnimatePresence>
+                  {composeOpen && (
+                    <ComposePanel
+                      chatName={activeChat.name}
+                      chatAvatar={activeChat.avatar}
+                      onSend={handleSendPlaydate}
+                      onClose={() => setComposeOpen(false)}
+                    />
+                  )}
+                </AnimatePresence>
+
+                {/* Input area */}
                 <div className="p-3 md:p-4 bg-card border-t border-border shrink-0">
+                  {/* Propose pill */}
+                  {!composeOpen && (
+                    <div className="flex gap-2 mb-2">
+                      <button
+                        onClick={() => setComposeOpen(true)}
+                        className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-700 text-xs font-semibold hover:bg-amber-100 transition-colors"
+                        data-testid="btn-propose-playdate"
+                      >
+                        <CalendarCheck className="w-3.5 h-3.5" />
+                        Propose a playdate
+                      </button>
+                    </div>
+                  )}
+
                   <form className="flex gap-2 items-end" onSubmit={(e) => { e.preventDefault(); setMessage(""); }}>
                     <div className="bg-secondary/60 rounded-[1.5rem] flex-1 flex items-center px-2 min-h-[56px] border border-border/50 focus-within:border-primary/30 focus-within:bg-secondary transition-colors">
                       <Button type="button" variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground shrink-0 rounded-full w-10 h-10">
@@ -594,7 +917,14 @@ export default function Messages() {
                 </div>
               </motion.div>
             ) : (
-              <motion.div key="playdate-tab" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+              <motion.div
+                key="playdate-tab"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.18 }}
+                className="flex flex-col flex-1 min-h-0 overflow-hidden"
+              >
                 <PlaydateTab chatName={activeChat.name} chatAvatar={activeChat.avatar} />
               </motion.div>
             )}
