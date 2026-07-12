@@ -16,7 +16,7 @@ export default function Home() {
       <section className="relative w-full overflow-hidden" style={{ height: "calc(100vh - 4.5rem)" }}>
         {/* Background image */}
         <img
-          src="/hero-couples.png"
+          src={`/hero-couples.png?v=${Date.now()}`}
           alt="Two couples walking toward each other in a sun-dappled park with their pets"
           className="absolute inset-0 w-full h-full object-cover object-center"
         />
