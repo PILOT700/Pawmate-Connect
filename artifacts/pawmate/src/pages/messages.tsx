@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, Send, Phone, Video, MoreVertical, Paperclip, Smile, ArrowLeft } from "lucide-react";
-import { PawPrint } from "lucide-react";
+import { Search, Send, Phone, Video, MoreVertical, Paperclip, Smile, ArrowLeft, PawPrint, MapPin, Calendar, Clock, Check, X, ChevronRight, TreePine, Coffee, Waves, Building2, Flower2 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { motion, AnimatePresence } from "framer-motion";
 
 const conversations = [
   { id: "1", name: "Eleanor", pet: "Oliver", species: "cat", avatar: "/profile1.png", lastMessage: "That sounds perfect! Let's do Sunday.", time: "10:42 AM", unread: true, online: true },
@@ -27,47 +27,426 @@ const chatHistory = [
   { id: 9, sender: "Eleanor", text: "That sounds perfect! Let's do Sunday.", time: "10:42 AM", isMe: false },
 ];
 
+const LOCATIONS = [
+  { id: "park", label: "Dog Park", sublabel: "Dolores Park · 0.4 mi", icon: TreePine, color: "text-emerald-600 bg-emerald-50 border-emerald-200" },
+  { id: "cafe", label: "Pet Café", sublabel: "Wag & Brew · 0.9 mi", icon: Coffee, color: "text-amber-700 bg-amber-50 border-amber-200" },
+  { id: "beach", label: "Pet Beach", sublabel: "Crissy Field · 2.1 mi", icon: Waves, color: "text-sky-600 bg-sky-50 border-sky-200" },
+  { id: "trail", label: "Nature Trail", sublabel: "Marin Headlands · 4.3 mi", icon: Flower2, color: "text-violet-600 bg-violet-50 border-violet-200" },
+  { id: "plaza", label: "City Plaza", sublabel: "Ferry Building · 1.6 mi", icon: Building2, color: "text-slate-600 bg-slate-50 border-slate-200" },
+];
+
+const TIMES = ["8:00 AM", "9:00 AM", "10:00 AM", "11:00 AM", "12:00 PM", "2:00 PM", "4:00 PM", "6:00 PM"];
+
+function getDays() {
+  const days = [];
+  const now = new Date();
+  const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  for (let i = 1; i <= 7; i++) {
+    const d = new Date(now);
+    d.setDate(now.getDate() + i);
+    days.push({ key: d.toDateString(), short: dayNames[d.getDay()], num: d.getDate(), month: monthNames[d.getMonth()] });
+  }
+  return days;
+}
+
+type PlaydateStatus = "pending" | "confirmed" | "declined";
+interface Playdate {
+  id: string;
+  with: string;
+  avatar: string;
+  location: string;
+  locationSub: string;
+  day: string;
+  time: string;
+  status: PlaydateStatus;
+}
+
+const EXISTING_PLAYDATES: Playdate[] = [
+  {
+    id: "pd1",
+    with: "James",
+    avatar: "/profile2.png",
+    location: "Dog Park",
+    locationSub: "Dolores Park",
+    day: "Sat, Jul 18",
+    time: "9:00 AM",
+    status: "confirmed",
+  },
+];
+
+type ScheduleStep = "idle" | "location" | "datetime" | "confirm" | "sent";
+
+interface PlaydateTabProps {
+  chatName: string;
+  chatAvatar: string;
+}
+
+function PlaydateTab({ chatName, chatAvatar }: PlaydateTabProps) {
+  const DAYS = getDays();
+  const [step, setStep] = useState<ScheduleStep>("idle");
+  const [selectedLocation, setSelectedLocation] = useState<string | null>(null);
+  const [selectedDay, setSelectedDay] = useState<string | null>(null);
+  const [selectedTime, setSelectedTime] = useState<string | null>(null);
+  const [playdates, setPlaydates] = useState<Playdate[]>(EXISTING_PLAYDATES);
+
+  const locObj = LOCATIONS.find(l => l.id === selectedLocation);
+  const dayObj = DAYS.find(d => d.key === selectedDay);
+
+  const handleSend = () => {
+    if (!locObj || !dayObj || !selectedTime) return;
+    const newPd: Playdate = {
+      id: `pd-${Date.now()}`,
+      with: chatName,
+      avatar: chatAvatar,
+      location: locObj.label,
+      locationSub: locObj.sublabel.split("·")[0].trim(),
+      day: `${dayObj.short}, ${dayObj.month} ${dayObj.num}`,
+      time: selectedTime,
+      status: "pending",
+    };
+    setPlaydates(prev => [newPd, ...prev]);
+    setStep("sent");
+  };
+
+  const handleConfirm = (id: string) => setPlaydates(prev => prev.map(p => p.id === id ? { ...p, status: "confirmed" } : p));
+  const handleDecline = (id: string) => setPlaydates(prev => prev.filter(p => p.id !== id));
+
+  const statusStyle: Record<PlaydateStatus, string> = {
+    pending: "bg-amber-50 border-amber-200 text-amber-700",
+    confirmed: "bg-emerald-50 border-emerald-200 text-emerald-700",
+    declined: "bg-rose-50 border-rose-200 text-rose-700",
+  };
+  const statusLabel: Record<PlaydateStatus, string> = {
+    pending: "Awaiting response",
+    confirmed: "Confirmed ✓",
+    declined: "Declined",
+  };
+
+  return (
+    <div className="flex-1 overflow-y-auto p-5 md:p-7 space-y-6">
+
+      {/* Scheduled playdates list */}
+      {playdates.length > 0 && (
+        <div className="space-y-3">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Upcoming Playdates</p>
+          {playdates.map(pd => (
+            <motion.div
+              key={pd.id}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-card border border-border rounded-2xl p-4 space-y-3"
+            >
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
+                  <img src={pd.avatar} alt={pd.with} className="w-full h-full object-cover" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-foreground">{pd.with}</p>
+                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5">
+                    <MapPin className="w-3 h-3" />
+                    <span>{pd.location} · {pd.locationSub}</span>
+                  </div>
+                  <div className="flex items-center gap-3 mt-1.5">
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                      <Calendar className="w-3 h-3" /> {pd.day}
+                    </div>
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                      <Clock className="w-3 h-3" /> {pd.time}
+                    </div>
+                  </div>
+                </div>
+                <span className={`text-[10px] font-semibold px-2.5 py-1 rounded-full border flex-shrink-0 ${statusStyle[pd.status]}`}>
+                  {statusLabel[pd.status]}
+                </span>
+              </div>
+              {pd.status === "pending" && pd.with !== chatName && (
+                <div className="flex gap-2 pt-1">
+                  <Button size="sm" className="flex-1 h-8 rounded-full text-xs" onClick={() => handleConfirm(pd.id)} data-testid={`btn-confirm-pd-${pd.id}`}>
+                    <Check className="w-3 h-3 mr-1" /> Accept
+                  </Button>
+                  <Button size="sm" variant="outline" className="flex-1 h-8 rounded-full text-xs border-border" onClick={() => handleDecline(pd.id)} data-testid={`btn-decline-pd-${pd.id}`}>
+                    <X className="w-3 h-3 mr-1" /> Decline
+                  </Button>
+                </div>
+              )}
+            </motion.div>
+          ))}
+        </div>
+      )}
+
+      <Separator className="bg-border/50" />
+
+      {/* Scheduler flow */}
+      <AnimatePresence mode="wait">
+
+        {/* IDLE / SENT — CTA */}
+        {(step === "idle" || step === "sent") && (
+          <motion.div key="idle" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+            {step === "sent" && (
+              <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 flex items-center gap-3 mb-4">
+                <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
+                  <Check className="w-4 h-4 text-emerald-600" />
+                </div>
+                <p className="text-sm text-emerald-700 font-medium">Playdate invite sent to <span className="font-semibold">{chatName}</span>! 🐾</p>
+              </div>
+            )}
+            <div className="bg-gradient-to-br from-primary/5 via-amber-50/40 to-rose-50/30 border border-primary/15 rounded-2xl p-6 text-center space-y-4">
+              <div className="w-14 h-14 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
+                <PawPrint className="w-7 h-7 text-primary" />
+              </div>
+              <div>
+                <h3 className="font-serif text-xl font-semibold text-foreground">Plan a pet playdate</h3>
+                <p className="text-sm text-muted-foreground mt-1.5 leading-relaxed">
+                  Pick a spot, choose a time, and send {chatName} a playdate invite — all in a few taps.
+                </p>
+              </div>
+              <Button
+                onClick={() => setStep("location")}
+                className="rounded-full px-8 h-11 bg-primary text-primary-foreground shadow-sm font-medium"
+                data-testid="btn-schedule-playdate"
+              >
+                Schedule a playdate <ChevronRight className="w-4 h-4 ml-1" />
+              </Button>
+            </div>
+          </motion.div>
+        )}
+
+        {/* STEP 1 — Location */}
+        {step === "location" && (
+          <motion.div key="location" initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -24 }} className="space-y-4">
+            <div className="flex items-center gap-2">
+              <button onClick={() => setStep("idle")} className="text-muted-foreground hover:text-foreground transition-colors" data-testid="btn-pd-back-idle">
+                <ArrowLeft className="w-4 h-4" />
+              </button>
+              <div>
+                <p className="text-xs text-muted-foreground">Step 1 of 3</p>
+                <h3 className="font-serif text-lg font-semibold text-foreground">Choose a location</h3>
+              </div>
+            </div>
+            <div className="space-y-2.5">
+              {LOCATIONS.map(loc => {
+                const Icon = loc.icon;
+                const active = selectedLocation === loc.id;
+                return (
+                  <button
+                    key={loc.id}
+                    onClick={() => setSelectedLocation(loc.id)}
+                    data-testid={`btn-loc-${loc.id}`}
+                    className={`w-full flex items-center gap-4 p-3.5 rounded-2xl border-2 text-left transition-all duration-150 ${
+                      active ? loc.color + " shadow-sm" : "bg-card border-border hover:border-primary/30"
+                    }`}
+                  >
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 border ${active ? loc.color : "bg-secondary border-border text-muted-foreground"}`}>
+                      <Icon className="w-5 h-5" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-foreground">{loc.label}</p>
+                      <p className="text-xs text-muted-foreground">{loc.sublabel}</p>
+                    </div>
+                    {active && <Check className="w-4 h-4 text-current flex-shrink-0" />}
+                  </button>
+                );
+              })}
+            </div>
+            <Button
+              onClick={() => setStep("datetime")}
+              disabled={!selectedLocation}
+              className="w-full h-11 rounded-full bg-primary text-primary-foreground"
+              data-testid="btn-pd-next-datetime"
+            >
+              Next: Pick a time <ChevronRight className="w-4 h-4 ml-1" />
+            </Button>
+          </motion.div>
+        )}
+
+        {/* STEP 2 — Date & Time */}
+        {step === "datetime" && (
+          <motion.div key="datetime" initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -24 }} className="space-y-5">
+            <div className="flex items-center gap-2">
+              <button onClick={() => setStep("location")} className="text-muted-foreground hover:text-foreground transition-colors" data-testid="btn-pd-back-location">
+                <ArrowLeft className="w-4 h-4" />
+              </button>
+              <div>
+                <p className="text-xs text-muted-foreground">Step 2 of 3</p>
+                <h3 className="font-serif text-lg font-semibold text-foreground">Pick a date & time</h3>
+              </div>
+            </div>
+
+            {/* Day chips */}
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Date</p>
+              <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+                {DAYS.map(day => (
+                  <button
+                    key={day.key}
+                    onClick={() => setSelectedDay(day.key)}
+                    data-testid={`btn-day-${day.num}`}
+                    className={`flex-shrink-0 flex flex-col items-center px-3.5 py-3 rounded-2xl border-2 min-w-[58px] transition-all duration-150 ${
+                      selectedDay === day.key
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "border-border bg-card text-muted-foreground hover:border-primary/30"
+                    }`}
+                  >
+                    <span className="text-[10px] font-semibold uppercase tracking-wide">{day.short}</span>
+                    <span className="text-lg font-bold mt-0.5 leading-none">{day.num}</span>
+                    <span className="text-[10px] mt-0.5">{day.month}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Time slots */}
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Time</p>
+              <div className="grid grid-cols-4 gap-2">
+                {TIMES.map(t => (
+                  <button
+                    key={t}
+                    onClick={() => setSelectedTime(t)}
+                    data-testid={`btn-time-${t.replace(/\s|:/g, "-")}`}
+                    className={`py-2 rounded-xl text-xs font-medium border-2 transition-all duration-150 ${
+                      selectedTime === t
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "border-border bg-card text-muted-foreground hover:border-primary/30"
+                    }`}
+                  >
+                    {t}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <Button
+              onClick={() => setStep("confirm")}
+              disabled={!selectedDay || !selectedTime}
+              className="w-full h-11 rounded-full bg-primary text-primary-foreground"
+              data-testid="btn-pd-next-confirm"
+            >
+              Review invite <ChevronRight className="w-4 h-4 ml-1" />
+            </Button>
+          </motion.div>
+        )}
+
+        {/* STEP 3 — Confirm */}
+        {step === "confirm" && locObj && dayObj && selectedTime && (
+          <motion.div key="confirm" initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -24 }} className="space-y-5">
+            <div className="flex items-center gap-2">
+              <button onClick={() => setStep("datetime")} className="text-muted-foreground hover:text-foreground transition-colors" data-testid="btn-pd-back-datetime">
+                <ArrowLeft className="w-4 h-4" />
+              </button>
+              <div>
+                <p className="text-xs text-muted-foreground">Step 3 of 3</p>
+                <h3 className="font-serif text-lg font-semibold text-foreground">Review & send</h3>
+              </div>
+            </div>
+
+            {/* Invite preview card */}
+            <div className="bg-gradient-to-br from-primary/5 to-amber-50/50 border border-primary/15 rounded-2xl p-5 space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="flex -space-x-3">
+                  <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-background">
+                    <img src="/profile1.png" alt="You" className="w-full h-full object-cover" />
+                  </div>
+                  <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-background">
+                    <img src={chatAvatar} alt={chatName} className="w-full h-full object-cover" />
+                  </div>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Playdate invite</p>
+                  <p className="text-sm font-semibold text-foreground">You + {chatName}</p>
+                </div>
+              </div>
+
+              <Separator className="bg-border/50" />
+
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className={`w-9 h-9 rounded-xl border flex items-center justify-center flex-shrink-0 ${locObj.color}`}>
+                    <locObj.icon className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Location</p>
+                    <p className="text-sm font-semibold text-foreground">{locObj.label}</p>
+                    <p className="text-xs text-muted-foreground">{locObj.sublabel}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl border border-border bg-secondary flex items-center justify-center flex-shrink-0">
+                    <Calendar className="w-4 h-4 text-muted-foreground" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Date & time</p>
+                    <p className="text-sm font-semibold text-foreground">{dayObj.short}, {dayObj.month} {dayObj.num} · {selectedTime}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                onClick={() => setStep("idle")}
+                className="flex-1 h-11 rounded-full border-border"
+                data-testid="btn-pd-cancel"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSend}
+                className="flex-1 h-11 rounded-full bg-primary text-primary-foreground shadow-sm font-medium"
+                data-testid="btn-pd-send-invite"
+              >
+                <Send className="w-4 h-4 mr-2" /> Send invite
+              </Button>
+            </div>
+          </motion.div>
+        )}
+
+      </AnimatePresence>
+    </div>
+  );
+}
+
 export default function Messages() {
   const [activeChat, setActiveChat] = useState(conversations[0]);
   const [message, setMessage] = useState("");
-  const [showChat, setShowChat] = useState(false); // Mobile toggle
+  const [showChat, setShowChat] = useState(false);
+  const [activeTab, setActiveTab] = useState<"chat" | "playdate">("chat");
 
   return (
     <div className="container mx-auto px-4 md:px-8 py-4 md:py-8 h-[calc(100vh-5rem)]">
       <div className="bg-card rounded-[2rem] border border-card-border shadow-sm h-full flex overflow-hidden">
-        
-        {/* Left Panel - Conversation List */}
+
+        {/* Left Panel */}
         <div className={`w-full md:w-1/3 border-r border-border flex flex-col bg-card ${showChat ? 'hidden md:flex' : 'flex'}`}>
           <div className="p-6">
             <h2 className="font-serif text-2xl font-semibold text-foreground mb-4">Messages</h2>
             <div className="relative">
               <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <Input 
-                placeholder="Search messages..." 
+              <Input
+                placeholder="Search messages..."
                 className="pl-10 h-10 bg-secondary border-none rounded-full"
                 data-testid="input-search-messages"
               />
             </div>
           </div>
-          
+
           <div className="px-6 pb-2">
             <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Active</h3>
           </div>
           <Separator className="bg-border/50" />
-          
+
           <ScrollArea className="flex-1">
             {conversations.map((chat) => (
               <button
                 key={chat.id}
                 className={`w-full text-left p-4 flex gap-4 items-center transition-colors border-b border-border/20 ${
-                  activeChat.id === chat.id 
-                    ? 'bg-secondary/30 border-l-4 border-l-primary' 
+                  activeChat.id === chat.id
+                    ? 'bg-secondary/30 border-l-4 border-l-primary'
                     : 'hover:bg-secondary/20 border-l-4 border-l-transparent'
                 }`}
-                onClick={() => {
-                  setActiveChat(chat);
-                  setShowChat(true);
-                }}
+                onClick={() => { setActiveChat(chat); setShowChat(true); setActiveTab("chat"); }}
                 data-testid={`btn-chat-${chat.id}`}
               >
                 <div className="relative flex-shrink-0">
@@ -95,114 +474,131 @@ export default function Messages() {
           </ScrollArea>
         </div>
 
-        {/* Right Panel - Chat Thread */}
+        {/* Right Panel */}
         <div className={`w-full md:w-2/3 flex-col bg-[#FCFBF8] relative ${showChat ? 'flex' : 'hidden md:flex'}`}>
-          {/* Chat Header */}
-          <div className="h-20 border-b border-border px-4 md:px-6 flex items-center justify-between bg-card shrink-0">
-            <div className="flex items-center gap-3 md:gap-4">
-              <Button variant="ghost" size="icon" className="md:hidden -ml-2" onClick={() => setShowChat(false)}>
-                <ArrowLeft className="w-5 h-5" />
-              </Button>
-              <div className="w-10 h-10 md:w-12 md:h-12 rounded-full overflow-hidden">
-                <img src={activeChat.avatar} alt={activeChat.name} className="w-full h-full object-cover" />
+
+          {/* Header with tab switcher */}
+          <div className="border-b border-border px-4 md:px-6 bg-card shrink-0">
+            <div className="h-16 flex items-center justify-between">
+              <div className="flex items-center gap-3 md:gap-4">
+                <Button variant="ghost" size="icon" className="md:hidden -ml-2" onClick={() => setShowChat(false)}>
+                  <ArrowLeft className="w-5 h-5" />
+                </Button>
+                <div className="w-10 h-10 rounded-full overflow-hidden">
+                  <img src={activeChat.avatar} alt={activeChat.name} className="w-full h-full object-cover" />
+                </div>
+                <div>
+                  <h3 className="font-medium text-foreground leading-tight">{activeChat.name}</h3>
+                  <p className="text-xs text-muted-foreground">with {activeChat.pet}</p>
+                </div>
               </div>
-              <div>
-                <h3 className="font-medium text-foreground leading-tight">{activeChat.name}</h3>
-                <p className="text-xs text-muted-foreground">with {activeChat.pet}</p>
+              <div className="flex gap-1 md:gap-2">
+                <Button variant="ghost" size="icon" className="rounded-full text-muted-foreground hover:text-foreground">
+                  <Phone className="w-5 h-5" />
+                </Button>
+                <Button variant="ghost" size="icon" className="rounded-full text-muted-foreground hover:text-foreground">
+                  <Video className="w-5 h-5" />
+                </Button>
+                <Button variant="ghost" size="icon" className="rounded-full text-muted-foreground hover:text-foreground hidden sm:flex">
+                  <MoreVertical className="w-5 h-5" />
+                </Button>
               </div>
             </div>
-            <div className="flex gap-1 md:gap-2">
-              <Button variant="ghost" size="icon" className="rounded-full text-muted-foreground hover:text-foreground">
-                <Phone className="w-5 h-5" />
-              </Button>
-              <Button variant="ghost" size="icon" className="rounded-full text-muted-foreground hover:text-foreground">
-                <Video className="w-5 h-5" />
-              </Button>
-              <Button variant="ghost" size="icon" className="rounded-full text-muted-foreground hover:text-foreground hidden sm:flex">
-                <MoreVertical className="w-5 h-5" />
-              </Button>
+
+            {/* Tab bar */}
+            <div className="flex gap-0 -mb-px">
+              {(["chat", "playdate"] as const).map(tab => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  data-testid={`tab-${tab}`}
+                  className={`relative px-5 py-2.5 text-sm font-medium transition-colors capitalize flex items-center gap-1.5 ${
+                    activeTab === tab
+                      ? "text-foreground border-b-2 border-primary"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {tab === "playdate" && <PawPrint className="w-3.5 h-3.5" />}
+                  {tab === "chat" ? "Chat" : "Playdate"}
+                </button>
+              ))}
             </div>
           </div>
 
-          {/* Top Gradient Fade */}
-          <div className="absolute top-20 left-0 right-0 h-6 bg-gradient-to-b from-card to-transparent pointer-events-none z-10"></div>
+          {/* Tab content */}
+          <AnimatePresence mode="wait">
+            {activeTab === "chat" ? (
+              <motion.div key="chat-tab" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }} className="flex flex-col flex-1 min-h-0">
+                {/* Top Gradient */}
+                <div className="absolute top-[108px] left-0 right-0 h-6 bg-gradient-to-b from-card to-transparent pointer-events-none z-10" />
 
-          {/* Messages */}
-          <ScrollArea className="flex-1 p-4 md:p-6">
-            <div className="space-y-6">
-              <div className="text-center pb-4 pt-2">
-                <span className="text-[11px] font-medium text-muted-foreground bg-secondary/50 px-3 py-1 rounded-full uppercase tracking-wider">Today</span>
-              </div>
-              
-              {chatHistory.map((msg, idx) => {
-                const isLastMsg = idx === chatHistory.length - 1;
-                return (
-                  <div key={msg.id} className={`flex ${msg.isMe ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`flex gap-3 max-w-[85%] md:max-w-[70%] ${msg.isMe ? 'flex-row-reverse' : 'flex-row'}`}>
-                      {!msg.isMe && (
-                        <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 mt-auto">
-                          <img src={activeChat.avatar} alt={msg.sender} className="w-full h-full object-cover" />
-                        </div>
-                      )}
-                      <div className={`flex flex-col ${msg.isMe ? 'items-end' : 'items-start'}`}>
-                        <div 
-                          className={`p-3.5 shadow-sm text-[15px] ${
-                            msg.isMe 
-                              ? 'bg-primary text-primary-foreground rounded-2xl rounded-br-sm' 
-                              : 'bg-card border border-border text-foreground rounded-2xl rounded-bl-sm'
-                          }`}
-                        >
-                          <p className="leading-relaxed">{msg.text}</p>
-                        </div>
-                        <div className="flex items-center gap-2 mt-1.5 px-1">
-                          <span className="text-[10px] text-muted-foreground font-medium">
-                            {msg.time}
-                          </span>
-                          {msg.isMe && isLastMsg && (
-                            <span className="text-[10px] text-primary font-semibold">Seen</span>
-                          )}
-                        </div>
-                      </div>
+                <ScrollArea className="flex-1 p-4 md:p-6">
+                  <div className="space-y-6">
+                    <div className="text-center pb-4 pt-2">
+                      <span className="text-[11px] font-medium text-muted-foreground bg-secondary/50 px-3 py-1 rounded-full uppercase tracking-wider">Today</span>
                     </div>
+                    {chatHistory.map((msg, idx) => {
+                      const isLastMsg = idx === chatHistory.length - 1;
+                      return (
+                        <div key={msg.id} className={`flex ${msg.isMe ? 'justify-end' : 'justify-start'}`}>
+                          <div className={`flex gap-3 max-w-[85%] md:max-w-[70%] ${msg.isMe ? 'flex-row-reverse' : 'flex-row'}`}>
+                            {!msg.isMe && (
+                              <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 mt-auto">
+                                <img src={activeChat.avatar} alt={msg.sender} className="w-full h-full object-cover" />
+                              </div>
+                            )}
+                            <div className={`flex flex-col ${msg.isMe ? 'items-end' : 'items-start'}`}>
+                              <div className={`p-3.5 shadow-sm text-[15px] ${msg.isMe ? 'bg-primary text-primary-foreground rounded-2xl rounded-br-sm' : 'bg-card border border-border text-foreground rounded-2xl rounded-bl-sm'}`}>
+                                <p className="leading-relaxed">{msg.text}</p>
+                              </div>
+                              <div className="flex items-center gap-2 mt-1.5 px-1">
+                                <span className="text-[10px] text-muted-foreground font-medium">{msg.time}</span>
+                                {msg.isMe && isLastMsg && <span className="text-[10px] text-primary font-semibold">Seen</span>}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
-                )
-              })}
-            </div>
-          </ScrollArea>
+                </ScrollArea>
 
-          {/* Input Area */}
-          <div className="p-3 md:p-4 bg-card border-t border-border shrink-0">
-            <form 
-              className="flex gap-2 items-end"
-              onSubmit={(e) => { e.preventDefault(); setMessage(""); }}
-            >
-              <div className="bg-secondary/60 rounded-[1.5rem] flex-1 flex items-center px-2 min-h-[56px] border border-border/50 focus-within:border-primary/30 focus-within:bg-secondary transition-colors">
-                <Button type="button" variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground shrink-0 rounded-full w-10 h-10">
-                  <Paperclip className="w-5 h-5" />
-                </Button>
-                <input 
-                  type="text" 
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  placeholder="Type a message..." 
-                  className="bg-transparent w-full focus:outline-none text-[15px] py-3 px-2"
-                  data-testid="input-chat-message"
-                />
-                <Button type="button" variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground shrink-0 rounded-full w-10 h-10 hidden sm:flex">
-                  <Smile className="w-5 h-5" />
-                </Button>
-              </div>
-              <Button 
-                type="submit" 
-                size="icon" 
-                className="w-14 h-14 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 flex-shrink-0 shadow-sm transition-transform active:scale-95"
-                disabled={!message.trim()}
-                data-testid="btn-send-message"
-              >
-                <Send className="w-5 h-5 ml-1" />
-              </Button>
-            </form>
-          </div>
+                <div className="p-3 md:p-4 bg-card border-t border-border shrink-0">
+                  <form className="flex gap-2 items-end" onSubmit={(e) => { e.preventDefault(); setMessage(""); }}>
+                    <div className="bg-secondary/60 rounded-[1.5rem] flex-1 flex items-center px-2 min-h-[56px] border border-border/50 focus-within:border-primary/30 focus-within:bg-secondary transition-colors">
+                      <Button type="button" variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground shrink-0 rounded-full w-10 h-10">
+                        <Paperclip className="w-5 h-5" />
+                      </Button>
+                      <input
+                        type="text"
+                        value={message}
+                        onChange={(e) => setMessage(e.target.value)}
+                        placeholder="Type a message..."
+                        className="bg-transparent w-full focus:outline-none text-[15px] py-3 px-2"
+                        data-testid="input-chat-message"
+                      />
+                      <Button type="button" variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground shrink-0 rounded-full w-10 h-10 hidden sm:flex">
+                        <Smile className="w-5 h-5" />
+                      </Button>
+                    </div>
+                    <Button
+                      type="submit"
+                      size="icon"
+                      className="w-14 h-14 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 flex-shrink-0 shadow-sm transition-transform active:scale-95"
+                      disabled={!message.trim()}
+                      data-testid="btn-send-message"
+                    >
+                      <Send className="w-5 h-5 ml-1" />
+                    </Button>
+                  </form>
+                </div>
+              </motion.div>
+            ) : (
+              <motion.div key="playdate-tab" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+                <PlaydateTab chatName={activeChat.name} chatAvatar={activeChat.avatar} />
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
     </div>
