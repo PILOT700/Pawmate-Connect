@@ -66,3 +66,9 @@ id = "bNNXew8sj4BpAGm4e2e0d"
 uri = "file://attached_assets/generated_images/wide_cinematic_park_scene_c899.png"
 type = "image"
 title = "generated_image"
+
+[[generated]]
+id = "4Hj9vjEnp5-5rHUvuQjUy"
+uri = "file://artifacts/pawmate/public/hero-couples.png"
+type = "image"
+title = "generated_image"
