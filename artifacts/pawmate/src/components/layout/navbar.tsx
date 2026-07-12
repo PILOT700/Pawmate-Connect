@@ -9,7 +9,7 @@ const publicNavLinks = [
   { label: "How it works", href: "/#how-it-works" },
   { label: "For pet lovers", href: "/#community" },
   { label: "Safety", href: "/#how-it-works" },
-  { label: "Community", href: "/#testimonials" },
+  { label: "Community", href: "/community" },
   { label: "About us", href: "/#testimonials" },
 ];
 
@@ -74,6 +74,13 @@ export function Navbar() {
                 >
                   <Heart className={`w-3.5 h-3.5 ${location === "/liked" ? "fill-current text-primary" : ""}`} />
                   Liked
+                </Link>
+                <Link
+                  href="/community"
+                  className={`text-sm font-medium transition-colors ${location === "/community" ? "text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                  data-testid="link-nav-community"
+                >
+                  Community
                 </Link>
                 <Link
                   href="/messages"
@@ -162,6 +169,7 @@ export function Navbar() {
                   <Link href="/liked" className="text-base font-medium text-foreground py-1.5 border-b border-border/40 flex items-center gap-2" onClick={() => setMobileMenuOpen(false)}>
                     <Heart className="w-4 h-4 text-primary" /> Liked
                   </Link>
+                  <Link href="/community" className="text-base font-medium text-foreground py-1.5 border-b border-border/40" onClick={() => setMobileMenuOpen(false)}>Community</Link>
                   <Link href="/messages" className="text-base font-medium text-foreground py-1.5 border-b border-border/40" onClick={() => setMobileMenuOpen(false)}>Messages</Link>
                   <Link href="/profile/me" className="text-base font-medium text-foreground py-1.5 border-b border-border/40" onClick={() => setMobileMenuOpen(false)}>My Profile</Link>
                   <Link href="/settings" className="text-base font-medium text-foreground py-1.5 border-b border-border/40" onClick={() => setMobileMenuOpen(false)}>Settings</Link>

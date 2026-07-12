@@ -13,6 +13,7 @@ import CreateProfile from "@/pages/create-profile";
 import LikedProfiles from "@/pages/liked-profiles";
 import Settings from "@/pages/settings";
 import Onboarding from "@/pages/onboarding";
+import Community from "@/pages/community";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient();
@@ -32,6 +33,7 @@ function Router() {
           <Route path="/liked" component={LikedProfiles} />
           <Route path="/settings" component={Settings} />
           <Route path="/onboarding" component={Onboarding} />
+          <Route path="/community" component={Community} />
           <Route component={NotFound} />
         </Switch>
       </main>
