@@ -1,12 +1,16 @@
 import { useParams, Link } from "wouter";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Heart, MapPin, MessageCircle, ArrowLeft } from "lucide-react";
+import { Heart, MapPin, MessageCircle, ArrowLeft, Loader } from "lucide-react";
 import { motion } from "framer-motion";
 import { CompatibilityScore } from "@/components/compatibility-score";
 import type { CompatibilityInput } from "@/components/compatibility-score";
 import { StoryStrip } from "@/components/story-strip";
 import type { Story } from "@/components/story-viewer";
+import { useListUserStories, useMarkStoryViewed } from "@workspace/api-client-react";
+import { useToast } from "@/hooks/use-toast";
+import { apiErrorMessage } from "@/lib/api-error";
 
 const PROFILES: Record<string, {
   id: string; name: string; age: number; city: string; image: string; bio: string;
@@ -101,7 +105,43 @@ const FALLBACK = PROFILES["1"];
 
 export default function Profile() {
   const { id } = useParams();
-  const profile = (id && PROFILES[id]) ? PROFILES[id] : { ...FALLBACK, name: "Eleanor", id: id ?? "me" };
+  const { toast } = useToast();
+  const [profile, setProfile] = useState(
+    id && PROFILES[id] ? PROFILES[id] : { ...FALLBACK, name: "Eleanor", id: id ?? "me" }
+  );
+
+  const { data: storiesData, isLoading: storiesLoading } = useListUserStories(id || "me");
+  const markViewedMutation = useMarkStoryViewed();
+
+  // Map API stories to Story type format
+  const apiStories: Story[] = (storiesData || []).map(s => ({
+    id: s.id,
+    image: s.imageUrl || "",
+    caption: s.caption || "",
+    petMoment: s.isPetMoment || false,
+  }));
+
+  // Update story strip with API data
+  useEffect(() => {
+    if (storiesData) {
+      setProfile(prev => ({
+        ...prev,
+        stories: apiStories,
+      }));
+    }
+  }, [storiesData]);
+
+  // Mark stories as viewed when they're displayed
+  useEffect(() => {
+    apiStories.forEach(story => {
+      const apiStory = storiesData?.find(s => s.id === story.id);
+      if (apiStory && !apiStory.viewed) {
+        markViewedMutation.mutate({ storyId: story.id }).catch(err => {
+          console.error("Failed to mark story as viewed:", err);
+        });
+      }
+    });
+  }, [apiStories, storiesData, markViewedMutation]);
 
   const compatInput: CompatibilityInput = {
     theirPetSpecies: profile.pet.species,
@@ -133,11 +173,17 @@ export default function Profile() {
           {/* Story Strip */}
           <div className="mb-8">
             <h2 className="font-serif text-xl font-medium text-foreground mb-4">Moments</h2>
-            <StoryStrip
-              name={profile.name}
-              avatar={profile.image}
-              stories={profile.stories}
-            />
+            {storiesLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader className="w-5 h-5 animate-spin text-muted-foreground" />
+              </div>
+            ) : (
+              <StoryStrip
+                name={profile.name}
+                avatar={profile.image}
+                stories={profile.stories}
+              />
+            )}
           </div>
 
           {/* Name + actions */}
