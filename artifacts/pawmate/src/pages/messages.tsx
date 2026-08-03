@@ -5,58 +5,88 @@ import { Search, Send, Phone, Video, MoreVertical, Paperclip, Smile, ArrowLeft, 
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { motion, AnimatePresence } from "framer-motion";
+import { format, isToday, isYesterday, differenceInCalendarDays } from "date-fns";
 import { pushNotification } from "@/lib/notif-store";
+import {
+  useListMatches,
+  useListMessages,
+  getListMessagesQueryKey,
+  useSendMessage,
+  useMarkMatchRead,
+  useListPlaydates,
+  useProposePlaydate,
+  useRespondToPlaydate,
+  type MatchSummary,
+  type Message,
+  type Playdate,
+} from "@workspace/api-client-react";
+import { useAuth } from "@/contexts/auth-context";
+import { useToast } from "@/hooks/use-toast";
+import { apiErrorMessage } from "@/lib/api-error";
 
-// ─── Conversations ───────────────────────────────────────────────────────────
+const FALLBACK_IMAGE = "/profile1.png";
 
-const conversations = [
-  { id: "1", name: "Eleanor", pet: "Oliver", species: "cat", avatar: "/profile1.png", lastMessage: "That sounds perfect! Let's do Sunday.", time: "10:42 AM", unread: true, online: true },
-  { id: "2", name: "James", pet: "Buster", species: "dog", avatar: "/profile2.png", lastMessage: "Buster loves that park.", time: "Yesterday", unread: false, online: false },
-  { id: "3", name: "Maya", pet: "Luna", species: "dog", avatar: "/profile3.png", lastMessage: "Haha yes! Luna does the exact same thing.", time: "Tue", unread: false, online: true },
-  { id: "4", name: "David", pet: "Milo", species: "dog", avatar: "/profile2.png", lastMessage: "Are you free this weekend?", time: "Mon", unread: true, online: false },
-  { id: "5", name: "Chloe", pet: "Cleo", species: "cat", avatar: "/profile1.png", lastMessage: "Thanks for the recommendation!", time: "Sun", unread: false, online: false },
-  { id: "6", name: "Marcus", pet: "Rex", species: "dog", avatar: "/profile3.png", lastMessage: "Rex is exhausted now lol", time: "Last week", unread: false, online: false },
-];
+// ─── Display helpers ──────────────────────────────────────────────────────────
 
-// ─── Message types ────────────────────────────────────────────────────────────
-
-type PlaydateStatus = "proposed" | "accepted" | "declined";
-
-interface TextMessage {
-  id: number | string;
-  kind: "text";
-  sender: string;
-  text: string;
-  time: string;
-  isMe: boolean;
+// `Playdate.date` comes back as a full ISO datetime (midnight UTC of that
+// calendar day) — formatting it directly with local-time `date-fns` can roll
+// it back a day in negative-offset zones. Re-anchor to local noon first.
+function formatPlaydateDate(iso: string): string {
+  const [y, m, d] = iso.slice(0, 10).split("-").map(Number);
+  return format(new Date(y!, m! - 1, d!, 12), "EEE, MMM d");
 }
 
-interface PlaydateMessage {
-  id: number | string;
-  kind: "playdate";
-  isMe: true;
-  time: string;
-  date: string;
-  slot: string;
-  place: string;
-  status: PlaydateStatus;
+function formatConversationTime(iso: string): string {
+  const date = new Date(iso);
+  if (isToday(date)) return format(date, "h:mm a");
+  if (isYesterday(date)) return "Yesterday";
+  const daysAgo = differenceInCalendarDays(new Date(), date);
+  if (daysAgo < 7) return format(date, "EEE");
+  return format(date, "MMM d");
 }
 
-type ChatMessage = TextMessage | PlaydateMessage;
+function dayDividerLabel(date: Date): string {
+  if (isToday(date)) return "Today";
+  if (isYesterday(date)) return "Yesterday";
+  return format(date, "EEEE, MMM d");
+}
 
-const INITIAL_CHAT: ChatMessage[] = [
-  { id: 1, kind: "text", sender: "Eleanor", text: "Hi! Your dog is so cute! What breed is Milo?", time: "9:00 AM", isMe: false },
-  { id: 2, kind: "text", sender: "Me", text: "Hey Eleanor! Thank you, he's a mix, mostly terrier we think. Oliver is stunning, I love orange tabbies.", time: "9:15 AM", isMe: true },
-  { id: 3, kind: "text", sender: "Eleanor", text: "Thanks! He's a menace but I love him. Are you guys going to the dog park this weekend?", time: "9:30 AM", isMe: false },
-  { id: 4, kind: "text", sender: "Me", text: "We're actually planning to go to the trails on Saturday morning. You ever take Oliver out?", time: "9:45 AM", isMe: true },
-  { id: 5, kind: "text", sender: "Eleanor", text: "He has a backpack! I've been meaning to try the trails. Mind if we tag along?", time: "10:00 AM", isMe: false },
-  { id: 6, kind: "text", sender: "Me", text: "Not at all, that would be great. Milo loves meeting new friends.", time: "10:15 AM", isMe: true },
-  { id: 7, kind: "text", sender: "Eleanor", text: "Awesome! What time were you thinking?", time: "10:20 AM", isMe: false },
-  { id: 8, kind: "text", sender: "Me", text: "Probably around 9am before it gets too hot.", time: "10:25 AM", isMe: true },
-  { id: 9, kind: "text", sender: "Eleanor", text: "That sounds perfect! Let's do Sunday.", time: "10:42 AM", isMe: false },
-];
+// ─── Conversation list ────────────────────────────────────────────────────────
 
-// ─── Playdate tab data (existing tab, unchanged) ──────────────────────────────
+interface ConversationView {
+  id: string;
+  name: string;
+  pet?: string;
+  avatar: string;
+  lastMessage: string;
+  time: string;
+  unread: boolean;
+  online: boolean;
+}
+
+function toConversationView(match: MatchSummary): ConversationView {
+  const lastAt = match.lastMessageAt ?? match.matchedAt;
+  return {
+    id: match.id,
+    name: match.otherUser.firstName,
+    pet: match.otherPet?.name,
+    avatar: match.otherUser.avatarUrl || FALLBACK_IMAGE,
+    lastMessage: match.lastMessage || "Say hello 👋",
+    time: formatConversationTime(lastAt),
+    unread: match.unreadCount > 0,
+    online: match.otherUser.isOnline,
+  };
+}
+
+// ─── Playdate status (single source of truth — matches the API) ─────────────
+
+const STATUS_STYLE: Record<Playdate["status"], { badge: string; label: string }> = {
+  proposed: { badge: "bg-amber-50 border-amber-200 text-amber-700", label: "Awaiting response" },
+  accepted: { badge: "bg-emerald-50 border-emerald-200 text-emerald-700", label: "Accepted ✓" },
+  declined: { badge: "bg-rose-50 border-rose-200 text-rose-700", label: "Declined" },
+};
+
+// ─── Playdate tab data ────────────────────────────────────────────────────────
 
 const LOCATIONS = [
   { id: "park", label: "Dog Park", sublabel: "Dolores Park · 0.4 mi", icon: TreePine, color: "text-emerald-600 bg-emerald-50 border-emerald-200" },
@@ -76,82 +106,52 @@ function getDays() {
   for (let i = 1; i <= 7; i++) {
     const d = new Date(now);
     d.setDate(now.getDate() + i);
-    days.push({ key: d.toDateString(), short: dayNames[d.getDay()], num: d.getDate(), month: monthNames[d.getMonth()] });
+    days.push({ key: d.toDateString(), short: dayNames[d.getDay()]!, num: d.getDate(), month: monthNames[d.getMonth()]! });
   }
   return days;
 }
 
-type PDTabStatus = "pending" | "confirmed" | "declined";
-interface PlaydateTabItem {
-  id: string;
-  with: string;
-  avatar: string;
-  location: string;
-  locationSub: string;
-  day: string;
-  time: string;
-  status: PDTabStatus;
+interface ProposeData {
+  place: string;
+  placeSub?: string;
+  date: string;
+  timeSlot: string;
 }
-
-const EXISTING_PLAYDATES: PlaydateTabItem[] = [
-  {
-    id: "pd1",
-    with: "James",
-    avatar: "/profile2.png",
-    location: "Dog Park",
-    locationSub: "Dolores Park",
-    day: "Sat, Jul 18",
-    time: "9:00 AM",
-    status: "confirmed",
-  },
-];
 
 type ScheduleStep = "idle" | "location" | "datetime" | "confirm" | "sent";
 
 interface PlaydateTabProps {
   chatName: string;
   chatAvatar: string;
+  playdates: Playdate[];
+  currentUserId: string;
+  onPropose: (data: ProposeData) => Promise<void>;
+  onRespond: (playdateId: string, status: "accepted" | "declined") => Promise<void>;
 }
 
-function PlaydateTab({ chatName, chatAvatar }: PlaydateTabProps) {
+function PlaydateTab({ chatName, chatAvatar, playdates, currentUserId, onPropose, onRespond }: PlaydateTabProps) {
   const DAYS = getDays();
   const [step, setStep] = useState<ScheduleStep>("idle");
   const [selectedLocation, setSelectedLocation] = useState<string | null>(null);
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
-  const [playdates, setPlaydates] = useState<PlaydateTabItem[]>(EXISTING_PLAYDATES);
 
   const locObj = LOCATIONS.find(l => l.id === selectedLocation);
   const dayObj = DAYS.find(d => d.key === selectedDay);
 
-  const handleSend = () => {
-    if (!locObj || !dayObj || !selectedTime) return;
-    const newPd: PlaydateTabItem = {
-      id: `pd-${Date.now()}`,
-      with: chatName,
-      avatar: chatAvatar,
-      location: locObj.label,
-      locationSub: locObj.sublabel.split("·")[0].trim(),
-      day: `${dayObj.short}, ${dayObj.month} ${dayObj.num}`,
-      time: selectedTime,
-      status: "pending",
-    };
-    setPlaydates(prev => [newPd, ...prev]);
-    setStep("sent");
-  };
-
-  const handleConfirm = (id: string) => setPlaydates(prev => prev.map(p => p.id === id ? { ...p, status: "confirmed" } : p));
-  const handleDecline = (id: string) => setPlaydates(prev => prev.filter(p => p.id !== id));
-
-  const statusStyle: Record<PDTabStatus, string> = {
-    pending: "bg-amber-50 border-amber-200 text-amber-700",
-    confirmed: "bg-emerald-50 border-emerald-200 text-emerald-700",
-    declined: "bg-rose-50 border-rose-200 text-rose-700",
-  };
-  const statusLabel: Record<PDTabStatus, string> = {
-    pending: "Awaiting response",
-    confirmed: "Confirmed ✓",
-    declined: "Declined",
+  const handleSend = async () => {
+    if (!locObj || !dayObj || !selectedTime || !selectedDay) return;
+    try {
+      await onPropose({
+        place: locObj.label,
+        placeSub: locObj.sublabel.split("·")[0]!.trim(),
+        date: format(new Date(selectedDay), "yyyy-MM-dd"),
+        timeSlot: selectedTime,
+      });
+      setStep("sent");
+    } catch {
+      // onPropose already surfaced a toast — stay on this step so the user can retry.
+    }
   };
 
   return (
@@ -159,48 +159,52 @@ function PlaydateTab({ chatName, chatAvatar }: PlaydateTabProps) {
       {playdates.length > 0 && (
         <div className="space-y-3">
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Upcoming Playdates</p>
-          {playdates.map(pd => (
-            <motion.div
-              key={pd.id}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-card border border-border rounded-2xl p-4 space-y-3"
-            >
-              <div className="flex items-start gap-3">
-                <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
-                  <img src={pd.avatar} alt={pd.with} className="w-full h-full object-cover" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-foreground">{pd.with}</p>
-                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5">
-                    <MapPin className="w-3 h-3" />
-                    <span>{pd.location} · {pd.locationSub}</span>
+          {playdates.map(pd => {
+            const s = STATUS_STYLE[pd.status];
+            const canRespond = pd.status === "proposed" && pd.proposedByUserId !== currentUserId;
+            return (
+              <motion.div
+                key={pd.id}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-card border border-border rounded-2xl p-4 space-y-3"
+              >
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
+                    <img src={chatAvatar} alt={chatName} className="w-full h-full object-cover" />
                   </div>
-                  <div className="flex items-center gap-3 mt-1.5">
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <Calendar className="w-3 h-3" /> {pd.day}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-foreground">{chatName}</p>
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5">
+                      <MapPin className="w-3 h-3" />
+                      <span>{pd.place}{pd.placeSub ? ` · ${pd.placeSub}` : ""}</span>
                     </div>
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <Clock className="w-3 h-3" /> {pd.time}
+                    <div className="flex items-center gap-3 mt-1.5">
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <Calendar className="w-3 h-3" /> {formatPlaydateDate(pd.date)}
+                      </div>
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <Clock className="w-3 h-3" /> {pd.timeSlot}
+                      </div>
                     </div>
                   </div>
+                  <span className={`text-[10px] font-semibold px-2.5 py-1 rounded-full border flex-shrink-0 ${s.badge}`}>
+                    {s.label}
+                  </span>
                 </div>
-                <span className={`text-[10px] font-semibold px-2.5 py-1 rounded-full border flex-shrink-0 ${statusStyle[pd.status]}`}>
-                  {statusLabel[pd.status]}
-                </span>
-              </div>
-              {pd.status === "pending" && pd.with !== chatName && (
-                <div className="flex gap-2 pt-1">
-                  <Button size="sm" className="flex-1 h-8 rounded-full text-xs" onClick={() => handleConfirm(pd.id)} data-testid={`btn-confirm-pd-${pd.id}`}>
-                    <Check className="w-3 h-3 mr-1" /> Accept
-                  </Button>
-                  <Button size="sm" variant="outline" className="flex-1 h-8 rounded-full text-xs border-border" onClick={() => handleDecline(pd.id)} data-testid={`btn-decline-pd-${pd.id}`}>
-                    <X className="w-3 h-3 mr-1" /> Decline
-                  </Button>
-                </div>
-              )}
-            </motion.div>
-          ))}
+                {canRespond && (
+                  <div className="flex gap-2 pt-1">
+                    <Button size="sm" className="flex-1 h-8 rounded-full text-xs" onClick={() => onRespond(pd.id, "accepted")} data-testid={`btn-confirm-pd-${pd.id}`}>
+                      <Check className="w-3 h-3 mr-1" /> Accept
+                    </Button>
+                    <Button size="sm" variant="outline" className="flex-1 h-8 rounded-full text-xs border-border" onClick={() => onRespond(pd.id, "declined")} data-testid={`btn-decline-pd-${pd.id}`}>
+                      <X className="w-3 h-3 mr-1" /> Decline
+                    </Button>
+                  </div>
+                )}
+              </motion.div>
+            );
+          })}
         </div>
       )}
 
@@ -299,7 +303,7 @@ function PlaydateTab({ chatName, chatAvatar }: PlaydateTabProps) {
             <div>
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Date</p>
               <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
-                {getDays().map(day => (
+                {DAYS.map(day => (
                   <button
                     key={day.key}
                     onClick={() => setSelectedDay(day.key)}
@@ -413,28 +417,23 @@ function PlaydateTab({ chatName, chatAvatar }: PlaydateTabProps) {
 
 // ─── Playdate Card (in-thread) ────────────────────────────────────────────────
 
-const STATUS_STYLE: Record<PlaydateStatus, { badge: string; label: string }> = {
-  proposed: { badge: "bg-amber-50 border-amber-200 text-amber-700", label: "Proposed" },
-  accepted: { badge: "bg-emerald-50 border-emerald-200 text-emerald-700", label: "Accepted ✓" },
-  declined: { badge: "bg-rose-50 border-rose-200 text-rose-700", label: "Declined" },
-};
-
 interface PlaydateCardProps {
-  msg: PlaydateMessage;
+  playdate: Playdate;
+  sentAt: string;
   chatName: string;
-  chatAvatar: string;
+  canRespond: boolean;
   onAccept: () => void;
   onDecline: () => void;
 }
 
-function PlaydateCard({ msg, chatName, chatAvatar, onAccept, onDecline }: PlaydateCardProps) {
-  const s = STATUS_STYLE[msg.status];
+function PlaydateCard({ playdate, sentAt, chatName, canRespond, onAccept, onDecline }: PlaydateCardProps) {
+  const s = STATUS_STYLE[playdate.status];
   return (
     <motion.div
       initial={{ opacity: 0, y: 10, scale: 0.97 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       className="w-full max-w-[320px] mx-auto"
-      data-testid={`playdate-card-${msg.id}`}
+      data-testid={`playdate-card-${playdate.id}`}
     >
       <div className="bg-gradient-to-br from-amber-50/80 to-primary/5 border border-amber-200/60 rounded-2xl overflow-hidden shadow-sm">
         {/* Header */}
@@ -444,7 +443,7 @@ function PlaydateCard({ msg, chatName, chatAvatar, onAccept, onDecline }: Playda
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-xs font-semibold text-amber-800 leading-none">Playdate Request</p>
-            <p className="text-[10px] text-amber-600 mt-0.5">You → {chatName}</p>
+            <p className="text-[10px] text-amber-600 mt-0.5">with {chatName}</p>
           </div>
           <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border flex-shrink-0 ${s.badge}`}>
             {s.label}
@@ -455,23 +454,23 @@ function PlaydateCard({ msg, chatName, chatAvatar, onAccept, onDecline }: Playda
         <div className="px-4 py-3 space-y-2">
           <div className="flex items-center gap-2 text-xs text-foreground">
             <MapPin className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
-            <span className="font-medium">{msg.place}</span>
+            <span className="font-medium">{playdate.place}</span>
           </div>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <Calendar className="w-3.5 h-3.5 flex-shrink-0" />
-              <span>{msg.date}</span>
+              <span>{formatPlaydateDate(playdate.date)}</span>
             </div>
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <Clock className="w-3.5 h-3.5 flex-shrink-0" />
-              <span>{msg.slot}</span>
+              <span>{playdate.timeSlot}</span>
             </div>
           </div>
         </div>
 
-        {/* Accept / Decline — shown while proposed */}
+        {/* Accept / Decline */}
         <AnimatePresence>
-          {msg.status === "proposed" && (
+          {canRespond && (
             <motion.div
               key="actions"
               initial={{ opacity: 0, height: 0 }}
@@ -479,12 +478,11 @@ function PlaydateCard({ msg, chatName, chatAvatar, onAccept, onDecline }: Playda
               exit={{ opacity: 0, height: 0 }}
               className="px-4 pb-3 flex gap-2"
             >
-              <p className="sr-only">{chatName}'s response</p>
               <Button
                 size="sm"
                 className="flex-1 h-8 rounded-full text-xs bg-primary text-primary-foreground"
                 onClick={onAccept}
-                data-testid={`btn-accept-${msg.id}`}
+                data-testid={`btn-accept-${playdate.id}`}
               >
                 <Check className="w-3 h-3 mr-1" /> Accept
               </Button>
@@ -493,7 +491,7 @@ function PlaydateCard({ msg, chatName, chatAvatar, onAccept, onDecline }: Playda
                 variant="outline"
                 className="flex-1 h-8 rounded-full text-xs border-border"
                 onClick={onDecline}
-                data-testid={`btn-decline-${msg.id}`}
+                data-testid={`btn-decline-${playdate.id}`}
               >
                 <X className="w-3 h-3 mr-1" /> Decline
               </Button>
@@ -501,7 +499,7 @@ function PlaydateCard({ msg, chatName, chatAvatar, onAccept, onDecline }: Playda
           )}
         </AnimatePresence>
       </div>
-      <p className="text-[10px] text-muted-foreground text-center mt-1.5">{msg.time}</p>
+      <p className="text-[10px] text-muted-foreground text-center mt-1.5">{format(new Date(sentAt), "h:mm a")}</p>
     </motion.div>
   );
 }
@@ -511,7 +509,7 @@ function PlaydateCard({ msg, chatName, chatAvatar, onAccept, onDecline }: Playda
 interface ComposePanelProps {
   chatName: string;
   chatAvatar: string;
-  onSend: (date: string, slot: string, place: string) => void;
+  onSend: (data: ProposeData) => Promise<void>;
   onClose: () => void;
 }
 
@@ -520,13 +518,25 @@ function ComposePanel({ chatName, chatAvatar, onSend, onClose }: ComposePanelPro
   const [selDay, setSelDay] = useState<string | null>(null);
   const [selTime, setSelTime] = useState<string | null>(null);
   const [place, setPlace] = useState("");
+  const [sending, setSending] = useState(false);
   const placeRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { placeRef.current?.focus(); }, []);
 
-  const dayObj = DAYS.find(d => d.key === selDay);
-  const dateLabel = dayObj ? `${dayObj.short}, ${dayObj.month} ${dayObj.num}` : "";
   const canSend = !!selDay && !!selTime && place.trim().length > 0;
+
+  const handleSend = async () => {
+    if (!canSend || !selDay || !selTime) return;
+    setSending(true);
+    try {
+      await onSend({ place: place.trim(), date: format(new Date(selDay), "yyyy-MM-dd"), timeSlot: selTime });
+      onClose();
+    } catch {
+      // onSend already surfaced a toast.
+    } finally {
+      setSending(false);
+    }
+  };
 
   return (
     <motion.div
@@ -614,12 +624,12 @@ function ComposePanel({ chatName, chatAvatar, onSend, onClose }: ComposePanelPro
 
       {/* Send */}
       <Button
-        onClick={() => canSend && onSend(dateLabel, selTime!, place.trim())}
-        disabled={!canSend}
+        onClick={handleSend}
+        disabled={!canSend || sending}
         className="w-full h-10 rounded-full bg-primary text-primary-foreground text-sm font-medium shadow-sm"
         data-testid="btn-send-playdate-card"
       >
-        <Send className="w-3.5 h-3.5 mr-2" /> Send playdate request to {chatName}
+        <Send className="w-3.5 h-3.5 mr-2" /> {sending ? "Sending…" : `Send playdate request to ${chatName}`}
       </Button>
     </motion.div>
   );
@@ -628,65 +638,172 @@ function ComposePanel({ chatName, chatAvatar, onSend, onClose }: ComposePanelPro
 // ─── Main Messages page ───────────────────────────────────────────────────────
 
 export default function Messages() {
-  const [activeChat, setActiveChat] = useState(conversations[0]);
-  const [message, setMessage] = useState("");
+  const { user } = useAuth();
+  const { toast } = useToast();
+
+  const [activeMatchId, setActiveMatchId] = useState<string | null>(null);
+  const [messageText, setMessageText] = useState("");
   const [showChat, setShowChat] = useState(false);
   const [activeTab, setActiveTab] = useState<"chat" | "playdate">("chat");
-  const [chatMsgs, setChatMsgs] = useState<ChatMessage[]>(INITIAL_CHAT);
   const [composeOpen, setComposeOpen] = useState(false);
+  const [search, setSearch] = useState("");
 
-  const now = new Date();
-  const timeStr = `${now.getHours() % 12 || 12}:${String(now.getMinutes()).padStart(2, "0")} ${now.getHours() >= 12 ? "PM" : "AM"}`;
+  const { data: matchesData, isLoading: matchesLoading, refetch: refetchMatches } = useListMatches({ pageSize: 50 });
+  const {
+    data: messagesData,
+    isLoading: messagesLoading,
+    refetch: refetchMessages,
+  } = useListMessages(
+    activeMatchId ?? "",
+    { pageSize: 100 },
+    { query: { queryKey: getListMessagesQueryKey(activeMatchId ?? "", { pageSize: 100 }), enabled: !!activeMatchId } },
+  );
+  const { data: playdatesData, refetch: refetchPlaydates } = useListPlaydates({ pageSize: 100 });
 
-  const handleSendPlaydate = (date: string, slot: string, place: string) => {
-    const newMsg: PlaydateMessage = {
-      id: `pd-${Date.now()}`,
-      kind: "playdate",
-      isMe: true,
-      time: timeStr,
-      date,
-      slot,
-      place,
-      status: "proposed",
-    };
-    setChatMsgs(prev => [...prev, newMsg]);
-    setComposeOpen(false);
+  const sendMessage = useSendMessage();
+  const markRead = useMarkMatchRead();
+  const proposePlaydate = useProposePlaydate();
+  const respondToPlaydate = useRespondToPlaydate();
 
-    // Notification 1: recipient gets a playdate request
-    pushNotification({
-      type: "playdate",
-      title: `Playdate request sent to ${activeChat.name}`,
-      body: `${place} · ${date} at ${slot}`,
-      time: "Just now",
-      avatar: activeChat.avatar,
-      petName: activeChat.pet,
-      href: "/messages",
-    });
-  };
+  const matches = matchesData?.items ?? [];
+  const conversations = matches.map(toConversationView);
+  const filteredConversations = search.trim()
+    ? conversations.filter(c => c.name.toLowerCase().includes(search.trim().toLowerCase()))
+    : conversations;
 
-  const handleRespond = (msgId: string | number, response: "accepted" | "declined") => {
-    setChatMsgs(prev =>
-      prev.map(m =>
-        m.id === msgId && m.kind === "playdate"
-          ? { ...m, status: response }
-          : m
-      )
+  const activeMatch = matches.find(m => m.id === activeMatchId) ?? null;
+  const messages = messagesData?.items ?? [];
+  const playdates = playdatesData?.items ?? [];
+  const playdatesById = new Map(playdates.map(pd => [pd.id, pd] as const));
+  const matchPlaydates = playdates
+    .filter(pd => pd.matchId === activeMatchId)
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+
+  // Default to the first conversation once matches load.
+  useEffect(() => {
+    if (!activeMatchId && matches.length > 0) {
+      setActiveMatchId(matches[0]!.id);
+    }
+  }, [matches, activeMatchId]);
+
+  // Mark the opened conversation read and clear its unread badge on the left.
+  useEffect(() => {
+    if (!activeMatchId) return;
+    markRead.mutate(
+      { matchId: activeMatchId },
+      { onSuccess: () => refetchMatches() },
     );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeMatchId]);
 
-    const pd = chatMsgs.find(m => m.id === msgId && m.kind === "playdate") as PlaydateMessage | undefined;
-    if (!pd) return;
-
-    // Notification 2: sender gets the response
-    pushNotification({
-      type: "playdate",
-      title: `${activeChat.name} ${response} your playdate`,
-      body: `${pd.place} · ${pd.date} at ${pd.slot}`,
-      time: "Just now",
-      avatar: activeChat.avatar,
-      petName: activeChat.pet,
-      href: "/messages",
-    });
+  const handleSelectChat = (matchId: string) => {
+    setActiveMatchId(matchId);
+    setShowChat(true);
+    setActiveTab("chat");
+    setComposeOpen(false);
   };
+
+  const handleSendText = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!activeMatchId || !messageText.trim()) return;
+    const text = messageText.trim();
+    setMessageText("");
+    try {
+      await sendMessage.mutateAsync({ matchId: activeMatchId, data: { text } });
+      await Promise.all([refetchMessages(), refetchMatches()]);
+    } catch (err) {
+      setMessageText(text);
+      toast({
+        variant: "destructive",
+        title: "Message not sent",
+        description: apiErrorMessage(err, "Please try again."),
+      });
+    }
+  };
+
+  const handleProposePlaydate = async (data: ProposeData) => {
+    if (!activeMatchId || !activeMatch) return;
+    try {
+      await proposePlaydate.mutateAsync({ matchId: activeMatchId, data });
+      await Promise.all([refetchMessages(), refetchPlaydates(), refetchMatches()]);
+      pushNotification({
+        type: "playdate",
+        title: `Playdate request sent to ${activeMatch.otherUser.firstName}`,
+        body: `${data.place} · ${formatPlaydateDate(new Date(data.date).toISOString())} at ${data.timeSlot}`,
+        time: "Just now",
+        avatar: activeMatch.otherUser.avatarUrl || FALLBACK_IMAGE,
+        petName: activeMatch.otherPet?.name,
+        href: "/messages",
+      });
+    } catch (err) {
+      toast({
+        variant: "destructive",
+        title: "Couldn't send that invite",
+        description: apiErrorMessage(err, "Please try again."),
+      });
+      throw err;
+    }
+  };
+
+  const handleRespondPlaydate = async (playdateId: string, status: "accepted" | "declined") => {
+    try {
+      await respondToPlaydate.mutateAsync({ playdateId, data: { status } });
+      await Promise.all([refetchMessages(), refetchPlaydates(), refetchMatches()]);
+      const pd = playdatesById.get(playdateId);
+      if (pd && activeMatch) {
+        pushNotification({
+          type: "playdate",
+          title: status === "accepted"
+            ? `You accepted the playdate with ${activeMatch.otherUser.firstName}`
+            : `You declined the playdate with ${activeMatch.otherUser.firstName}`,
+          body: `${pd.place} · ${formatPlaydateDate(pd.date)} at ${pd.timeSlot}`,
+          time: "Just now",
+          avatar: activeMatch.otherUser.avatarUrl || FALLBACK_IMAGE,
+          petName: activeMatch.otherPet?.name,
+          href: "/messages",
+        });
+      }
+    } catch (err) {
+      toast({
+        variant: "destructive",
+        title: "Couldn't update that playdate",
+        description: apiErrorMessage(err, "Please try again."),
+      });
+    }
+  };
+
+  // Interleave day-divider labels between messages grouped by calendar day.
+  type MessageEntry =
+    | { type: "divider"; key: string; label: string }
+    | { type: "message"; message: Message };
+  const renderableMessages: MessageEntry[] = [];
+  {
+    let lastDayKey = "";
+    for (const msg of messages) {
+      const sentAt = new Date(msg.sentAt);
+      const dayKey = format(sentAt, "yyyy-MM-dd");
+      if (dayKey !== lastDayKey) {
+        renderableMessages.push({ type: "divider", key: `divider-${dayKey}`, label: dayDividerLabel(sentAt) });
+        lastDayKey = dayKey;
+      }
+      renderableMessages.push({ type: "message", message: msg });
+    }
+  }
+
+  if (!matchesLoading && matches.length === 0) {
+    return (
+      <div className="container mx-auto px-4 md:px-8 py-16 text-center">
+        <div className="w-20 h-20 bg-secondary rounded-full flex items-center justify-center mx-auto mb-5">
+          <PawPrint className="w-8 h-8 text-muted-foreground" />
+        </div>
+        <h2 className="font-serif text-2xl text-foreground mb-2">No matches yet</h2>
+        <p className="text-muted-foreground mb-6">Head to Discover to find someone to talk to.</p>
+        <a href="/discover">
+          <Button className="rounded-full px-8 bg-primary text-primary-foreground">Browse Profiles</Button>
+        </a>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-4 md:px-8 py-4 md:py-8 h-[calc(100vh-5rem)]">
@@ -699,6 +816,8 @@ export default function Messages() {
             <div className="relative">
               <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <Input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search messages..."
                 className="pl-10 h-10 bg-secondary border-none rounded-full"
                 data-testid="input-search-messages"
@@ -712,15 +831,15 @@ export default function Messages() {
           <Separator className="bg-border/50" />
 
           <ScrollArea className="flex-1">
-            {conversations.map((chat) => (
+            {filteredConversations.map((chat) => (
               <button
                 key={chat.id}
                 className={`w-full text-left p-4 flex gap-4 items-center transition-colors border-b border-border/20 ${
-                  activeChat.id === chat.id
+                  activeMatchId === chat.id
                     ? 'bg-secondary/30 border-l-4 border-l-primary'
                     : 'hover:bg-secondary/20 border-l-4 border-l-transparent'
                 }`}
-                onClick={() => { setActiveChat(chat); setShowChat(true); setActiveTab("chat"); setComposeOpen(false); }}
+                onClick={() => handleSelectChat(chat.id)}
                 data-testid={`btn-chat-${chat.id}`}
               >
                 <div className="relative flex-shrink-0">
@@ -728,17 +847,19 @@ export default function Messages() {
                     <img src={chat.avatar} alt={chat.name} className="w-full h-full object-cover" />
                   </div>
                   {chat.online && <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-card"></span>}
-                  {!chat.online && chat.unread && <span className="absolute top-0 right-0 w-3.5 h-3.5 bg-accent rounded-full border-2 border-card"></span>}
+                  {chat.unread && <span className="absolute top-0 right-0 w-4 h-4 bg-primary rounded-full border-2 border-card flex items-center justify-center"><span className="w-1.5 h-1.5 bg-primary-foreground rounded-full"></span></span>}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex justify-between items-baseline mb-1">
                     <h3 className="font-medium text-foreground truncate">{chat.name}</h3>
                     <span className="text-xs text-muted-foreground whitespace-nowrap ml-2">{chat.time}</span>
                   </div>
-                  <div className="flex items-center text-xs text-primary font-medium mb-0.5">
-                    <PawPrint className="w-3 h-3 mr-1" />
-                    {chat.pet}
-                  </div>
+                  {chat.pet && (
+                    <div className="flex items-center text-xs text-primary font-medium mb-0.5">
+                      <PawPrint className="w-3 h-3 mr-1" />
+                      {chat.pet}
+                    </div>
+                  )}
                   <p className={`text-sm truncate ${chat.unread ? 'font-medium text-foreground' : 'text-muted-foreground'}`}>
                     {chat.lastMessage}
                   </p>
@@ -750,185 +871,213 @@ export default function Messages() {
 
         {/* Right Panel */}
         <div className={`w-full md:w-2/3 flex-col bg-[#FCFBF8] relative ${showChat ? 'flex' : 'hidden md:flex'}`}>
-
-          {/* Header */}
-          <div className="border-b border-border px-4 md:px-6 bg-card shrink-0">
-            <div className="h-16 flex items-center justify-between">
-              <div className="flex items-center gap-3 md:gap-4">
-                <Button variant="ghost" size="icon" className="md:hidden -ml-2" onClick={() => setShowChat(false)}>
-                  <ArrowLeft className="w-5 h-5" />
-                </Button>
-                <div className="w-10 h-10 rounded-full overflow-hidden">
-                  <img src={activeChat.avatar} alt={activeChat.name} className="w-full h-full object-cover" />
-                </div>
-                <div>
-                  <h3 className="font-medium text-foreground leading-tight">{activeChat.name}</h3>
-                  <p className="text-xs text-muted-foreground">with {activeChat.pet}</p>
-                </div>
-              </div>
-              <div className="flex gap-1 md:gap-2">
-                <Button variant="ghost" size="icon" className="rounded-full text-muted-foreground hover:text-foreground">
-                  <Phone className="w-5 h-5" />
-                </Button>
-                <Button variant="ghost" size="icon" className="rounded-full text-muted-foreground hover:text-foreground">
-                  <Video className="w-5 h-5" />
-                </Button>
-                <Button variant="ghost" size="icon" className="rounded-full text-muted-foreground hover:text-foreground hidden sm:flex">
-                  <MoreVertical className="w-5 h-5" />
-                </Button>
-              </div>
+          {!activeMatch ? (
+            <div className="flex-1 flex items-center justify-center text-muted-foreground text-sm">
+              {matchesLoading ? "Loading…" : "Select a conversation"}
             </div>
-
-            {/* Tab bar */}
-            <div className="flex gap-0 -mb-px">
-              {(["chat", "playdate"] as const).map(tab => (
-                <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
-                  data-testid={`tab-${tab}`}
-                  className={`relative px-5 py-2.5 text-sm font-medium transition-colors capitalize flex items-center gap-1.5 ${
-                    activeTab === tab
-                      ? "text-foreground border-b-2 border-primary"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {tab === "playdate" && <PawPrint className="w-3.5 h-3.5" />}
-                  {tab === "chat" ? "Chat" : "Playdate"}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Tab content */}
-          <AnimatePresence mode="wait">
-            {activeTab === "chat" ? (
-              <motion.div
-                key="chat-tab"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.18 }}
-                className="flex flex-col flex-1 min-h-0"
-              >
-                {/* Top gradient */}
-                <div className="absolute top-[108px] left-0 right-0 h-6 bg-gradient-to-b from-card to-transparent pointer-events-none z-10" />
-
-                {/* Messages */}
-                <ScrollArea className="flex-1 p-4 md:p-6">
-                  <div className="space-y-5">
-                    <div className="text-center pb-4 pt-2">
-                      <span className="text-[11px] font-medium text-muted-foreground bg-secondary/50 px-3 py-1 rounded-full uppercase tracking-wider">Today</span>
-                    </div>
-
-                    {chatMsgs.map((msg, idx) => {
-                      if (msg.kind === "playdate") {
-                        return (
-                          <PlaydateCard
-                            key={msg.id}
-                            msg={msg}
-                            chatName={activeChat.name}
-                            chatAvatar={activeChat.avatar}
-                            onAccept={() => handleRespond(msg.id, "accepted")}
-                            onDecline={() => handleRespond(msg.id, "declined")}
-                          />
-                        );
-                      }
-
-                      const isLastMsg = idx === chatMsgs.length - 1;
-                      return (
-                        <div key={msg.id} className={`flex ${msg.isMe ? 'justify-end' : 'justify-start'}`}>
-                          <div className={`flex gap-3 max-w-[85%] md:max-w-[70%] ${msg.isMe ? 'flex-row-reverse' : 'flex-row'}`}>
-                            {!msg.isMe && (
-                              <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 mt-auto">
-                                <img src={activeChat.avatar} alt={msg.sender} className="w-full h-full object-cover" />
-                              </div>
-                            )}
-                            <div className={`flex flex-col ${msg.isMe ? 'items-end' : 'items-start'}`}>
-                              <div className={`p-3.5 shadow-sm text-[15px] ${msg.isMe ? 'bg-primary text-primary-foreground rounded-2xl rounded-br-sm' : 'bg-card border border-border text-foreground rounded-2xl rounded-bl-sm'}`}>
-                                <p className="leading-relaxed">{msg.text}</p>
-                              </div>
-                              <div className="flex items-center gap-2 mt-1.5 px-1">
-                                <span className="text-[10px] text-muted-foreground font-medium">{msg.time}</span>
-                                {msg.isMe && isLastMsg && msg.kind === "text" && <span className="text-[10px] text-primary font-semibold">Seen</span>}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </ScrollArea>
-
-                {/* Compose panel (slides up) */}
-                <AnimatePresence>
-                  {composeOpen && (
-                    <ComposePanel
-                      chatName={activeChat.name}
-                      chatAvatar={activeChat.avatar}
-                      onSend={handleSendPlaydate}
-                      onClose={() => setComposeOpen(false)}
-                    />
-                  )}
-                </AnimatePresence>
-
-                {/* Input area */}
-                <div className="p-3 md:p-4 bg-card border-t border-border shrink-0">
-                  {/* Propose pill */}
-                  {!composeOpen && (
-                    <div className="flex gap-2 mb-2">
-                      <button
-                        onClick={() => setComposeOpen(true)}
-                        className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-700 text-xs font-semibold hover:bg-amber-100 transition-colors"
-                        data-testid="btn-propose-playdate"
-                      >
-                        <CalendarCheck className="w-3.5 h-3.5" />
-                        Propose a playdate
-                      </button>
-                    </div>
-                  )}
-
-                  <form className="flex gap-2 items-end" onSubmit={(e) => { e.preventDefault(); setMessage(""); }}>
-                    <div className="bg-secondary/60 rounded-[1.5rem] flex-1 flex items-center px-2 min-h-[56px] border border-border/50 focus-within:border-primary/30 focus-within:bg-secondary transition-colors">
-                      <Button type="button" variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground shrink-0 rounded-full w-10 h-10">
-                        <Paperclip className="w-5 h-5" />
-                      </Button>
-                      <input
-                        type="text"
-                        value={message}
-                        onChange={(e) => setMessage(e.target.value)}
-                        placeholder="Type a message..."
-                        className="bg-transparent w-full focus:outline-none text-[15px] py-3 px-2"
-                        data-testid="input-chat-message"
-                      />
-                      <Button type="button" variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground shrink-0 rounded-full w-10 h-10 hidden sm:flex">
-                        <Smile className="w-5 h-5" />
-                      </Button>
-                    </div>
-                    <Button
-                      type="submit"
-                      size="icon"
-                      className="w-14 h-14 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 flex-shrink-0 shadow-sm transition-transform active:scale-95"
-                      disabled={!message.trim()}
-                      data-testid="btn-send-message"
-                    >
-                      <Send className="w-5 h-5 ml-1" />
+          ) : (
+            <>
+              {/* Header */}
+              <div className="border-b border-border px-4 md:px-6 bg-card shrink-0">
+                <div className="h-16 flex items-center justify-between">
+                  <div className="flex items-center gap-3 md:gap-4">
+                    <Button variant="ghost" size="icon" className="md:hidden -ml-2" onClick={() => setShowChat(false)}>
+                      <ArrowLeft className="w-5 h-5" />
                     </Button>
-                  </form>
+                    <div className="w-10 h-10 rounded-full overflow-hidden">
+                      <img src={activeMatch.otherUser.avatarUrl || FALLBACK_IMAGE} alt={activeMatch.otherUser.firstName} className="w-full h-full object-cover" />
+                    </div>
+                    <div>
+                      <h3 className="font-medium text-foreground leading-tight">{activeMatch.otherUser.firstName}</h3>
+                      {activeMatch.otherPet && <p className="text-xs text-muted-foreground">with {activeMatch.otherPet.name}</p>}
+                    </div>
+                  </div>
+                  <div className="flex gap-1 md:gap-2">
+                    <Button variant="ghost" size="icon" className="rounded-full text-muted-foreground hover:text-foreground">
+                      <Phone className="w-5 h-5" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="rounded-full text-muted-foreground hover:text-foreground">
+                      <Video className="w-5 h-5" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="rounded-full text-muted-foreground hover:text-foreground hidden sm:flex">
+                      <MoreVertical className="w-5 h-5" />
+                    </Button>
+                  </div>
                 </div>
-              </motion.div>
-            ) : (
-              <motion.div
-                key="playdate-tab"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.18 }}
-                className="flex flex-col flex-1 min-h-0 overflow-hidden"
-              >
-                <PlaydateTab chatName={activeChat.name} chatAvatar={activeChat.avatar} />
-              </motion.div>
-            )}
-          </AnimatePresence>
+
+                {/* Tab bar */}
+                <div className="flex gap-0 -mb-px">
+                  {(["chat", "playdate"] as const).map(tab => (
+                    <button
+                      key={tab}
+                      onClick={() => setActiveTab(tab)}
+                      data-testid={`tab-${tab}`}
+                      className={`relative px-5 py-2.5 text-sm font-medium transition-colors capitalize flex items-center gap-1.5 ${
+                        activeTab === tab
+                          ? "text-foreground border-b-2 border-primary"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      {tab === "playdate" && <PawPrint className="w-3.5 h-3.5" />}
+                      {tab === "chat" ? "Chat" : "Playdate"}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Tab content */}
+              <AnimatePresence mode="wait">
+                {activeTab === "chat" ? (
+                  <motion.div
+                    key="chat-tab"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.18 }}
+                    className="flex flex-col flex-1 min-h-0"
+                  >
+                    {/* Top gradient */}
+                    <div className="absolute top-[108px] left-0 right-0 h-6 bg-gradient-to-b from-card to-transparent pointer-events-none z-10" />
+
+                    {/* Messages */}
+                    <ScrollArea className="flex-1 p-4 md:p-6">
+                      <div className="space-y-5">
+                        {messagesLoading ? (
+                          <p className="text-center text-sm text-muted-foreground py-8">Loading messages…</p>
+                        ) : renderableMessages.length === 0 ? (
+                          <p className="text-center text-sm text-muted-foreground py-8">Say hello to {activeMatch.otherUser.firstName} 👋</p>
+                        ) : (
+                          renderableMessages.map((entry) => {
+                            if (entry.type === "divider") {
+                              return (
+                                <div key={entry.key} className="text-center pb-2 pt-2">
+                                  <span className="text-[11px] font-medium text-muted-foreground bg-secondary/50 px-3 py-1 rounded-full uppercase tracking-wider">{entry.label}</span>
+                                </div>
+                              );
+                            }
+
+                            const msg = entry.message;
+                            const isMe = msg.senderId === user!.id;
+
+                            if (msg.kind === "playdate") {
+                              const pd = msg.playdateId ? playdatesById.get(msg.playdateId) : undefined;
+                              if (!pd) return null;
+                              return (
+                                <PlaydateCard
+                                  key={msg.id}
+                                  playdate={pd}
+                                  sentAt={msg.sentAt}
+                                  chatName={activeMatch.otherUser.firstName}
+                                  canRespond={pd.status === "proposed" && pd.proposedByUserId !== user!.id}
+                                  onAccept={() => handleRespondPlaydate(pd.id, "accepted")}
+                                  onDecline={() => handleRespondPlaydate(pd.id, "declined")}
+                                />
+                              );
+                            }
+
+                            return (
+                              <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
+                                <div className={`flex gap-3 max-w-[85%] md:max-w-[70%] ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
+                                  {!isMe && (
+                                    <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 mt-auto">
+                                      <img src={activeMatch.otherUser.avatarUrl || FALLBACK_IMAGE} alt={activeMatch.otherUser.firstName} className="w-full h-full object-cover" />
+                                    </div>
+                                  )}
+                                  <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
+                                    <div className={`p-3.5 shadow-sm text-[15px] ${isMe ? 'bg-primary text-primary-foreground rounded-2xl rounded-br-sm' : 'bg-card border border-border text-foreground rounded-2xl rounded-bl-sm'}`}>
+                                      <p className="leading-relaxed">{msg.text}</p>
+                                    </div>
+                                    <div className="flex items-center gap-2 mt-1.5 px-1">
+                                      <span className="text-[10px] text-muted-foreground font-medium">{format(new Date(msg.sentAt), "h:mm a")}</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })
+                        )}
+                      </div>
+                    </ScrollArea>
+
+                    {/* Compose panel (slides up) */}
+                    <AnimatePresence>
+                      {composeOpen && (
+                        <ComposePanel
+                          chatName={activeMatch.otherUser.firstName}
+                          chatAvatar={activeMatch.otherUser.avatarUrl || FALLBACK_IMAGE}
+                          onSend={handleProposePlaydate}
+                          onClose={() => setComposeOpen(false)}
+                        />
+                      )}
+                    </AnimatePresence>
+
+                    {/* Input area */}
+                    <div className="p-3 md:p-4 bg-card border-t border-border shrink-0">
+                      {/* Propose pill */}
+                      {!composeOpen && (
+                        <div className="flex gap-2 mb-2">
+                          <button
+                            onClick={() => setComposeOpen(true)}
+                            className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-700 text-xs font-semibold hover:bg-amber-100 transition-colors"
+                            data-testid="btn-propose-playdate"
+                          >
+                            <CalendarCheck className="w-3.5 h-3.5" />
+                            Propose a playdate
+                          </button>
+                        </div>
+                      )}
+
+                      <form className="flex gap-2 items-end" onSubmit={handleSendText}>
+                        <div className="bg-secondary/60 rounded-[1.5rem] flex-1 flex items-center px-2 min-h-[56px] border border-border/50 focus-within:border-primary/30 focus-within:bg-secondary transition-colors">
+                          <Button type="button" variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground shrink-0 rounded-full w-10 h-10">
+                            <Paperclip className="w-5 h-5" />
+                          </Button>
+                          <input
+                            type="text"
+                            value={messageText}
+                            onChange={(e) => setMessageText(e.target.value)}
+                            placeholder="Type a message..."
+                            className="bg-transparent w-full focus:outline-none text-[15px] py-3 px-2"
+                            data-testid="input-chat-message"
+                          />
+                          <Button type="button" variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground shrink-0 rounded-full w-10 h-10 hidden sm:flex">
+                            <Smile className="w-5 h-5" />
+                          </Button>
+                        </div>
+                        <Button
+                          type="submit"
+                          size="icon"
+                          className="w-14 h-14 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 flex-shrink-0 shadow-sm transition-transform active:scale-95"
+                          disabled={!messageText.trim() || sendMessage.isPending}
+                          data-testid="btn-send-message"
+                        >
+                          <Send className="w-5 h-5 ml-1" />
+                        </Button>
+                      </form>
+                    </div>
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="playdate-tab"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.18 }}
+                    className="flex flex-col flex-1 min-h-0 overflow-hidden"
+                  >
+                    <PlaydateTab
+                      chatName={activeMatch.otherUser.firstName}
+                      chatAvatar={activeMatch.otherUser.avatarUrl || FALLBACK_IMAGE}
+                      playdates={matchPlaydates}
+                      currentUserId={user!.id}
+                      onPropose={handleProposePlaydate}
+                      onRespond={handleRespondPlaydate}
+                    />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </>
+          )}
         </div>
       </div>
     </div>
