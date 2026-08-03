@@ -14,6 +14,10 @@ import {
   useCancelEventRsvp,
   useSaveEvent,
   useUnsaveEvent,
+  useListEventComments,
+  useCreateEventComment,
+  useLikeEventComment,
+  useUnlikeEventComment,
   type CommunityEvent,
 } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
@@ -43,12 +47,20 @@ const CATEGORY_STYLE: Record<Exclude<EventCategory, "all">, { badge: string; ico
 
 function EventCard({ event, onRefetch }: { event: CommunityEvent; onRefetch: () => void }) {
   const [commentsOpen, setCommentsOpen] = useState(false);
+  const [newComment, setNewComment] = useState("");
   const { toast } = useToast();
 
   const rsvpMutation = useRsvpToEvent();
   const cancelRsvpMutation = useCancelEventRsvp();
   const saveMutation = useSaveEvent();
   const unsaveMutation = useUnsaveEvent();
+
+  const { data: commentsData, isLoading: commentsLoading, refetch: refetchComments } = useListEventComments(event.id);
+  const createCommentMutation = useCreateEventComment();
+  const likeCommentMutation = useLikeEventComment();
+  const unlikeCommentMutation = useUnlikeEventComment();
+
+  const comments = commentsData?.items || [];
 
   const style = CATEGORY_STYLE[event.category];
   const maxAttendees = event.maxAttendees || 50;
@@ -84,7 +96,44 @@ function EventCard({ event, onRefetch }: { event: CommunityEvent; onRefetch: () 
       toast({
         variant: "destructive",
         title: "Error",
-        description: apiErrorMessage(err, "Failed to update RSVP"),
+        description: apiErrorMessage(err, "Failed to update bookmark"),
+      });
+    }
+  };
+
+  const handleAddComment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newComment.trim()) return;
+
+    try {
+      await createCommentMutation.mutateAsync({
+        eventId: event.id,
+        data: { text: newComment },
+      });
+      setNewComment("");
+      await refetchComments();
+    } catch (err) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: apiErrorMessage(err, "Failed to add comment"),
+      });
+    }
+  };
+
+  const handleLikeComment = async (commentId: string, liked: boolean) => {
+    try {
+      if (liked) {
+        await unlikeCommentMutation.mutateAsync({ commentId });
+      } else {
+        await likeCommentMutation.mutateAsync({ commentId });
+      }
+      await refetchComments();
+    } catch (err) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: apiErrorMessage(err, "Failed to update like"),
       });
     }
   };
@@ -195,7 +244,7 @@ function EventCard({ event, onRefetch }: { event: CommunityEvent; onRefetch: () 
             data-testid={`btn-comments-${event.id}`}
           >
             <MessageCircle className="w-4 h-4" />
-            <span>0</span>
+            <span>{comments.length}</span>
           </button>
           <button
             onClick={handleSave}
@@ -221,7 +270,57 @@ function EventCard({ event, onRefetch }: { event: CommunityEvent; onRefetch: () 
               className="overflow-hidden"
             >
               <div className="border-t border-border/50 pt-4 space-y-3">
-                <p className="text-sm text-muted-foreground text-center py-2">Comments coming soon — be the first!</p>
+                {commentsLoading ? (
+                  <div className="flex items-center justify-center py-4">
+                    <Loader className="w-4 h-4 animate-spin text-muted-foreground" />
+                  </div>
+                ) : comments.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-2">No comments yet — be the first!</p>
+                ) : (
+                  comments.map(c => (
+                    <div key={c.id} className="flex gap-3">
+                      <img src={c.author.avatarUrl || "/profile1.png"} alt={c.author.firstName} className="w-8 h-8 rounded-full object-cover flex-shrink-0 mt-0.5" />
+                      <div className="flex-1 min-w-0">
+                        <div className="bg-secondary/60 rounded-2xl rounded-tl-sm px-3.5 py-2.5">
+                          <p className="text-xs font-semibold text-foreground mb-0.5">{c.author.firstName}</p>
+                          <p className="text-sm text-foreground leading-relaxed">{c.text}</p>
+                        </div>
+                        <div className="flex items-center gap-3 mt-1 px-1">
+                          <span className="text-[10px] text-muted-foreground">{new Date(c.createdAt as any).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}</span>
+                          <button
+                            onClick={() => handleLikeComment(c.id, c.liked)}
+                            className={`text-[10px] transition-colors font-medium flex items-center gap-0.5 ${c.liked ? "text-rose-500" : "text-muted-foreground hover:text-rose-500"}`}
+                          >
+                            ♥ {c.likeCount}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+
+                {/* New comment input */}
+                <form onSubmit={handleAddComment} className="flex gap-2 items-center pt-1">
+                  <img src="/profile1.png" alt="You" className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
+                  <div className="flex-1 flex items-center bg-secondary/60 border border-border/50 rounded-full px-4 h-9 focus-within:border-primary/30 transition-colors">
+                    <input
+                      type="text"
+                      value={newComment}
+                      onChange={e => setNewComment(e.target.value)}
+                      placeholder="Add a comment…"
+                      className="bg-transparent text-sm w-full focus:outline-none"
+                      data-testid={`input-comment-${event.id}`}
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={!newComment.trim() || createCommentMutation.isPending}
+                    className="w-9 h-9 rounded-full bg-primary text-primary-foreground flex items-center justify-center disabled:opacity-40 transition-opacity flex-shrink-0"
+                    data-testid={`btn-submit-comment-${event.id}`}
+                  >
+                    <Send className="w-3.5 h-3.5 ml-0.5" />
+                  </button>
+                </form>
               </div>
             </motion.div>
           )}
