@@ -4,19 +4,31 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
+import { AuthProvider } from "@/contexts/auth-context";
+import { ProtectedRoute } from "@/components/protected-route";
 import Home from "@/pages/home";
 import Auth from "@/pages/auth";
 import Discover from "@/pages/discover";
 import Profile from "@/pages/profile";
 import Messages from "@/pages/messages";
 import CreateProfile from "@/pages/create-profile";
+import CreateEvent from "@/pages/create-event";
+import CreateStory from "@/pages/create-story";
 import LikedProfiles from "@/pages/liked-profiles";
 import Settings from "@/pages/settings";
 import Onboarding from "@/pages/onboarding";
 import Community from "@/pages/community";
 import NotFound from "@/pages/not-found";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      // A 401 is a definitive answer for a signed-out visitor, not a blip.
+      retry: false,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 function Router() {
   return (
@@ -26,14 +38,36 @@ function Router() {
         <Switch>
           <Route path="/" component={Home} />
           <Route path="/login" component={Auth} />
-          <Route path="/discover" component={Discover} />
-          <Route path="/profile/:id" component={Profile} />
-          <Route path="/messages" component={Messages} />
-          <Route path="/create-profile" component={CreateProfile} />
-          <Route path="/liked" component={LikedProfiles} />
-          <Route path="/settings" component={Settings} />
-          <Route path="/onboarding" component={Onboarding} />
-          <Route path="/community" component={Community} />
+          <Route path="/discover">
+            <ProtectedRoute component={Discover} />
+          </Route>
+          <Route path="/profile/:id">
+            <ProtectedRoute component={Profile} />
+          </Route>
+          <Route path="/messages">
+            <ProtectedRoute component={Messages} />
+          </Route>
+          <Route path="/create-profile">
+            <ProtectedRoute component={CreateProfile} />
+          </Route>
+          <Route path="/create-event">
+            <ProtectedRoute component={CreateEvent} />
+          </Route>
+          <Route path="/create-story">
+            <ProtectedRoute component={CreateStory} />
+          </Route>
+          <Route path="/liked">
+            <ProtectedRoute component={LikedProfiles} />
+          </Route>
+          <Route path="/settings">
+            <ProtectedRoute component={Settings} />
+          </Route>
+          <Route path="/onboarding">
+            <ProtectedRoute component={Onboarding} />
+          </Route>
+          <Route path="/community">
+            <ProtectedRoute component={Community} />
+          </Route>
           <Route component={NotFound} />
         </Switch>
       </main>
@@ -45,12 +79,14 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-          <Router />
-        </WouterRouter>
-        <Toaster />
-      </TooltipProvider>
+      <AuthProvider>
+        <TooltipProvider>
+          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+            <Router />
+          </WouterRouter>
+          <Toaster />
+        </TooltipProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

@@ -1,9 +1,12 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { Menu, X, Bell, User, PawPrint, Heart } from "lucide-react";
+import { Menu, X, Bell, User, PawPrint, Heart, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import { NotificationsDrawer } from "@/components/notifications-drawer";
+import { useLogoutUser } from "@workspace/api-client-react";
+import { useAuth } from "@/contexts/auth-context";
+import { useNotifications } from "@/lib/notif-store";
 
 const publicNavLinks = [
   { label: "How it works", href: "/#how-it-works" },
@@ -14,12 +17,23 @@ const publicNavLinks = [
 ];
 
 export function Navbar() {
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
 
-  const isLoggedIn = location !== "/" && location !== "/login" && location !== "/create-profile";
-  const unreadCount = 3;
+  const { user, refreshSession } = useAuth();
+  const notifications = useNotifications();
+  const logout = useLogoutUser();
+
+  const isLoggedIn = Boolean(user);
+  const unreadCount = notifications.filter((n) => !n.read).length;
+
+  const handleLogout = async () => {
+    await logout.mutateAsync();
+    await refreshSession();
+    setMobileMenuOpen(false);
+    setLocation("/");
+  };
 
   return (
     <>
@@ -51,7 +65,7 @@ export function Navbar() {
                       Log in
                     </Button>
                   </Link>
-                  <Link href="/onboarding" data-testid="link-get-started">
+                  <Link href="/login?tab=register" data-testid="link-get-started">
                     <Button className="rounded-full px-5 h-9 font-medium bg-primary text-primary-foreground hover:bg-primary/90">
                       Sign up
                     </Button>
@@ -82,6 +96,21 @@ export function Navbar() {
                 >
                   Community
                 </Link>
+                <div className="h-4 w-px bg-border/30" />
+                <Link
+                  href="/create-event"
+                  className={`text-sm font-medium transition-colors ${location === "/create-event" ? "text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                  data-testid="link-nav-create-event"
+                >
+                  + Event
+                </Link>
+                <Link
+                  href="/create-story"
+                  className={`text-sm font-medium transition-colors ${location === "/create-story" ? "text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                  data-testid="link-nav-create-story"
+                >
+                  + Story
+                </Link>
                 <Link
                   href="/messages"
                   className={`text-sm font-medium transition-colors ${location.startsWith("/messages") ? "text-foreground" : "text-muted-foreground hover:text-foreground"}`}
@@ -105,6 +134,15 @@ export function Navbar() {
                       <User className="w-5 h-5 text-foreground" />
                     </Button>
                   </Link>
+                  <button
+                    onClick={handleLogout}
+                    disabled={logout.isPending}
+                    className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-secondary transition-colors disabled:opacity-50"
+                    title="Log out"
+                    data-testid="btn-logout"
+                  >
+                    <LogOut className="w-5 h-5 text-muted-foreground" />
+                  </button>
                 </div>
               </>
             )}
@@ -158,7 +196,7 @@ export function Navbar() {
                     <Link href="/login" onClick={() => setMobileMenuOpen(false)}>
                       <Button variant="outline" className="w-full h-11 text-base rounded-full">Log in</Button>
                     </Link>
-                    <Link href="/onboarding" onClick={() => setMobileMenuOpen(false)}>
+                    <Link href="/login?tab=register" onClick={() => setMobileMenuOpen(false)}>
                       <Button className="w-full h-11 text-base rounded-full bg-primary text-primary-foreground">Sign up</Button>
                     </Link>
                   </div>
@@ -170,9 +208,19 @@ export function Navbar() {
                     <Heart className="w-4 h-4 text-primary" /> Liked
                   </Link>
                   <Link href="/community" className="text-base font-medium text-foreground py-1.5 border-b border-border/40" onClick={() => setMobileMenuOpen(false)}>Community</Link>
+                  <Link href="/create-event" className="text-base font-medium text-foreground py-1.5 border-b border-border/40" onClick={() => setMobileMenuOpen(false)}>Create Event</Link>
+                  <Link href="/create-story" className="text-base font-medium text-foreground py-1.5 border-b border-border/40" onClick={() => setMobileMenuOpen(false)}>Share Story</Link>
                   <Link href="/messages" className="text-base font-medium text-foreground py-1.5 border-b border-border/40" onClick={() => setMobileMenuOpen(false)}>Messages</Link>
                   <Link href="/profile/me" className="text-base font-medium text-foreground py-1.5 border-b border-border/40" onClick={() => setMobileMenuOpen(false)}>My Profile</Link>
                   <Link href="/settings" className="text-base font-medium text-foreground py-1.5 border-b border-border/40" onClick={() => setMobileMenuOpen(false)}>Settings</Link>
+                  <button
+                    onClick={handleLogout}
+                    disabled={logout.isPending}
+                    className="text-base font-medium text-foreground py-1.5 flex items-center gap-2 disabled:opacity-50"
+                    data-testid="btn-logout-mobile"
+                  >
+                    <LogOut className="w-4 h-4" /> Log out
+                  </button>
                 </>
               )}
             </motion.div>
