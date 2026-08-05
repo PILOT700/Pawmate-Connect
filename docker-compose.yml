@@ -1,0 +1,63 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: pawmate-db
+    environment:
+      POSTGRES_DB: ${DB_NAME:-pawmate}
+      POSTGRES_USER: ${DB_USER:-pawmate}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-password}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-pawmate}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - pawmate-network
+
+  api:
+    build:
+      context: .
+      dockerfile: artifacts/api-server/Dockerfile
+    container_name: pawmate-api
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      DATABASE_URL: postgresql://${DB_USER:-pawmate}:${DB_PASSWORD:-password}@postgres:5432/${DB_NAME:-pawmate}
+      COOKIE_SECRET: ${COOKIE_SECRET:-your-secret-key-change-in-production}
+      FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:8080}
+      PORT: 3000
+    ports:
+      - "3000:3000"
+    networks:
+      - pawmate-network
+    restart: unless-stopped
+
+  web:
+    build:
+      context: .
+      dockerfile: artifacts/pawmate/Dockerfile
+    container_name: pawmate-web
+    environment:
+      VITE_API_URL: ${VITE_API_URL:-http://localhost:3000/api}
+    ports:
+      - "8080:8080"
+    networks:
+      - pawmate-network
+    restart: unless-stopped
+    depends_on:
+      - api
+
+volumes:
+  postgres_data:
+
+networks:
+  pawmate-network:
+    driver: bridge

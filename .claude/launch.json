@@ -1,0 +1,15 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "pawmate-frontend",
+      "runtimeExecutable": "corepack",
+      "runtimeArgs": ["pnpm", "--filter", "@workspace/pawmate", "run", "dev"],
+      "port": 8080,
+      "env": {
+        "PORT": "8080",
+        "BASE_PATH": "/"
+      }
+    }
+  ]
+}
