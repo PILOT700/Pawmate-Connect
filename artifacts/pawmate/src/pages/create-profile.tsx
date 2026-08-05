@@ -7,26 +7,91 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Camera, Check } from "lucide-react";
+import {
+  useUpdateMyProfile,
+  useCreateMyPet,
+  type Species,
+  type LookingFor,
+} from "@workspace/api-client-react";
+import { useAuth } from "@/contexts/auth-context";
+import { useToast } from "@/hooks/use-toast";
+import { apiErrorMessage } from "@/lib/api-error";
+
+// The intent picker offers "both", which maps onto two API values.
+const INTENT_TO_LOOKING_FOR: Record<string, LookingFor[]> = {
+  friendship: ["friendship"],
+  relationship: ["relationship"],
+  both: ["friendship", "relationship"],
+};
 
 export default function CreateProfile() {
   const [, setLocation] = useLocation();
+  const { refreshSession } = useAuth();
+  const { toast } = useToast();
   const [step, setStep] = useState(1);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
+  const [name, setName] = useState("");
+  const [age, setAge] = useState("");
+  const [city, setCity] = useState("");
+  // Defaults mirror what the selects show, so an untouched form saves what the
+  // user actually sees.
+  const [intent, setIntent] = useState("both");
+  const [bio, setBio] = useState("");
+  const [petName, setPetName] = useState("");
+  const [petSpecies, setPetSpecies] = useState("dog");
+  const [petBreed, setPetBreed] = useState("");
+  const [petAge, setPetAge] = useState("");
+
+  const updateProfile = useUpdateMyProfile();
+  const createPet = useCreateMyPet();
+  const isSaving = updateProfile.isPending || createPet.isPending;
+
   const lifestyleTags = [
-    "Morning person", "Night owl", "Homebody", "Outdoor lover", 
+    "Morning person", "Night owl", "Homebody", "Outdoor lover",
     "Coffee enthusiast", "Fitness focused", "Foodie", "Dog park regular",
     "Weekend hiker", "Couch cuddler", "Work from home", "Traveler"
   ];
 
   const toggleTag = (tag: string) => {
-    setSelectedTags(prev => 
+    setSelectedTags(prev =>
       prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
     );
   };
 
-  const handleComplete = () => {
-    setLocation("/discover");
+  const handleComplete = async () => {
+    try {
+      await updateProfile.mutateAsync({
+        data: {
+          ...(name ? { firstName: name } : {}),
+          ...(age ? { age: Number(age) } : {}),
+          ...(city ? { city } : {}),
+          ...(bio ? { bio } : {}),
+          ...(intent ? { lookingFor: INTENT_TO_LOOKING_FOR[intent] ?? [] } : {}),
+          lifestyleTags: selectedTags,
+        },
+      });
+
+      if (petName && petSpecies) {
+        await createPet.mutateAsync({
+          data: {
+            name: petName,
+            species: petSpecies as Species,
+            ...(petBreed ? { breed: petBreed } : {}),
+            ...(petAge && !Number.isNaN(Number(petAge)) ? { ageYears: Number(petAge) } : {}),
+          },
+        });
+      }
+
+      await refreshSession();
+      setLocation("/discover");
+    } catch (err) {
+      toast({
+        variant: "destructive",
+        title: "Couldn't save your profile",
+        description: apiErrorMessage(err, "Please try again."),
+      });
+    }
   };
 
   return (
@@ -75,22 +140,22 @@ export default function CreateProfile() {
                 <div className="grid md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <Label htmlFor="name">First Name</Label>
-                    <Input id="name" className="h-12 rounded-xl bg-background" data-testid="input-profile-name" />
+                    <Input id="name" value={name} onChange={(e) => setName(e.target.value)} className="h-12 rounded-xl bg-background" data-testid="input-profile-name" />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="age">Age</Label>
-                    <Input id="age" type="number" className="h-12 rounded-xl bg-background" data-testid="input-profile-age" />
+                    <Input id="age" type="number" value={age} onChange={(e) => setAge(e.target.value)} className="h-12 rounded-xl bg-background" data-testid="input-profile-age" />
                   </div>
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="city">City</Label>
-                  <Input id="city" className="h-12 rounded-xl bg-background" data-testid="input-profile-city" />
+                  <Input id="city" value={city} onChange={(e) => setCity(e.target.value)} className="h-12 rounded-xl bg-background" data-testid="input-profile-city" />
                 </div>
 
                 <div className="space-y-2">
                   <Label>I'm looking for</Label>
-                  <Select defaultValue="both">
+                  <Select value={intent} onValueChange={setIntent}>
                     <SelectTrigger className="h-12 rounded-xl bg-background" data-testid="select-profile-intent">
                       <SelectValue placeholder="Select intent" />
                     </SelectTrigger>
@@ -104,7 +169,7 @@ export default function CreateProfile() {
 
                 <div className="space-y-2">
                   <Label htmlFor="bio">Bio</Label>
-                  <Textarea id="bio" placeholder="A little bit about you..." className="min-h-[120px] rounded-xl bg-background resize-none" data-testid="input-profile-bio" />
+                  <Textarea id="bio" value={bio} onChange={(e) => setBio(e.target.value)} placeholder="A little bit about you..." className="min-h-[120px] rounded-xl bg-background resize-none" data-testid="input-profile-bio" />
                 </div>
 
                 <Button 
@@ -140,11 +205,11 @@ export default function CreateProfile() {
                 <div className="grid md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <Label htmlFor="pet-name">Pet's Name</Label>
-                    <Input id="pet-name" className="h-12 rounded-xl bg-background" data-testid="input-pet-name" />
+                    <Input id="pet-name" value={petName} onChange={(e) => setPetName(e.target.value)} className="h-12 rounded-xl bg-background" data-testid="input-pet-name" />
                   </div>
                   <div className="space-y-2">
                     <Label>Species</Label>
-                    <Select defaultValue="dog">
+                    <Select value={petSpecies} onValueChange={setPetSpecies}>
                       <SelectTrigger className="h-12 rounded-xl bg-background" data-testid="select-pet-species">
                         <SelectValue placeholder="Select species" />
                       </SelectTrigger>
@@ -161,11 +226,11 @@ export default function CreateProfile() {
                 <div className="grid md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <Label htmlFor="pet-breed">Breed</Label>
-                    <Input id="pet-breed" className="h-12 rounded-xl bg-background" data-testid="input-pet-breed" />
+                    <Input id="pet-breed" value={petBreed} onChange={(e) => setPetBreed(e.target.value)} className="h-12 rounded-xl bg-background" data-testid="input-pet-breed" />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="pet-age">Age</Label>
-                    <Input id="pet-age" className="h-12 rounded-xl bg-background" data-testid="input-pet-age" />
+                    <Input id="pet-age" type="number" value={petAge} onChange={(e) => setPetAge(e.target.value)} placeholder="Years" className="h-12 rounded-xl bg-background" data-testid="input-pet-age" />
                   </div>
                 </div>
 
@@ -219,8 +284,8 @@ export default function CreateProfile() {
                   <Button variant="outline" className="h-14 rounded-full px-8 border-border" onClick={() => setStep(2)} data-testid="btn-prev-step">
                     Back
                   </Button>
-                  <Button className="flex-1 h-14 rounded-full bg-primary text-primary-foreground text-lg" onClick={handleComplete} data-testid="btn-complete-profile">
-                    Complete Profile
+                  <Button className="flex-1 h-14 rounded-full bg-primary text-primary-foreground text-lg" onClick={handleComplete} disabled={isSaving} data-testid="btn-complete-profile">
+                    {isSaving ? "Saving…" : "Complete Profile"}
                   </Button>
                 </div>
               </motion.div>

@@ -3,83 +3,89 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Heart, MapPin, X, Bookmark, Sparkles, MessageCircle, RefreshCw, ChevronRight } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { MatchCelebrationModal } from "@/components/match-celebration-modal";
+import {
+  useListDiscoverProfiles,
+  useListMyPets,
+  useCreateLike,
+  useCreatePass,
+  type DiscoverProfile,
+  type Species,
+  type LookingFor,
+} from "@workspace/api-client-react";
+import { useAuth } from "@/contexts/auth-context";
+import { useToast } from "@/hooks/use-toast";
+import { apiErrorMessage } from "@/lib/api-error";
 
-const mockProfiles = [
-  {
-    id: "1",
-    name: "Eleanor",
-    age: 31,
-    city: "San Francisco",
-    image: "/profile1.png",
-    pet: { name: "Oliver", species: "Cat", breed: "Orange Tabby", image: "/pet2.png" },
-    bio: "Slow mornings, strong coffee, and finding the sunniest spot in the apartment. Looking for someone to share quiet Sundays with."
-  },
-  {
-    id: "2",
-    name: "James",
-    age: 34,
-    city: "Seattle",
-    image: "/profile2.png",
-    pet: { name: "Buster", species: "Dog", breed: "French Bulldog", image: "/pet1.png" },
-    bio: "Architect by day, amateur chef by night. Buster comes everywhere with me. Hoping to find a hiking partner."
-  },
-  {
-    id: "3",
-    name: "Maya",
-    age: 28,
-    city: "Portland",
-    image: "/profile3.png",
-    pet: { name: "Luna", species: "Dog", breed: "Golden Retriever", image: "/pet1.png" },
-    bio: "Always looking for the next adventure. Luna is the goodest girl and loves the beach."
-  },
-  {
-    id: "4",
-    name: "David",
-    age: 36,
-    city: "Austin",
-    image: "/profile2.png",
-    pet: { name: "Milo", species: "Dog", breed: "Mixed", image: "/pet1.png" },
-    bio: "Tech worker who unplugs by running trails. Milo keeps my pace honest."
-  },
-  {
-    id: "5",
-    name: "Chloe",
-    age: 29,
-    city: "Denver",
-    image: "/profile1.png",
-    pet: { name: "Cleo", species: "Cat", breed: "Siamese", image: "/pet2.png" },
-    bio: "Bookstore regular. Cleo thinks she runs the place. I just pay the rent."
-  },
-  {
-    id: "6",
-    name: "Marcus",
-    age: 33,
-    city: "Chicago",
-    image: "/profile3.png",
-    pet: { name: "Rex", species: "Dog", breed: "Labrador", image: "/pet1.png" },
-    bio: "Just looking for someone who loves dogs as much as I do."
-  }
+const FALLBACK_IMAGE = "/profile1.png";
+const FALLBACK_PET_IMAGE = "/pet1.png";
+
+const ICE_BREAKERS = [
+  "If your pet could plan your perfect first date, what would it look like?",
+  "What's one thing your pet would want a date to know about you?",
+  "Coffee walk or brunch — what would your pet pick?",
 ];
 
-const DAILY_SPARK = {
-  id: "spark",
-  name: "Sophia",
-  age: 32,
-  city: "New York",
-  image: "/profile1.png",
-  bio: "Yoga teacher, terrible cook, great at finding the best brunch spots in the city. Noodle and I have a morning ritual — she gets the sunny patch on the rug, I get the coffee.",
-  lifestyle: ["Morning person", "Foodie", "Creative", "Outdoorsy"],
-  lookingFor: "Friendship & connection",
-  pet: { name: "Noodle", breed: "Scottish Fold", image: "/pet2.png" },
-  prompt: "If your pet could plan your perfect first date, what would it look like?",
-  compatScore: 88,
+type SparkState = "visible" | "liked" | "dismissed";
+
+interface SparkView {
+  id: string;
+  name: string;
+  age: number | null;
+  city: string | null;
+  image: string;
+  bio: string | null;
+  lifestyle: string[];
+  lookingForLabel: string;
+  pet?: { name: string; breed: string | null; image: string };
+  prompt: string;
+  compatScore: number;
+}
+
+// Same weighting as components/compatibility-score.tsx, fed with the real
+// logged-in user's data instead of that component's hardcoded baseline.
+const PET_COMPAT: Record<string, Record<string, number>> = {
+  dog: { dog: 92, cat: 72, rabbit: 75, bird: 65, fish: 58, other: 68 },
+  cat: { cat: 95, dog: 72, rabbit: 80, bird: 68, fish: 60, other: 70 },
+  rabbit: { rabbit: 90, cat: 80, dog: 75, bird: 70, fish: 62, other: 72 },
+  bird: { bird: 88, cat: 68, dog: 65, rabbit: 70, fish: 64, other: 66 },
+  fish: { fish: 85, cat: 60, dog: 58, rabbit: 62, bird: 64, other: 60 },
+  other: { other: 80, cat: 70, dog: 68, rabbit: 72, bird: 66, fish: 60 },
 };
 
-type Profile = typeof mockProfiles[number];
+function calcCompatScore(opts: {
+  myPetSpecies?: Species;
+  myLifestyle: string[];
+  myLookingFor: LookingFor[];
+  theirPetSpecies?: Species;
+  theirLifestyle: string[];
+  theirLookingFor: LookingFor[];
+}): number {
+  const petScore =
+    opts.myPetSpecies && opts.theirPetSpecies
+      ? (PET_COMPAT[opts.myPetSpecies]?.[opts.theirPetSpecies] ?? 65)
+      : 65;
+  const commonLifestyle = opts.theirLifestyle.filter((t) => opts.myLifestyle.includes(t)).length;
+  const lifestyleScore = opts.theirLifestyle.length
+    ? Math.round(50 + (commonLifestyle / Math.max(opts.myLifestyle.length, opts.theirLifestyle.length, 1)) * 50)
+    : 60;
+  const sharedIntent = opts.theirLookingFor.some((v) => opts.myLookingFor.includes(v));
+  const intentScore = sharedIntent ? 92 : 70;
+  return Math.min(Math.round(petScore * 0.4 + lifestyleScore * 0.35 + intentScore * 0.25), 99);
+}
 
-type SparkState = "visible" | "liked" | "dismissed";
+function lookingForLabel(values: LookingFor[]): string {
+  if (values.length === 0) return "Open to connecting";
+  const labels: Record<LookingFor, string> = {
+    friendship: "Friendship",
+    relationship: "Relationship",
+    playdates: "Pet playdates",
+    casual: "Casual meetups",
+    open: "Open to anything",
+  };
+  return values.map((v) => labels[v]).join(" & ");
+}
 
 function DailySparkCard({
   spark,
@@ -87,7 +93,7 @@ function DailySparkCard({
   onLike,
   onDismiss,
 }: {
-  spark: typeof DAILY_SPARK;
+  spark: SparkView;
   state: SparkState;
   onLike: () => void;
   onDismiss: () => void;
@@ -145,20 +151,24 @@ function DailySparkCard({
 
                   {/* Name overlay on mobile */}
                   <div className="md:hidden absolute bottom-0 left-0 right-0 p-5 text-white">
-                    <h3 className="font-serif text-2xl font-semibold">{spark.name}, {spark.age}</h3>
-                    <div className="flex items-center gap-1 text-white/80 text-sm mt-0.5">
-                      <MapPin className="w-3.5 h-3.5" /> {spark.city}
-                    </div>
+                    <h3 className="font-serif text-2xl font-semibold">{spark.name}{spark.age ? `, ${spark.age}` : ""}</h3>
+                    {spark.city && (
+                      <div className="flex items-center gap-1 text-white/80 text-sm mt-0.5">
+                        <MapPin className="w-3.5 h-3.5" /> {spark.city}
+                      </div>
+                    )}
                   </div>
 
                   {/* Pet badge */}
-                  <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-md rounded-2xl px-3 py-1.5 flex items-center gap-2 shadow-md">
-                    <img src={spark.pet.image} alt={spark.pet.name} className="w-6 h-6 rounded-full object-cover border border-border/30" />
-                    <div>
-                      <p className="text-[11px] font-semibold text-foreground leading-none">{spark.pet.name}</p>
-                      <p className="text-[10px] text-muted-foreground leading-none mt-0.5">{spark.pet.breed}</p>
+                  {spark.pet && (
+                    <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-md rounded-2xl px-3 py-1.5 flex items-center gap-2 shadow-md">
+                      <img src={spark.pet.image} alt={spark.pet.name} className="w-6 h-6 rounded-full object-cover border border-border/30" />
+                      <div>
+                        <p className="text-[11px] font-semibold text-foreground leading-none">{spark.pet.name}</p>
+                        {spark.pet.breed && <p className="text-[10px] text-muted-foreground leading-none mt-0.5">{spark.pet.breed}</p>}
+                      </div>
                     </div>
-                  </div>
+                  )}
 
                   {/* Compat badge */}
                   <div className="absolute top-4 right-4 bg-emerald-500 text-white rounded-full px-2.5 py-1 text-[11px] font-bold shadow-md flex items-center gap-1">
@@ -172,16 +182,20 @@ function DailySparkCard({
               <div className="flex-1 p-6 md:p-8 flex flex-col justify-between gap-6">
                 {/* Name (desktop only) */}
                 <div className="hidden md:block">
-                  <h3 className="font-serif text-3xl font-semibold text-foreground">{spark.name}, {spark.age}</h3>
-                  <div className="flex items-center gap-1.5 text-muted-foreground text-sm mt-1.5">
-                    <MapPin className="w-4 h-4" /> {spark.city}
-                  </div>
+                  <h3 className="font-serif text-3xl font-semibold text-foreground">{spark.name}{spark.age ? `, ${spark.age}` : ""}</h3>
+                  {spark.city && (
+                    <div className="flex items-center gap-1.5 text-muted-foreground text-sm mt-1.5">
+                      <MapPin className="w-4 h-4" /> {spark.city}
+                    </div>
+                  )}
                 </div>
 
                 {/* Bio */}
-                <p className="text-muted-foreground text-sm leading-relaxed line-clamp-3">
-                  "{spark.bio}"
-                </p>
+                {spark.bio && (
+                  <p className="text-muted-foreground text-sm leading-relaxed line-clamp-3">
+                    "{spark.bio}"
+                  </p>
+                )}
 
                 {/* Ice-breaker prompt */}
                 <div className="bg-amber-50 border border-amber-200/70 rounded-2xl p-4">
@@ -213,7 +227,7 @@ function DailySparkCard({
                       className="w-full h-11 rounded-full bg-accent text-accent-foreground hover:bg-accent/90 border border-accent-foreground/10 shadow-sm font-medium text-sm"
                       data-testid="btn-spark-like"
                     >
-                      <Heart className="w-4 h-4 mr-2 fill-current" /> Like Sophia
+                      <Heart className="w-4 h-4 mr-2 fill-current" /> Like {spark.name}
                     </Button>
                   </motion.div>
                   <Link href="/messages" className="flex-1" data-testid="btn-spark-message">
@@ -248,7 +262,7 @@ function DailySparkCard({
             <Heart className="w-4 h-4 text-rose-500 fill-rose-500" />
           </div>
           <p className="text-sm text-rose-700 font-medium flex-1">
-            You liked <span className="font-semibold">Sophia</span> — fingers crossed for a mutual match! 🐾
+            You liked <span className="font-semibold">{spark.name}</span> — fingers crossed for a mutual match! 🐾
           </p>
           <button
             onClick={onDismiss}
@@ -264,44 +278,132 @@ function DailySparkCard({
 }
 
 export default function Discover() {
-  const [profiles, setProfiles] = useState(mockProfiles);
+  const { user } = useAuth();
+  const { toast } = useToast();
+
+  const [speciesFilter, setSpeciesFilter] = useState("all");
+  const [intentFilter, setIntentFilter] = useState("both");
+
+  const { data, isLoading, isError, refetch } = useListDiscoverProfiles({
+    pageSize: 50,
+    ...(speciesFilter !== "all" ? { species: speciesFilter as Species } : {}),
+    ...(intentFilter !== "both" ? { lookingFor: intentFilter as LookingFor } : {}),
+  });
+  const { data: myPets } = useListMyPets();
+
+  const [profiles, setProfiles] = useState<DiscoverProfile[] | null>(null);
   const [likedIds, setLikedIds] = useState<Set<string>>(new Set());
-  const [matchProfile, setMatchProfile] = useState<Profile | null>(null);
+  const [matchProfile, setMatchProfile] = useState<DiscoverProfile | null>(null);
   const [matchOpen, setMatchOpen] = useState(false);
   const [sparkState, setSparkState] = useState<SparkState>("visible");
+  const [sparkPrompt] = useState(() => ICE_BREAKERS[Math.floor(Math.random() * ICE_BREAKERS.length)]!);
 
-  const handleSkip = (id: string) => {
-    setProfiles(prev => prev.filter(p => p.id !== id));
+  const createLike = useCreateLike();
+  const createPass = useCreatePass();
+
+  // Re-syncs from the server on initial load and whenever the filters change
+  // a new query resolves — local swipes (skip/like) filter this copy so the
+  // card-removal animation still works without a refetch on every tap.
+  useEffect(() => {
+    if (data) setProfiles(data.items);
+  }, [data]);
+
+  const handleSkip = async (id: string) => {
+    setProfiles((prev) => prev?.filter((p) => p.id !== id) ?? prev);
+    try {
+      await createPass.mutateAsync({ data: { passedUserId: id } });
+    } catch (err) {
+      toast({
+        variant: "destructive",
+        title: "Couldn't skip that profile",
+        description: apiErrorMessage(err, "Please try again."),
+      });
+    }
   };
 
-  const handleLike = (profile: Profile) => {
-    setLikedIds(prev => new Set([...prev, profile.id]));
-    const isMatch = Math.random() < 0.6;
-    if (isMatch) {
-      setTimeout(() => {
-        setMatchProfile(profile);
-        setMatchOpen(true);
-      }, 420);
-    } else {
-      setProfiles(prev => prev.filter(p => p.id !== profile.id));
+  const handleLike = async (profile: DiscoverProfile) => {
+    setLikedIds((prev) => new Set([...prev, profile.id]));
+    try {
+      const result = await createLike.mutateAsync({ data: { likedUserId: profile.id } });
+      if (result.isMatch) {
+        setTimeout(() => {
+          setMatchProfile(profile);
+          setMatchOpen(true);
+        }, 420);
+      } else {
+        setProfiles((prev) => prev?.filter((p) => p.id !== profile.id) ?? prev);
+      }
+    } catch (err) {
+      setLikedIds((prev) => {
+        const next = new Set(prev);
+        next.delete(profile.id);
+        return next;
+      });
+      toast({
+        variant: "destructive",
+        title: "Couldn't like that profile",
+        description: apiErrorMessage(err, "Please try again."),
+      });
     }
   };
 
   const handleCloseMatch = () => {
     setMatchOpen(false);
     if (matchProfile) {
-      setProfiles(prev => prev.filter(p => p.id !== matchProfile.id));
+      setProfiles((prev) => prev?.filter((p) => p.id !== matchProfile.id) ?? prev);
       setMatchProfile(null);
     }
   };
 
+  const [sparkCandidate, ...gridProfiles] = profiles ?? [];
+
+  const sparkView: SparkView | null = sparkCandidate
+    ? {
+        id: sparkCandidate.id,
+        name: sparkCandidate.firstName,
+        age: sparkCandidate.age ?? null,
+        city: sparkCandidate.city ?? null,
+        image: sparkCandidate.avatarUrl || FALLBACK_IMAGE,
+        bio: sparkCandidate.bio ?? null,
+        lifestyle: sparkCandidate.lifestyleTags,
+        lookingForLabel: lookingForLabel(sparkCandidate.lookingFor),
+        pet: sparkCandidate.pets[0]
+          ? {
+              name: sparkCandidate.pets[0].name,
+              breed: sparkCandidate.pets[0].breed ?? null,
+              image: sparkCandidate.pets[0].photoUrl || FALLBACK_PET_IMAGE,
+            }
+          : undefined,
+        prompt: sparkPrompt,
+        compatScore: calcCompatScore({
+          myPetSpecies: myPets?.[0]?.species,
+          myLifestyle: user?.lifestyleTags ?? [],
+          myLookingFor: user?.lookingFor ?? [],
+          theirPetSpecies: sparkCandidate.pets[0]?.species,
+          theirLifestyle: sparkCandidate.lifestyleTags,
+          theirLookingFor: sparkCandidate.lookingFor,
+        }),
+      }
+    : null;
+
   const handleSparkLike = () => {
+    if (!sparkCandidate) return;
     setSparkState("liked");
+    void handleLike(sparkCandidate);
   };
 
   const handleSparkDismiss = () => {
     setSparkState("dismissed");
   };
+
+  const matchModalProfile = matchProfile
+    ? {
+        id: matchProfile.id,
+        name: matchProfile.firstName,
+        image: matchProfile.avatarUrl || FALLBACK_IMAGE,
+        pet: { name: matchProfile.pets[0]?.name ?? "their pet" },
+      }
+    : null;
 
   return (
     <div className="min-h-screen bg-background pb-24">
@@ -309,7 +411,7 @@ export default function Discover() {
       <div className="sticky top-[64px] z-40 bg-background/90 backdrop-blur-md border-b border-border py-4">
         <div className="container mx-auto px-4 md:px-8">
           <div className="flex flex-row overflow-x-auto no-scrollbar pb-2 -mb-2 gap-4 items-center">
-            <Select defaultValue="all">
+            <Select value={speciesFilter} onValueChange={setSpeciesFilter}>
               <SelectTrigger className="w-[140px] shrink-0 rounded-full bg-card" data-testid="filter-species">
                 <SelectValue placeholder="Species" />
               </SelectTrigger>
@@ -333,7 +435,7 @@ export default function Discover() {
               </SelectContent>
             </Select>
 
-            <Select defaultValue="both">
+            <Select value={intentFilter} onValueChange={setIntentFilter}>
               <SelectTrigger className="w-[160px] rounded-full bg-card" data-testid="filter-intent">
                 <SelectValue placeholder="Looking for" />
               </SelectTrigger>
@@ -359,133 +461,160 @@ export default function Discover() {
 
       {/* Main content */}
       <div className="container mx-auto px-4 md:px-8 mt-8">
-
-        {/* Daily Spark */}
-        {sparkState !== "dismissed" && (
-          <DailySparkCard
-            spark={DAILY_SPARK}
-            state={sparkState}
-            onLike={handleSparkLike}
-            onDismiss={handleSparkDismiss}
-          />
-        )}
-
-        {/* Section divider when both spark + grid are visible */}
-        {sparkState === "visible" && profiles.length > 0 && (
-          <div className="flex items-center gap-4 mb-8">
-            <div className="flex-1 h-px bg-border" />
-            <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Discover more</span>
-            <div className="flex-1 h-px bg-border" />
+        {isLoading && profiles === null ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="rounded-[2rem] border border-card-border bg-card overflow-hidden animate-pulse">
+                <div className="aspect-[4/5] bg-secondary" />
+                <div className="p-6 space-y-3">
+                  <div className="h-3 bg-secondary rounded-full w-full" />
+                  <div className="h-3 bg-secondary rounded-full w-2/3" />
+                </div>
+              </div>
+            ))}
           </div>
-        )}
-
-        {/* Grid */}
-        {profiles.length === 0 ? (
+        ) : isError ? (
           <div className="text-center py-24">
-            <div className="w-20 h-20 bg-secondary rounded-full flex items-center justify-center mx-auto mb-4">
-              <Heart className="w-8 h-8 text-muted-foreground" />
-            </div>
-            <h2 className="font-serif text-2xl text-foreground mb-2">You're all caught up!</h2>
-            <p className="text-muted-foreground">Check back later for more potential matches.</p>
-            <Button
-              className="mt-6 rounded-full"
-              onClick={() => { setProfiles(mockProfiles); setLikedIds(new Set()); }}
-              data-testid="btn-refresh-profiles"
-            >
-              Refresh Profiles
+            <p className="text-muted-foreground mb-4">Couldn't load profiles right now.</p>
+            <Button variant="outline" className="rounded-full" onClick={() => refetch()} data-testid="btn-retry-discover">
+              Try again
             </Button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <AnimatePresence mode="popLayout">
-              {profiles.map((profile, idx) => {
-                const isLiked = likedIds.has(profile.id);
-                return (
-                  <motion.div
-                    key={profile.id}
-                    layout
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.88, transition: { duration: 0.25 } }}
-                    transition={{ duration: 0.4, delay: idx * 0.05 }}
-                    className="group relative bg-card rounded-[2rem] border border-card-border overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col"
-                  >
-                    <Link href={`/profile/${profile.id}`} className="block relative aspect-[4/5] overflow-hidden" data-testid={`link-profile-${profile.id}`}>
-                      <img
-                        src={profile.image}
-                        alt={profile.name}
-                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-transparent" />
+          <>
+            {/* Daily Spark */}
+            {sparkView && sparkState !== "dismissed" && (
+              <DailySparkCard
+                spark={sparkView}
+                state={sparkState}
+                onLike={handleSparkLike}
+                onDismiss={handleSparkDismiss}
+              />
+            )}
 
-                      <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
-                        <h3 className="font-serif text-3xl font-medium mb-1">{profile.name}, {profile.age}</h3>
-                        <div className="flex items-center text-white/90 text-sm gap-1">
-                          <MapPin className="w-4 h-4" />
-                          <span>{profile.city}</span>
+            {/* Section divider when both spark + grid are visible */}
+            {sparkView && sparkState === "visible" && gridProfiles.length > 0 && (
+              <div className="flex items-center gap-4 mb-8">
+                <div className="flex-1 h-px bg-border" />
+                <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Discover more</span>
+                <div className="flex-1 h-px bg-border" />
+              </div>
+            )}
+
+            {/* Grid */}
+            {gridProfiles.length === 0 && !sparkView ? (
+              <div className="text-center py-24">
+                <div className="w-20 h-20 bg-secondary rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Heart className="w-8 h-8 text-muted-foreground" />
+                </div>
+                <h2 className="font-serif text-2xl text-foreground mb-2">You're all caught up!</h2>
+                <p className="text-muted-foreground">Check back later for more potential matches.</p>
+                <Button
+                  className="mt-6 rounded-full"
+                  onClick={() => { setLikedIds(new Set()); refetch(); }}
+                  data-testid="btn-refresh-profiles"
+                >
+                  Refresh Profiles
+                </Button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <AnimatePresence mode="popLayout">
+                  {gridProfiles.map((profile, idx) => {
+                    const isLiked = likedIds.has(profile.id);
+                    const pet = profile.pets[0];
+                    return (
+                      <motion.div
+                        key={profile.id}
+                        layout
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.88, transition: { duration: 0.25 } }}
+                        transition={{ duration: 0.4, delay: idx * 0.05 }}
+                        className="group relative bg-card rounded-[2rem] border border-card-border overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col"
+                      >
+                        <Link href={`/profile/${profile.id}`} className="block relative aspect-[4/5] overflow-hidden" data-testid={`link-profile-${profile.id}`}>
+                          <img
+                            src={profile.avatarUrl || FALLBACK_IMAGE}
+                            alt={profile.firstName}
+                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-transparent" />
+
+                          <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
+                            <h3 className="font-serif text-3xl font-medium mb-1">{profile.firstName}{profile.age ? `, ${profile.age}` : ""}</h3>
+                            {profile.city && (
+                              <div className="flex items-center text-white/90 text-sm gap-1">
+                                <MapPin className="w-4 h-4" />
+                                <span>{profile.city}</span>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Pet Badge */}
+                          {pet && (
+                            <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-md rounded-2xl p-2 pr-4 flex items-center gap-3 shadow-lg">
+                              <div className="w-10 h-10 rounded-full overflow-hidden border border-border/50">
+                                <img src={pet.photoUrl || FALLBACK_PET_IMAGE} alt={pet.name} className="w-full h-full object-cover" />
+                              </div>
+                              <div>
+                                <p className="text-xs font-semibold text-foreground leading-tight">{pet.name}</p>
+                                {pet.breed && <p className="text-[10px] text-muted-foreground leading-tight">{pet.breed}</p>}
+                              </div>
+                            </div>
+                          )}
+                        </Link>
+
+                        <div className="p-6 flex-grow flex flex-col justify-between">
+                          {profile.bio && <p className="text-muted-foreground text-sm line-clamp-3 mb-6">"{profile.bio}"</p>}
+
+                          <div className="flex items-center justify-between gap-4 mt-auto">
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="w-14 h-14 rounded-full border-border hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30 transition-colors"
+                              onClick={() => handleSkip(profile.id)}
+                              data-testid={`btn-skip-${profile.id}`}
+                            >
+                              <X className="w-6 h-6" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="w-12 h-12 rounded-full border-border hover:bg-secondary transition-colors"
+                              data-testid={`btn-save-${profile.id}`}
+                            >
+                              <Bookmark className="w-5 h-5 text-foreground" />
+                            </Button>
+                            <motion.div whileTap={{ scale: 0.88 }} whileHover={{ scale: 1.06 }}>
+                              <Button
+                                className={`w-14 h-14 rounded-full shadow-sm transition-colors ${
+                                  isLiked
+                                    ? "bg-rose-400 text-white hover:bg-rose-500 border border-rose-300"
+                                    : "bg-accent text-accent-foreground hover:bg-accent/90 border border-accent-foreground/10"
+                                }`}
+                                onClick={() => handleLike(profile)}
+                                data-testid={`btn-like-${profile.id}`}
+                              >
+                                <Heart className={`w-6 h-6 ${isLiked ? "fill-white" : "fill-current"}`} />
+                              </Button>
+                            </motion.div>
+                          </div>
                         </div>
-                      </div>
-
-                      {/* Pet Badge */}
-                      <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-md rounded-2xl p-2 pr-4 flex items-center gap-3 shadow-lg">
-                        <div className="w-10 h-10 rounded-full overflow-hidden border border-border/50">
-                          <img src={profile.pet.image} alt={profile.pet.name} className="w-full h-full object-cover" />
-                        </div>
-                        <div>
-                          <p className="text-xs font-semibold text-foreground leading-tight">{profile.pet.name}</p>
-                          <p className="text-[10px] text-muted-foreground leading-tight">{profile.pet.breed}</p>
-                        </div>
-                      </div>
-                    </Link>
-
-                    <div className="p-6 flex-grow flex flex-col justify-between">
-                      <p className="text-muted-foreground text-sm line-clamp-3 mb-6">"{profile.bio}"</p>
-
-                      <div className="flex items-center justify-between gap-4 mt-auto">
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="w-14 h-14 rounded-full border-border hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30 transition-colors"
-                          onClick={() => handleSkip(profile.id)}
-                          data-testid={`btn-skip-${profile.id}`}
-                        >
-                          <X className="w-6 h-6" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="w-12 h-12 rounded-full border-border hover:bg-secondary transition-colors"
-                          data-testid={`btn-save-${profile.id}`}
-                        >
-                          <Bookmark className="w-5 h-5 text-foreground" />
-                        </Button>
-                        <motion.div whileTap={{ scale: 0.88 }} whileHover={{ scale: 1.06 }}>
-                          <Button
-                            className={`w-14 h-14 rounded-full shadow-sm transition-colors ${
-                              isLiked
-                                ? "bg-rose-400 text-white hover:bg-rose-500 border border-rose-300"
-                                : "bg-accent text-accent-foreground hover:bg-accent/90 border border-accent-foreground/10"
-                            }`}
-                            onClick={() => handleLike(profile)}
-                            data-testid={`btn-like-${profile.id}`}
-                          >
-                            <Heart className={`w-6 h-6 ${isLiked ? "fill-white" : "fill-current"}`} />
-                          </Button>
-                        </motion.div>
-                      </div>
-                    </div>
-                  </motion.div>
-                );
-              })}
-            </AnimatePresence>
-          </div>
+                      </motion.div>
+                    );
+                  })}
+                </AnimatePresence>
+              </div>
+            )}
+          </>
         )}
       </div>
 
       {/* Match Celebration Modal */}
       <MatchCelebrationModal
         open={matchOpen}
-        profile={matchProfile}
+        profile={matchModalProfile}
         onClose={handleCloseMatch}
       />
     </div>

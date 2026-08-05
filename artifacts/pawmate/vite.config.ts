@@ -66,6 +66,15 @@ export default defineConfig({
     fs: {
       strict: true,
     },
+    // Proxying keeps API calls same-origin so the session cookie is sent:
+    // the generated client's fetch never sets `credentials`, and fetch's
+    // default ("same-origin") drops cookies on cross-origin requests.
+    proxy: {
+      "/api": {
+        target: process.env.API_PROXY_TARGET ?? "http://localhost:5050",
+        changeOrigin: true,
+      },
+    },
   },
   preview: {
     port,

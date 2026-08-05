@@ -1,19 +1,63 @@
 import { useState } from "react";
-import { Link, useLocation } from "wouter";
+import { Link, useLocation, useSearch } from "wouter";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { PawPrint, Eye, EyeOff } from "lucide-react";
+import { PawPrint, Eye, EyeOff, AlertCircle } from "lucide-react";
 import { motion } from "framer-motion";
+import { useLoginUser, useRegisterUser } from "@workspace/api-client-react";
+import { useAuth } from "@/contexts/auth-context";
+import { apiErrorMessage } from "@/lib/api-error";
 
 export default function Auth() {
   const [, setLocation] = useLocation();
+  const search = useSearch();
+  const { refreshSession } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
+  const [tab, setTab] = useState(
+    new URLSearchParams(search).get("tab") === "register" ? "register" : "signin",
+  );
 
-  const handleAuth = (e: React.FormEvent) => {
+  const [signinEmail, setSigninEmail] = useState("");
+  const [signinPassword, setSigninPassword] = useState("");
+  const [registerName, setRegisterName] = useState("");
+  const [registerEmail, setRegisterEmail] = useState("");
+  const [registerPassword, setRegisterPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+
+  const login = useLoginUser();
+  const register = useRegisterUser();
+  const isSubmitting = login.isPending || register.isPending;
+
+  const handleSignin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLocation("/discover");
+    setError(null);
+
+    try {
+      const user = await login.mutateAsync({
+        data: { email: signinEmail, password: signinPassword },
+      });
+      await refreshSession();
+      setLocation(user.onboardingCompletedAt ? "/discover" : "/onboarding");
+    } catch (err) {
+      setError(apiErrorMessage(err, "Could not sign in"));
+    }
+  };
+
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+
+    try {
+      await register.mutateAsync({
+        data: { email: registerEmail, password: registerPassword, firstName: registerName },
+      });
+      await refreshSession();
+      setLocation("/onboarding");
+    } catch (err) {
+      setError(apiErrorMessage(err, "Could not create account"));
+    }
   };
 
   return (
@@ -32,14 +76,24 @@ export default function Auth() {
           <p className="text-muted-foreground mt-2 text-sm">Find connections that start with paws.</p>
         </div>
 
-        <Tabs defaultValue="signin" className="w-full">
+        {error && (
+          <div
+            className="mb-6 flex items-start gap-2 rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+            data-testid="auth-error"
+          >
+            <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+            <span>{error}</span>
+          </div>
+        )}
+
+        <Tabs value={tab} onValueChange={(value) => { setTab(value); setError(null); }} className="w-full">
           <TabsList className="grid w-full grid-cols-2 mb-8 h-11 bg-secondary rounded-full p-1">
             <TabsTrigger value="signin" className="rounded-full text-sm" data-testid="tab-signin">Sign In</TabsTrigger>
             <TabsTrigger value="register" className="rounded-full text-sm" data-testid="tab-register">Create Account</TabsTrigger>
           </TabsList>
 
           <TabsContent value="signin">
-            <form onSubmit={handleAuth} className="space-y-4">
+            <form onSubmit={handleSignin} className="space-y-4">
               <div className="space-y-1.5">
                 <Label htmlFor="signin-email" className="text-sm font-medium">Email</Label>
                 <Input
@@ -48,6 +102,8 @@ export default function Auth() {
                   placeholder="hello@example.com"
                   className="h-11 bg-background rounded-xl"
                   required
+                  value={signinEmail}
+                  onChange={(e) => setSigninEmail(e.target.value)}
                   data-testid="input-signin-email"
                 />
               </div>
@@ -62,6 +118,8 @@ export default function Auth() {
                     type={showPassword ? "text" : "password"}
                     className="h-11 bg-background rounded-xl pr-11"
                     required
+                    value={signinPassword}
+                    onChange={(e) => setSigninPassword(e.target.value)}
                     data-testid="input-signin-password"
                   />
                   <button
@@ -77,16 +135,17 @@ export default function Auth() {
               </div>
               <Button
                 type="submit"
+                disabled={isSubmitting}
                 className="w-full h-11 rounded-xl bg-primary text-primary-foreground text-sm font-medium mt-2"
                 data-testid="btn-signin-submit"
               >
-                Sign In
+                {login.isPending ? "Signing in…" : "Sign In"}
               </Button>
             </form>
           </TabsContent>
 
           <TabsContent value="register">
-            <form onSubmit={handleAuth} className="space-y-4">
+            <form onSubmit={handleRegister} className="space-y-4">
               <div className="space-y-1.5">
                 <Label htmlFor="register-name" className="text-sm font-medium">First Name</Label>
                 <Input
@@ -94,6 +153,8 @@ export default function Auth() {
                   placeholder="Sarah"
                   className="h-11 bg-background rounded-xl"
                   required
+                  value={registerName}
+                  onChange={(e) => setRegisterName(e.target.value)}
                   data-testid="input-register-name"
                 />
               </div>
@@ -105,6 +166,8 @@ export default function Auth() {
                   placeholder="hello@example.com"
                   className="h-11 bg-background rounded-xl"
                   required
+                  value={registerEmail}
+                  onChange={(e) => setRegisterEmail(e.target.value)}
                   data-testid="input-register-email"
                 />
               </div>
@@ -117,6 +180,9 @@ export default function Auth() {
                     placeholder="At least 6 characters"
                     className="h-11 bg-background rounded-xl pr-11"
                     required
+                    minLength={6}
+                    value={registerPassword}
+                    onChange={(e) => setRegisterPassword(e.target.value)}
                     data-testid="input-register-password"
                   />
                   <button
@@ -136,10 +202,11 @@ export default function Auth() {
               </p>
               <Button
                 type="submit"
+                disabled={isSubmitting}
                 className="w-full h-11 rounded-xl bg-primary text-primary-foreground text-sm font-medium mt-2"
                 data-testid="btn-register-submit"
               >
-                Create Account
+                {register.isPending ? "Creating account…" : "Create Account"}
               </Button>
             </form>
           </TabsContent>

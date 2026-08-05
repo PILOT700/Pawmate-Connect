@@ -3,6 +3,14 @@ import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { PawPrint, Dog, Cat, Rabbit, Bird, Fish, Heart, Users, Coffee, Sparkles, MapPin, ChevronRight, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  useUpdateMyPreferences,
+  type Species,
+  type LookingFor,
+} from "@workspace/api-client-react";
+import { useAuth } from "@/contexts/auth-context";
+import { useToast } from "@/hooks/use-toast";
+import { apiErrorMessage } from "@/lib/api-error";
 
 const TOTAL_STEPS = 3;
 
@@ -48,6 +56,8 @@ const variants = {
 
 export default function Onboarding() {
   const [, navigate] = useLocation();
+  const { refreshSession } = useAuth();
+  const { toast } = useToast();
   const [step, setStep] = useState(0);
   const [dir, setDir] = useState(1);
 
@@ -55,6 +65,33 @@ export default function Onboarding() {
   const [lookingFor, setLookingFor] = useState<string[]>([]);
   const [distance, setDistance] = useState(25);
   const [ageRange, setAgeRange] = useState([25, 55]);
+
+  const savePreferences = useUpdateMyPreferences();
+
+  // PET_OPTIONS / LOOKING_FOR_OPTIONS ids are already the API enum values.
+  const handleFinish = async () => {
+    try {
+      await savePreferences.mutateAsync({
+        data: {
+          petTypePrefs: pets as Species[],
+          lookingForPrefs: lookingFor as LookingFor[],
+          maxDistanceMiles: distance,
+          ageRangeMin: ageRange[0]!,
+          ageRangeMax: ageRange[1]!,
+        },
+      });
+      // The server stamps onboardingCompletedAt on this call, so the cached
+      // session must be refreshed before we route off it.
+      await refreshSession();
+      navigate("/create-profile");
+    } catch (err) {
+      toast({
+        variant: "destructive",
+        title: "Couldn't save your preferences",
+        description: apiErrorMessage(err, "Please try again."),
+      });
+    }
+  };
 
   const go = (next: number) => {
     setDir(next > step ? 1 : -1);
@@ -338,12 +375,13 @@ export default function Onboarding() {
             </Button>
           ) : (
             <Button
-              onClick={() => navigate("/discover")}
+              onClick={handleFinish}
+              disabled={savePreferences.isPending}
               className="flex-1 h-12 rounded-full bg-primary text-primary-foreground shadow-sm"
               data-testid="btn-finish"
             >
               <Sparkles className="w-4 h-4 mr-2" />
-              Find my matches
+              {savePreferences.isPending ? "Saving…" : "Find my matches"}
             </Button>
           )}
         </div>

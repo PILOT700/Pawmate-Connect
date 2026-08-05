@@ -7,9 +7,41 @@ info:
 servers:
   - url: /api
     description: Base API path
+security:
+  - cookieAuth: []
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Registration, login, session
+  - name: users
+    description: User profiles
+  - name: pets
+    description: Pet profiles
+  - name: preferences
+    description: Discovery preferences
+  - name: settings
+    description: Notification/privacy/general settings
+  - name: discover
+    description: Candidate profile feed
+  - name: likes
+    description: Liking candidate profiles
+  - name: passes
+    description: Skipping candidate profiles
+  - name: matches
+    description: Mutual likes / conversations
+  - name: messages
+    description: Chat messages within a match
+  - name: playdates
+    description: Playdate proposals within a match
+  - name: events
+    description: Community events
+  - name: comments
+    description: Comments on community events
+  - name: stories
+    description: Profile "moments" stories
+  - name: notifications
+    description: In-app notifications
 paths:
   /healthz:
     get:
@@ -17,6 +49,7 @@ paths:
       tags: [health]
       summary: Health check
       description: Returns server health status
+      security: []
       responses:
         "200":
           description: Healthy
@@ -24,7 +57,904 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  # ---------------------------------------------------------------- auth --
+  /auth/register:
+    post:
+      operationId: registerUser
+      tags: [auth]
+      summary: Create an account and start a session
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+      responses:
+        "201":
+          description: Account created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /auth/login:
+    post:
+      operationId: loginUser
+      tags: [auth]
+      summary: Start a session with email + password
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Signed in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /auth/logout:
+    post:
+      operationId: logoutUser
+      tags: [auth]
+      summary: End the current session
+      responses:
+        "204":
+          description: Signed out
+
+  /auth/me:
+    get:
+      operationId: getCurrentSession
+      tags: [auth]
+      summary: Get the current session's user (for app bootstrap)
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  # --------------------------------------------------------------- users --
+  /users/me:
+    get:
+      operationId: getMyProfile
+      tags: [users]
+      summary: Get the logged-in user's own profile
+      responses:
+        "200":
+          description: Own profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    patch:
+      operationId: updateMyProfile
+      tags: [users]
+      summary: Update the logged-in user's profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateUserRequest"
+      responses:
+        "200":
+          description: Updated profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    delete:
+      operationId: deleteMyAccount
+      tags: [users]
+      summary: Permanently delete the logged-in user's account
+      responses:
+        "204":
+          description: Account deleted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /users/{userId}:
+    parameters:
+      - $ref: "#/components/parameters/userId"
+    get:
+      operationId: getUserProfile
+      tags: [users]
+      summary: Get another user's public profile
+      responses:
+        "200":
+          description: Public profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ---------------------------------------------------------------- pets --
+  /users/me/pets:
+    get:
+      operationId: listMyPets
+      tags: [pets]
+      summary: List the logged-in user's pets
+      responses:
+        "200":
+          description: Pets
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Pet"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      operationId: createMyPet
+      tags: [pets]
+      summary: Add a pet to the logged-in user's profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePetRequest"
+      responses:
+        "201":
+          description: Pet created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Pet"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /pets/{petId}:
+    parameters:
+      - $ref: "#/components/parameters/petId"
+    patch:
+      operationId: updatePet
+      tags: [pets]
+      summary: Update one of the logged-in user's pets
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdatePetRequest"
+      responses:
+        "200":
+          description: Updated pet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Pet"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      operationId: deletePet
+      tags: [pets]
+      summary: Remove one of the logged-in user's pets
+      responses:
+        "204":
+          description: Pet deleted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ----------------------------------------------------------- preferences --
+  /users/me/preferences:
+    get:
+      operationId: getMyPreferences
+      tags: [preferences]
+      summary: Get the logged-in user's discovery preferences
+      responses:
+        "200":
+          description: Preferences
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserPreferences"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    put:
+      operationId: updateMyPreferences
+      tags: [preferences]
+      summary: Replace the logged-in user's discovery preferences
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateUserPreferencesRequest"
+      responses:
+        "200":
+          description: Updated preferences
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserPreferences"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  # -------------------------------------------------------------- settings --
+  /users/me/settings:
+    get:
+      operationId: getMySettings
+      tags: [settings]
+      summary: Get the logged-in user's app settings
+      responses:
+        "200":
+          description: Settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserSettings"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    patch:
+      operationId: updateMySettings
+      tags: [settings]
+      summary: Update the logged-in user's app settings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateUserSettingsRequest"
+      responses:
+        "200":
+          description: Updated settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserSettings"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  # -------------------------------------------------------------- discover --
+  /discover:
+    get:
+      operationId: listDiscoverProfiles
+      tags: [discover]
+      summary: List candidate profiles (excludes self, already-liked, already-passed)
+      parameters:
+        - $ref: "#/components/parameters/page"
+        - $ref: "#/components/parameters/pageSize"
+        - name: species
+          in: query
+          schema:
+            $ref: "#/components/schemas/Species"
+        - name: lookingFor
+          in: query
+          schema:
+            $ref: "#/components/schemas/LookingFor"
+      responses:
+        "200":
+          description: Candidate profiles
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DiscoverProfileList"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  # ----------------------------------------------------------------- likes --
+  /likes:
+    post:
+      operationId: createLike
+      tags: [likes]
+      summary: Like a candidate profile (creates a match if reciprocal)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateLikeRequest"
+      responses:
+        "201":
+          description: Like recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LikeResult"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /likes/sent:
+    get:
+      operationId: listSentLikes
+      tags: [likes]
+      summary: List profiles the logged-in user has liked
+      parameters:
+        - $ref: "#/components/parameters/page"
+        - $ref: "#/components/parameters/pageSize"
+      responses:
+        "200":
+          description: Sent likes
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SentLikeList"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  # ---------------------------------------------------------------- passes --
+  /passes:
+    post:
+      operationId: createPass
+      tags: [passes]
+      summary: Skip a candidate profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePassRequest"
+      responses:
+        "201":
+          description: Pass recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Pass"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  # --------------------------------------------------------------- matches --
+  /matches:
+    get:
+      operationId: listMatches
+      tags: [matches]
+      summary: List the logged-in user's matches (conversation list)
+      parameters:
+        - $ref: "#/components/parameters/page"
+        - $ref: "#/components/parameters/pageSize"
+      responses:
+        "200":
+          description: Matches
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MatchSummaryList"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  # -------------------------------------------------------------- messages --
+  /matches/{matchId}/messages:
+    parameters:
+      - $ref: "#/components/parameters/matchId"
+    get:
+      operationId: listMessages
+      tags: [messages]
+      summary: List messages in a match, oldest first
+      parameters:
+        - $ref: "#/components/parameters/page"
+        - $ref: "#/components/parameters/pageSize"
+      responses:
+        "200":
+          description: Messages
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageList"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    post:
+      operationId: sendMessage
+      tags: [messages]
+      summary: Send a text message in a match
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SendMessageRequest"
+      responses:
+        "201":
+          description: Message sent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Message"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /matches/{matchId}/read:
+    parameters:
+      - $ref: "#/components/parameters/matchId"
+    post:
+      operationId: markMatchRead
+      tags: [messages]
+      summary: Mark all messages in a match as read up to now
+      responses:
+        "204":
+          description: Marked read
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ------------------------------------------------------------- playdates --
+  /matches/{matchId}/playdates:
+    parameters:
+      - $ref: "#/components/parameters/matchId"
+    post:
+      operationId: proposePlaydate
+      tags: [playdates]
+      summary: Propose a playdate within a match
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePlaydateRequest"
+      responses:
+        "201":
+          description: Playdate proposed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Playdate"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /playdates:
+    get:
+      operationId: listPlaydates
+      tags: [playdates]
+      summary: List playdates across all of the logged-in user's matches
+      parameters:
+        - $ref: "#/components/parameters/page"
+        - $ref: "#/components/parameters/pageSize"
+      responses:
+        "200":
+          description: Playdates
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlaydateList"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /playdates/{playdateId}:
+    parameters:
+      - $ref: "#/components/parameters/playdateId"
+    patch:
+      operationId: respondToPlaydate
+      tags: [playdates]
+      summary: Accept or decline a proposed playdate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdatePlaydateRequest"
+      responses:
+        "200":
+          description: Updated playdate
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Playdate"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ---------------------------------------------------------------- events --
+  /events:
+    get:
+      operationId: listEvents
+      tags: [events]
+      summary: List community events
+      parameters:
+        - $ref: "#/components/parameters/page"
+        - $ref: "#/components/parameters/pageSize"
+        - name: category
+          in: query
+          schema:
+            $ref: "#/components/schemas/EventCategory"
+      responses:
+        "200":
+          description: Events
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CommunityEventList"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      operationId: createEvent
+      tags: [events]
+      summary: Host a new community event
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateEventRequest"
+      responses:
+        "201":
+          description: Event created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CommunityEvent"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /events/{eventId}:
+    parameters:
+      - $ref: "#/components/parameters/eventId"
+    get:
+      operationId: getEvent
+      tags: [events]
+      summary: Get a community event
+      responses:
+        "200":
+          description: Event
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CommunityEvent"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /events/{eventId}/rsvp:
+    parameters:
+      - $ref: "#/components/parameters/eventId"
+    post:
+      operationId: rsvpToEvent
+      tags: [events]
+      summary: RSVP to an event
+      responses:
+        "204":
+          description: RSVP'd
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      operationId: cancelEventRsvp
+      tags: [events]
+      summary: Cancel an RSVP
+      responses:
+        "204":
+          description: RSVP cancelled
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /events/{eventId}/save:
+    parameters:
+      - $ref: "#/components/parameters/eventId"
+    post:
+      operationId: saveEvent
+      tags: [events]
+      summary: Bookmark an event
+      responses:
+        "204":
+          description: Saved
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      operationId: unsaveEvent
+      tags: [events]
+      summary: Remove an event bookmark
+      responses:
+        "204":
+          description: Unsaved
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ------------------------------------------------------------- comments --
+  /events/{eventId}/comments:
+    parameters:
+      - $ref: "#/components/parameters/eventId"
+    get:
+      operationId: listEventComments
+      tags: [comments]
+      summary: List comments on an event
+      parameters:
+        - $ref: "#/components/parameters/page"
+        - $ref: "#/components/parameters/pageSize"
+      responses:
+        "200":
+          description: Comments
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EventCommentList"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    post:
+      operationId: createEventComment
+      tags: [comments]
+      summary: Comment on an event
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCommentRequest"
+      responses:
+        "201":
+          description: Comment created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EventComment"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /comments/{commentId}/like:
+    parameters:
+      - $ref: "#/components/parameters/commentId"
+    post:
+      operationId: likeEventComment
+      tags: [comments]
+      summary: Like a comment
+      responses:
+        "204":
+          description: Liked
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      operationId: unlikeEventComment
+      tags: [comments]
+      summary: Remove a like from a comment
+      responses:
+        "204":
+          description: Unliked
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # --------------------------------------------------------------- stories --
+  /users/{userId}/stories:
+    parameters:
+      - $ref: "#/components/parameters/userId"
+    get:
+      operationId: listUserStories
+      tags: [stories]
+      summary: List a user's active stories
+      responses:
+        "200":
+          description: Stories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Story"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /stories:
+    post:
+      operationId: createStory
+      tags: [stories]
+      summary: Post a new story
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateStoryRequest"
+      responses:
+        "201":
+          description: Story created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Story"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /stories/{storyId}/view:
+    parameters:
+      - $ref: "#/components/parameters/storyId"
+    post:
+      operationId: markStoryViewed
+      tags: [stories]
+      summary: Mark a story as viewed by the logged-in user
+      responses:
+        "204":
+          description: Marked viewed
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ---------------------------------------------------------- notifications --
+  /notifications:
+    get:
+      operationId: listNotifications
+      tags: [notifications]
+      summary: List the logged-in user's notifications, newest first
+      parameters:
+        - $ref: "#/components/parameters/page"
+        - $ref: "#/components/parameters/pageSize"
+      responses:
+        "200":
+          description: Notifications
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationList"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /notifications/{notificationId}/read:
+    parameters:
+      - $ref: "#/components/parameters/notificationId"
+    post:
+      operationId: markNotificationRead
+      tags: [notifications]
+      summary: Mark a single notification as read
+      responses:
+        "204":
+          description: Marked read
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /notifications/read-all:
+    post:
+      operationId: markAllNotificationsRead
+      tags: [notifications]
+      summary: Mark all of the logged-in user's notifications as read
+      responses:
+        "204":
+          description: Marked all read
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
 components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: pawmate_session
+
+  parameters:
+    page:
+      name: page
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    pageSize:
+      name: pageSize
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+    userId:
+      name: userId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    petId:
+      name: petId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    matchId:
+      name: matchId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    playdateId:
+      name: playdateId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    eventId:
+      name: eventId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    commentId:
+      name: commentId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    storyId:
+      name: storyId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    notificationId:
+      name: notificationId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+  responses:
+    Unauthorized:
+      description: Not signed in
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    Conflict:
+      description: Resource already exists
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+
   schemas:
     HealthStatus:
       type: object
@@ -34,3 +964,906 @@ components:
       required:
         - status
 
+    Error:
+      type: object
+      properties:
+        message:
+          type: string
+      required:
+        - message
+
+    Species:
+      type: string
+      enum: [dog, cat, rabbit, bird, fish, other]
+
+    LookingFor:
+      type: string
+      enum: [friendship, relationship, playdates, casual, open]
+
+    PlaydateStatus:
+      type: string
+      enum: [proposed, accepted, declined]
+
+    EventCategory:
+      type: string
+      enum: [meetup, cafe, adoption, training, trail]
+
+    NotificationType:
+      type: string
+      enum: [match, message, view, playdate]
+
+    MessageKind:
+      type: string
+      enum: [text, playdate]
+
+    # ------------------------------------------------------------- auth --
+    RegisterRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 6
+        firstName:
+          type: string
+          minLength: 1
+      required: [email, password, firstName]
+
+    LoginRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+      required: [email, password]
+
+    # ------------------------------------------------------------ users --
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        firstName:
+          type: string
+        age:
+          type: integer
+          nullable: true
+        city:
+          type: string
+          nullable: true
+        bio:
+          type: string
+          nullable: true
+        avatarUrl:
+          type: string
+          nullable: true
+        lookingFor:
+          type: array
+          items:
+            $ref: "#/components/schemas/LookingFor"
+        lifestyleTags:
+          type: array
+          items:
+            type: string
+        isOnline:
+          type: boolean
+        lastActiveAt:
+          type: string
+          format: date-time
+          nullable: true
+        twoFactorEnabled:
+          type: boolean
+        language:
+          type: string
+        onboardingCompletedAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - email
+        - firstName
+        - lookingFor
+        - lifestyleTags
+        - isOnline
+        - twoFactorEnabled
+        - language
+        - createdAt
+        - updatedAt
+
+    UpdateUserRequest:
+      type: object
+      properties:
+        firstName:
+          type: string
+          minLength: 1
+        age:
+          type: integer
+        city:
+          type: string
+        bio:
+          type: string
+        avatarUrl:
+          type: string
+        lookingFor:
+          type: array
+          items:
+            $ref: "#/components/schemas/LookingFor"
+        lifestyleTags:
+          type: array
+          items:
+            type: string
+
+    # ------------------------------------------------------------- pets --
+    Pet:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        species:
+          $ref: "#/components/schemas/Species"
+        breed:
+          type: string
+          nullable: true
+        ageYears:
+          type: integer
+          nullable: true
+        photoUrl:
+          type: string
+          nullable: true
+        traits:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - userId
+        - name
+        - species
+        - traits
+        - createdAt
+        - updatedAt
+
+    CreatePetRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        species:
+          $ref: "#/components/schemas/Species"
+        breed:
+          type: string
+        ageYears:
+          type: integer
+        photoUrl:
+          type: string
+        traits:
+          type: array
+          items:
+            type: string
+      required: [name, species]
+
+    UpdatePetRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        species:
+          $ref: "#/components/schemas/Species"
+        breed:
+          type: string
+        ageYears:
+          type: integer
+        photoUrl:
+          type: string
+        traits:
+          type: array
+          items:
+            type: string
+
+    # ------------------------------------------------------- preferences --
+    UserPreferences:
+      type: object
+      properties:
+        userId:
+          type: string
+          format: uuid
+        maxDistanceMiles:
+          type: integer
+        ageRangeMin:
+          type: integer
+        ageRangeMax:
+          type: integer
+        petTypePrefs:
+          type: array
+          items:
+            $ref: "#/components/schemas/Species"
+        lookingForPrefs:
+          type: array
+          items:
+            $ref: "#/components/schemas/LookingFor"
+      required:
+        - userId
+        - maxDistanceMiles
+        - ageRangeMin
+        - ageRangeMax
+        - petTypePrefs
+        - lookingForPrefs
+
+    UpdateUserPreferencesRequest:
+      type: object
+      properties:
+        maxDistanceMiles:
+          type: integer
+          minimum: 1
+        ageRangeMin:
+          type: integer
+          minimum: 18
+        ageRangeMax:
+          type: integer
+          minimum: 18
+        petTypePrefs:
+          type: array
+          items:
+            $ref: "#/components/schemas/Species"
+        lookingForPrefs:
+          type: array
+          items:
+            $ref: "#/components/schemas/LookingFor"
+
+    # ----------------------------------------------------------- settings --
+    UserSettings:
+      type: object
+      properties:
+        userId:
+          type: string
+          format: uuid
+        notifyNewMatches:
+          type: boolean
+        notifyMessages:
+          type: boolean
+        notifyProfileViews:
+          type: boolean
+        notifyWeeklyDigest:
+          type: boolean
+        notifyEmail:
+          type: boolean
+        notifyPush:
+          type: boolean
+        privacyShowDistance:
+          type: boolean
+        privacyShowLastActive:
+          type: boolean
+        privacyShowAge:
+          type: boolean
+        privacyIncognito:
+          type: boolean
+        privacyShareActivity:
+          type: boolean
+        darkMode:
+          type: boolean
+        locationServicesEnabled:
+          type: boolean
+        readReceiptsEnabled:
+          type: boolean
+      required:
+        - userId
+        - notifyNewMatches
+        - notifyMessages
+        - notifyProfileViews
+        - notifyWeeklyDigest
+        - notifyEmail
+        - notifyPush
+        - privacyShowDistance
+        - privacyShowLastActive
+        - privacyShowAge
+        - privacyIncognito
+        - privacyShareActivity
+        - darkMode
+        - locationServicesEnabled
+        - readReceiptsEnabled
+
+    UpdateUserSettingsRequest:
+      type: object
+      properties:
+        notifyNewMatches:
+          type: boolean
+        notifyMessages:
+          type: boolean
+        notifyProfileViews:
+          type: boolean
+        notifyWeeklyDigest:
+          type: boolean
+        notifyEmail:
+          type: boolean
+        notifyPush:
+          type: boolean
+        privacyShowDistance:
+          type: boolean
+        privacyShowLastActive:
+          type: boolean
+        privacyShowAge:
+          type: boolean
+        privacyIncognito:
+          type: boolean
+        privacyShareActivity:
+          type: boolean
+        darkMode:
+          type: boolean
+        locationServicesEnabled:
+          type: boolean
+        readReceiptsEnabled:
+          type: boolean
+
+    # ------------------------------------------------------------ discover --
+    DiscoverProfile:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        firstName:
+          type: string
+        age:
+          type: integer
+          nullable: true
+        city:
+          type: string
+          nullable: true
+        avatarUrl:
+          type: string
+          nullable: true
+        bio:
+          type: string
+          nullable: true
+        lifestyleTags:
+          type: array
+          items:
+            type: string
+        lookingFor:
+          type: array
+          items:
+            $ref: "#/components/schemas/LookingFor"
+        pets:
+          type: array
+          items:
+            $ref: "#/components/schemas/Pet"
+      required:
+        - id
+        - firstName
+        - lifestyleTags
+        - lookingFor
+        - pets
+
+    DiscoverProfileList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/DiscoverProfile"
+        total:
+          type: integer
+      required: [items, total]
+
+    # --------------------------------------------------------------- likes --
+    Like:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        likerId:
+          type: string
+          format: uuid
+        likedUserId:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, likerId, likedUserId, createdAt]
+
+    CreateLikeRequest:
+      type: object
+      properties:
+        likedUserId:
+          type: string
+          format: uuid
+      required: [likedUserId]
+
+    LikeResult:
+      type: object
+      properties:
+        like:
+          $ref: "#/components/schemas/Like"
+        isMatch:
+          type: boolean
+        match:
+          $ref: "#/components/schemas/Match"
+      required: [like, isMatch]
+
+    SentLike:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        likedUser:
+          $ref: "#/components/schemas/DiscoverProfile"
+        likedAt:
+          type: string
+          format: date-time
+        mutualMatch:
+          type: boolean
+      required: [id, likedUser, likedAt, mutualMatch]
+
+    SentLikeList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/SentLike"
+        total:
+          type: integer
+      required: [items, total]
+
+    # -------------------------------------------------------------- passes --
+    Pass:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        passedUserId:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, userId, passedUserId, createdAt]
+
+    CreatePassRequest:
+      type: object
+      properties:
+        passedUserId:
+          type: string
+          format: uuid
+      required: [passedUserId]
+
+    # ------------------------------------------------------------- matches --
+    Match:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        userOneId:
+          type: string
+          format: uuid
+        userTwoId:
+          type: string
+          format: uuid
+        matchedAt:
+          type: string
+          format: date-time
+      required: [id, userOneId, userTwoId, matchedAt]
+
+    MatchSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        matchedAt:
+          type: string
+          format: date-time
+        otherUser:
+          $ref: "#/components/schemas/User"
+        otherPet:
+          $ref: "#/components/schemas/Pet"
+        lastMessage:
+          type: string
+          nullable: true
+        lastMessageAt:
+          type: string
+          format: date-time
+          nullable: true
+        unreadCount:
+          type: integer
+      required: [id, matchedAt, otherUser, unreadCount]
+
+    MatchSummaryList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/MatchSummary"
+        total:
+          type: integer
+      required: [items, total]
+
+    # ------------------------------------------------------------ messages --
+    Message:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        matchId:
+          type: string
+          format: uuid
+        senderId:
+          type: string
+          format: uuid
+        kind:
+          $ref: "#/components/schemas/MessageKind"
+        text:
+          type: string
+          nullable: true
+        playdateId:
+          type: string
+          format: uuid
+          nullable: true
+        sentAt:
+          type: string
+          format: date-time
+      required: [id, matchId, senderId, kind, sentAt]
+
+    MessageList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Message"
+        total:
+          type: integer
+      required: [items, total]
+
+    SendMessageRequest:
+      type: object
+      properties:
+        text:
+          type: string
+          minLength: 1
+      required: [text]
+
+    # ----------------------------------------------------------- playdates --
+    Playdate:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        matchId:
+          type: string
+          format: uuid
+        proposedByUserId:
+          type: string
+          format: uuid
+        place:
+          type: string
+        placeSub:
+          type: string
+          nullable: true
+        date:
+          type: string
+          format: date
+        timeSlot:
+          type: string
+        status:
+          $ref: "#/components/schemas/PlaydateStatus"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - matchId
+        - proposedByUserId
+        - place
+        - date
+        - timeSlot
+        - status
+        - createdAt
+        - updatedAt
+
+    CreatePlaydateRequest:
+      type: object
+      properties:
+        place:
+          type: string
+          minLength: 1
+        placeSub:
+          type: string
+        date:
+          type: string
+          format: date
+        timeSlot:
+          type: string
+          minLength: 1
+      required: [place, date, timeSlot]
+
+    UpdatePlaydateRequest:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [accepted, declined]
+      required: [status]
+
+    PlaydateList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Playdate"
+        total:
+          type: integer
+      required: [items, total]
+
+    # -------------------------------------------------------------- events --
+    CommunityEvent:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        organizerId:
+          type: string
+          format: uuid
+        category:
+          $ref: "#/components/schemas/EventCategory"
+        title:
+          type: string
+        description:
+          type: string
+        location:
+          type: string
+        startAt:
+          type: string
+          format: date-time
+        endAt:
+          type: string
+          format: date-time
+        maxAttendees:
+          type: integer
+          nullable: true
+        tags:
+          type: array
+          items:
+            type: string
+        featured:
+          type: boolean
+        imageUrl:
+          type: string
+          nullable: true
+        attendeeCount:
+          type: integer
+        rsvped:
+          type: boolean
+        saved:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - organizerId
+        - category
+        - title
+        - description
+        - location
+        - startAt
+        - endAt
+        - tags
+        - featured
+        - attendeeCount
+        - rsvped
+        - saved
+        - createdAt
+        - updatedAt
+
+    CreateEventRequest:
+      type: object
+      properties:
+        category:
+          $ref: "#/components/schemas/EventCategory"
+        title:
+          type: string
+          minLength: 1
+        description:
+          type: string
+          minLength: 1
+        location:
+          type: string
+          minLength: 1
+        startAt:
+          type: string
+          format: date-time
+        endAt:
+          type: string
+          format: date-time
+        maxAttendees:
+          type: integer
+        tags:
+          type: array
+          items:
+            type: string
+        imageUrl:
+          type: string
+      required: [category, title, description, location, startAt, endAt]
+
+    CommunityEventList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/CommunityEvent"
+        total:
+          type: integer
+      required: [items, total]
+
+    # ------------------------------------------------------------ comments --
+    EventComment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        eventId:
+          type: string
+          format: uuid
+        author:
+          $ref: "#/components/schemas/User"
+        text:
+          type: string
+        likeCount:
+          type: integer
+        liked:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, eventId, author, text, likeCount, liked, createdAt]
+
+    CreateCommentRequest:
+      type: object
+      properties:
+        text:
+          type: string
+          minLength: 1
+      required: [text]
+
+    EventCommentList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/EventComment"
+        total:
+          type: integer
+      required: [items, total]
+
+    # -------------------------------------------------------------- stories --
+    Story:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        imageUrl:
+          type: string
+        caption:
+          type: string
+          nullable: true
+        isPetMoment:
+          type: boolean
+        viewed:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        expiresAt:
+          type: string
+          format: date-time
+          nullable: true
+      required: [id, userId, imageUrl, isPetMoment, viewed, createdAt]
+
+    CreateStoryRequest:
+      type: object
+      properties:
+        imageUrl:
+          type: string
+          minLength: 1
+        caption:
+          type: string
+        isPetMoment:
+          type: boolean
+      required: [imageUrl]
+
+    # --------------------------------------------------------- notifications --
+    Notification:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          $ref: "#/components/schemas/NotificationType"
+        title:
+          type: string
+        body:
+          type: string
+        relatedEntityType:
+          type: string
+          nullable: true
+        relatedEntityId:
+          type: string
+          format: uuid
+          nullable: true
+        avatarUrl:
+          type: string
+          nullable: true
+        read:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, type, title, body, read, createdAt]
+
+    NotificationList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Notification"
+        total:
+          type: integer
+      required: [items, total]
