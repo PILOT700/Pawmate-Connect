@@ -8,8 +8,7 @@ COPY pnpm-lock.yaml .
 COPY pnpm-workspace.yaml .
 COPY package.json .
 
-# Copy all packages
-COPY packages/ ./packages/
+# Copy all libraries
 COPY lib/ ./lib/
 COPY artifacts/api-server/ ./artifacts/api-server/
 COPY scripts/ ./scripts/
@@ -34,7 +33,6 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/pnpm-lock.yaml .
 COPY --from=builder /app/pnpm-workspace.yaml .
 COPY --from=builder /app/package.json .
-COPY --from=builder /app/packages ./packages
 COPY --from=builder /app/lib ./lib
 COPY --from=builder /app/artifacts/api-server ./artifacts/api-server
 COPY --from=builder /app/scripts ./scripts
