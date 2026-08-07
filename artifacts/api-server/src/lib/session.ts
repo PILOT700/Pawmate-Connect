@@ -7,11 +7,13 @@ export const SESSION_COOKIE_NAME = "pawmate_session";
 const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 
 function cookieOptions(): CookieOptions {
+  const isProduction = process.env.NODE_ENV === "production";
+
   return {
     httpOnly: true,
     signed: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    sameSite: isProduction ? "none" : "lax",
+    secure: isProduction,
     path: "/",
   };
 }
