@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://pawmate-api-ov14.onrender.com/api/:path*"
+    }
+  ]
+}
