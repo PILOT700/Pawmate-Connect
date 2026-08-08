@@ -30,8 +30,7 @@ export default function CreateStory() {
   const [imagePreview, setImagePreview] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
 
-  const { data: petsResponse } = useListMyPets();
-  const pets = petsResponse?.items || [];
+  const { data: pets = [] } = useListMyPets();
 
   const [isUploading, setIsUploading] = useState(false);
   const createStory = useCreateStory();

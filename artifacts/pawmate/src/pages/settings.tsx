@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { useGetMySettings, useUpdateMySettings } from "@workspace/api-client-react";
+import { useGetMySettings, useUpdateMySettings, type UserSettings } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiErrorMessage } from "@/lib/api-error";
 
@@ -97,51 +97,39 @@ export default function Settings() {
   const { data: settingsData, isLoading } = useGetMySettings();
   const updateMutation = useUpdateMySettings();
 
-  const [notifs, setNotifs] = useState({
+  type EditableSettings = Omit<UserSettings, "userId">;
+
+  const DEFAULT_SETTINGS: EditableSettings = {
     notifyNewMatches: true,
     notifyMessages: true,
     notifyProfileViews: false,
     notifyWeeklyDigest: true,
     notifyEmail: false,
     notifyPush: true,
-  });
-
-  const [privacy, setPrivacy] = useState({
     privacyShowDistance: true,
     privacyShowLastActive: false,
     privacyShowAge: true,
-  });
+    privacyIncognito: false,
+    privacyShareActivity: true,
+    darkMode: false,
+    locationServicesEnabled: true,
+    readReceiptsEnabled: true,
+  };
+
+  const [settings, setSettings] = useState<EditableSettings>(DEFAULT_SETTINGS);
 
   // Load settings from API on mount
   useEffect(() => {
     if (settingsData) {
-      setNotifs({
-        notifyNewMatches: settingsData.notifyNewMatches ?? true,
-        notifyMessages: settingsData.notifyMessages ?? true,
-        notifyProfileViews: settingsData.notifyProfileViews ?? false,
-        notifyWeeklyDigest: settingsData.notifyWeeklyDigest ?? true,
-        notifyEmail: settingsData.notifyEmail ?? false,
-        notifyPush: settingsData.notifyPush ?? true,
-      });
-      setPrivacy({
-        privacyShowDistance: settingsData.privacyShowDistance ?? true,
-        privacyShowLastActive: settingsData.privacyShowLastActive ?? false,
-        privacyShowAge: settingsData.privacyShowAge ?? true,
-      });
+      setSettings({ ...DEFAULT_SETTINGS, ...settingsData });
     }
   }, [settingsData]);
 
-  const toggle = <T extends Record<string, boolean>>(
-    setter: React.Dispatch<React.SetStateAction<T>>,
-    key: keyof T,
-    apiKey?: keyof typeof settingsData
-  ) => async (v: boolean) => {
-    setter(prev => ({ ...prev, [key]: v }));
+  const toggle = (key: keyof EditableSettings) => async (v: boolean) => {
+    setSettings(prev => ({ ...prev, [key]: v }));
 
-    // Save to API
     try {
-      const updates: Record<string, boolean> = { [apiKey || key]: v };
-      await updateMutation.mutateAsync(updates);
+      await updateMutation.mutateAsync({ data: { [key]: v } });
     } catch (err) {
       toast({
         variant: "destructive",
@@ -149,7 +137,7 @@ export default function Settings() {
         description: apiErrorMessage(err, "Failed to save settings"),
       });
       // Revert on error
-      setter(prev => ({ ...prev, [key]: !v }));
+      setSettings(prev => ({ ...prev, [key]: !v }));
     }
   };
 
@@ -200,8 +188,8 @@ export default function Settings() {
             iconBg="bg-rose-50"
             label="New matches"
             description="When someone likes you back"
-            toggle enabled={notifs.notifyNewMatches}
-            onToggle={toggle(setNotifs, "notifyNewMatches", "notifyNewMatches")}
+            toggle enabled={settings.notifyNewMatches}
+            onToggle={toggle("notifyNewMatches")}
             testId="setting-new-matches"
           />
           <SettingRow
@@ -209,8 +197,8 @@ export default function Settings() {
             iconBg="bg-primary/10"
             label="Messages"
             description="When you receive a new message"
-            toggle enabled={notifs.notifyMessages}
-            onToggle={toggle(setNotifs, "notifyMessages", "notifyMessages")}
+            toggle enabled={settings.notifyMessages}
+            onToggle={toggle("notifyMessages")}
             testId="setting-messages"
           />
           <SettingRow
@@ -218,8 +206,8 @@ export default function Settings() {
             iconBg="bg-secondary"
             label="Profile views"
             description="When someone visits your profile"
-            toggle enabled={notifs.notifyProfileViews}
-            onToggle={toggle(setNotifs, "notifyProfileViews", "notifyProfileViews")}
+            toggle enabled={settings.notifyProfileViews}
+            onToggle={toggle("notifyProfileViews")}
             testId="setting-profile-views"
           />
           <SettingRow
@@ -227,8 +215,8 @@ export default function Settings() {
             iconBg="bg-blue-50"
             label="Email notifications"
             description="Weekly digest and match summaries"
-            toggle enabled={notifs.notifyEmail}
-            onToggle={toggle(setNotifs, "notifyEmail", "notifyEmail")}
+            toggle enabled={settings.notifyEmail}
+            onToggle={toggle("notifyEmail")}
             testId="setting-email-notifs"
           />
           <SettingRow
@@ -236,8 +224,8 @@ export default function Settings() {
             iconBg="bg-violet-50"
             label="Push notifications"
             description="Real-time alerts on your device"
-            toggle enabled={notifs.notifyPush}
-            onToggle={toggle(setNotifs, "notifyPush", "notifyPush")}
+            toggle enabled={settings.notifyPush}
+            onToggle={toggle("notifyPush")}
             testId="setting-push-notifs"
           />
         </Section>
@@ -249,8 +237,8 @@ export default function Settings() {
             iconBg="bg-primary/10"
             label="Show distance"
             description="Let others see how far away you are"
-            toggle enabled={privacy.privacyShowDistance}
-            onToggle={toggle(setPrivacy, "privacyShowDistance", "privacyShowDistance")}
+            toggle enabled={settings.privacyShowDistance}
+            onToggle={toggle("privacyShowDistance")}
             testId="setting-show-distance"
           />
           <SettingRow
@@ -258,16 +246,16 @@ export default function Settings() {
             iconBg="bg-secondary"
             label="Show last active"
             description="Display when you were last online"
-            toggle enabled={privacy.privacyShowLastActive}
-            onToggle={toggle(setPrivacy, "privacyShowLastActive", "privacyShowLastActive")}
+            toggle enabled={settings.privacyShowLastActive}
+            onToggle={toggle("privacyShowLastActive")}
             testId="setting-last-active"
           />
           <SettingRow
             icon={<User className="w-4 h-4 text-foreground" />}
             iconBg="bg-secondary"
             label="Show age on profile"
-            toggle enabled={privacy.privacyShowAge}
-            onToggle={toggle(setPrivacy, "privacyShowAge", "privacyShowAge")}
+            toggle enabled={settings.privacyShowAge}
+            onToggle={toggle("privacyShowAge")}
             testId="setting-show-age"
           />
           <SettingRow
@@ -275,8 +263,8 @@ export default function Settings() {
             iconBg="bg-amber-50"
             label="Incognito mode"
             description="Browse profiles without being seen"
-            toggle enabled={privacy.incognito}
-            onToggle={toggle(setPrivacy, "incognito")}
+            toggle enabled={settings.privacyIncognito}
+            onToggle={toggle("privacyIncognito")}
             testId="setting-incognito"
           />
           <SettingRow
@@ -284,8 +272,8 @@ export default function Settings() {
             iconBg="bg-secondary"
             label="Read receipts"
             description="Let matches know when you've read their messages"
-            toggle enabled={prefs.readReceipts}
-            onToggle={toggle(setPrefs, "readReceipts")}
+            toggle enabled={settings.readReceiptsEnabled}
+            onToggle={toggle("readReceiptsEnabled")}
             testId="setting-read-receipts"
           />
         </Section>
@@ -297,8 +285,8 @@ export default function Settings() {
             iconBg="bg-indigo-50"
             label="Dark mode"
             description="Easy on the eyes at night"
-            toggle enabled={prefs.darkMode}
-            onToggle={toggle(setPrefs, "darkMode")}
+            toggle enabled={settings.darkMode}
+            onToggle={toggle("darkMode")}
             testId="setting-dark-mode"
           />
           <SettingRow
@@ -306,8 +294,8 @@ export default function Settings() {
             iconBg="bg-primary/10"
             label="Location services"
             description="Used to show nearby members"
-            toggle enabled={prefs.locationServices}
-            onToggle={toggle(setPrefs, "locationServices")}
+            toggle enabled={settings.locationServicesEnabled}
+            onToggle={toggle("locationServicesEnabled")}
             testId="setting-location"
           />
           <SettingRow

@@ -136,7 +136,7 @@ export default function Profile() {
     apiStories.forEach(story => {
       const apiStory = storiesData?.find(s => s.id === story.id);
       if (apiStory && !apiStory.viewed) {
-        markViewedMutation.mutate({ storyId: story.id }).catch(err => {
+        markViewedMutation.mutateAsync({ storyId: story.id }).catch((err: unknown) => {
           console.error("Failed to mark story as viewed:", err);
         });
       }

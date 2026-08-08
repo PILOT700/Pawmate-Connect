@@ -171,7 +171,7 @@ export function NotificationsDrawer({ open, onClose }: Props) {
                 <div className="divide-y divide-border/50">
                   {notifications.map((n, idx) => {
                     const notifType = mapNotificationType(n.type);
-                    const href = getNotificationHref(n.type, n.relatedEntityId);
+                    const href = getNotificationHref(n.type, n.relatedEntityId ?? undefined);
                     const displayTime = new Date(n.createdAt as any).toLocaleTimeString('en-US', {
                       hour: 'numeric',
                       minute: '2-digit',
