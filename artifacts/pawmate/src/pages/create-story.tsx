@@ -10,6 +10,7 @@ import { useCreateStory, useListMyPets } from "@workspace/api-client-react";
 import { useAuth } from "@/contexts/auth-context";
 import { useToast } from "@/hooks/use-toast";
 import { apiErrorMessage } from "@/lib/api-error";
+import { uploadImage } from "@/lib/cloudinary";
 import {
   Select,
   SelectContent,
@@ -32,8 +33,9 @@ export default function CreateStory() {
   const { data: petsResponse } = useListMyPets();
   const pets = petsResponse?.items || [];
 
+  const [isUploading, setIsUploading] = useState(false);
   const createStory = useCreateStory();
-  const isSubmitting = createStory.isPending;
+  const isSubmitting = isUploading || createStory.isPending;
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -63,16 +65,13 @@ export default function CreateStory() {
     }
 
     try {
-      let imageUrl: string | undefined;
-      if (image) {
-        // TODO: Implement image upload to S3 or cloud storage
-        // For now, use a placeholder
-        imageUrl = `https://via.placeholder.com/500x500?text=Story`;
-      }
+      setIsUploading(true);
+      const imageUrl = await uploadImage(image);
+      setIsUploading(false);
 
       await createStory.mutateAsync({
         data: {
-          imageUrl: imageUrl!,
+          imageUrl,
           caption: caption || undefined,
           isPetMoment: isPetMoment || undefined,
         },
@@ -85,6 +84,7 @@ export default function CreateStory() {
 
       setRoute("/discover");
     } catch (err) {
+      setIsUploading(false);
       setError(apiErrorMessage(err, "Could not create story"));
     }
   };
@@ -213,7 +213,7 @@ export default function CreateStory() {
                 disabled={isSubmitting}
                 className="flex-1 h-11 rounded-xl bg-primary text-primary-foreground font-medium"
               >
-                {isSubmitting ? "Posting…" : "Post Story"}
+                {isUploading ? "Uploading…" : isSubmitting ? "Posting…" : "Post Story"}
               </Button>
               <Button
                 type="button"

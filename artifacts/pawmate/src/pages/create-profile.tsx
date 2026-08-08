@@ -16,6 +16,7 @@ import {
 import { useAuth } from "@/contexts/auth-context";
 import { useToast } from "@/hooks/use-toast";
 import { apiErrorMessage } from "@/lib/api-error";
+import { uploadImage } from "@/lib/cloudinary";
 
 // The intent picker offers "both", which maps onto two API values.
 const INTENT_TO_LOOKING_FOR: Record<string, LookingFor[]> = {
@@ -42,10 +43,29 @@ export default function CreateProfile() {
   const [petSpecies, setPetSpecies] = useState("dog");
   const [petBreed, setPetBreed] = useState("");
   const [petAge, setPetAge] = useState("");
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string>("");
+  const [petPhotoFile, setPetPhotoFile] = useState<File | null>(null);
+  const [petPhotoPreview, setPetPhotoPreview] = useState<string>("");
+  const [isUploading, setIsUploading] = useState(false);
 
   const updateProfile = useUpdateMyProfile();
   const createPet = useCreateMyPet();
-  const isSaving = updateProfile.isPending || createPet.isPending;
+  const isSaving = isUploading || updateProfile.isPending || createPet.isPending;
+
+  const handlePhotoSelect = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    setFile: (file: File) => void,
+    setPreview: (url: string) => void,
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setFile(file);
+    const reader = new FileReader();
+    reader.onload = (evt) => setPreview(evt.target?.result as string);
+    reader.readAsDataURL(file);
+  };
 
   const lifestyleTags = [
     "Morning person", "Night owl", "Homebody", "Outdoor lover",
@@ -61,6 +81,11 @@ export default function CreateProfile() {
 
   const handleComplete = async () => {
     try {
+      setIsUploading(true);
+      const avatarUrl = avatarFile ? await uploadImage(avatarFile) : undefined;
+      const petPhotoUrl = petPhotoFile ? await uploadImage(petPhotoFile) : undefined;
+      setIsUploading(false);
+
       await updateProfile.mutateAsync({
         data: {
           ...(name ? { firstName: name } : {}),
@@ -68,6 +93,7 @@ export default function CreateProfile() {
           ...(city ? { city } : {}),
           ...(bio ? { bio } : {}),
           ...(intent ? { lookingFor: INTENT_TO_LOOKING_FOR[intent] ?? [] } : {}),
+          ...(avatarUrl ? { avatarUrl } : {}),
           lifestyleTags: selectedTags,
         },
       });
@@ -79,6 +105,7 @@ export default function CreateProfile() {
             species: petSpecies as Species,
             ...(petBreed ? { breed: petBreed } : {}),
             ...(petAge && !Number.isNaN(Number(petAge)) ? { ageYears: Number(petAge) } : {}),
+            ...(petPhotoUrl ? { photoUrl: petPhotoUrl } : {}),
           },
         });
       }
@@ -86,6 +113,7 @@ export default function CreateProfile() {
       await refreshSession();
       setLocation("/discover");
     } catch (err) {
+      setIsUploading(false);
       toast({
         variant: "destructive",
         title: "Couldn't save your profile",
@@ -131,10 +159,23 @@ export default function CreateProfile() {
                 </div>
 
                 <div className="flex justify-center mb-8">
-                  <div className="w-32 h-32 rounded-full bg-secondary border-2 border-dashed border-border flex flex-col items-center justify-center cursor-pointer hover:bg-secondary/80 transition-colors text-muted-foreground hover:text-foreground">
-                    <Camera className="w-8 h-8 mb-2" />
-                    <span className="text-xs font-medium">Add Photo</span>
-                  </div>
+                  <label className="w-32 h-32 rounded-full bg-secondary border-2 border-dashed border-border flex flex-col items-center justify-center cursor-pointer hover:bg-secondary/80 transition-colors text-muted-foreground hover:text-foreground overflow-hidden">
+                    {avatarPreview ? (
+                      <img src={avatarPreview} alt="Avatar preview" className="w-full h-full object-cover" />
+                    ) : (
+                      <>
+                        <Camera className="w-8 h-8 mb-2" />
+                        <span className="text-xs font-medium">Add Photo</span>
+                      </>
+                    )}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => handlePhotoSelect(e, setAvatarFile, setAvatarPreview)}
+                      data-testid="input-avatar-photo"
+                    />
+                  </label>
                 </div>
 
                 <div className="grid md:grid-cols-2 gap-6">
@@ -196,10 +237,23 @@ export default function CreateProfile() {
                 </div>
 
                 <div className="flex justify-center mb-8">
-                  <div className="w-32 h-32 rounded-full bg-secondary border-2 border-dashed border-border flex flex-col items-center justify-center cursor-pointer hover:bg-secondary/80 transition-colors text-muted-foreground hover:text-foreground">
-                    <Camera className="w-8 h-8 mb-2" />
-                    <span className="text-xs font-medium">Pet Photo</span>
-                  </div>
+                  <label className="w-32 h-32 rounded-full bg-secondary border-2 border-dashed border-border flex flex-col items-center justify-center cursor-pointer hover:bg-secondary/80 transition-colors text-muted-foreground hover:text-foreground overflow-hidden">
+                    {petPhotoPreview ? (
+                      <img src={petPhotoPreview} alt="Pet photo preview" className="w-full h-full object-cover" />
+                    ) : (
+                      <>
+                        <Camera className="w-8 h-8 mb-2" />
+                        <span className="text-xs font-medium">Pet Photo</span>
+                      </>
+                    )}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => handlePhotoSelect(e, setPetPhotoFile, setPetPhotoPreview)}
+                      data-testid="input-pet-photo"
+                    />
+                  </label>
                 </div>
 
                 <div className="grid md:grid-cols-2 gap-6">
@@ -285,7 +339,7 @@ export default function CreateProfile() {
                     Back
                   </Button>
                   <Button className="flex-1 h-14 rounded-full bg-primary text-primary-foreground text-lg" onClick={handleComplete} disabled={isSaving} data-testid="btn-complete-profile">
-                    {isSaving ? "Saving…" : "Complete Profile"}
+                    {isUploading ? "Uploading…" : isSaving ? "Saving…" : "Complete Profile"}
                   </Button>
                 </div>
               </motion.div>

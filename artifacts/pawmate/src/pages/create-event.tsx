@@ -16,6 +16,7 @@ import { motion } from "framer-motion";
 import { useCreateEvent } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiErrorMessage } from "@/lib/api-error";
+import { uploadImage } from "@/lib/cloudinary";
 
 const CATEGORIES = ["meetup", "cafe", "adoption", "training", "trail"] as const;
 
@@ -37,8 +38,9 @@ export default function CreateEvent() {
   const [imagePreview, setImagePreview] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
 
+  const [isUploading, setIsUploading] = useState(false);
   const createEvent = useCreateEvent();
-  const isSubmitting = createEvent.isPending;
+  const isSubmitting = isUploading || createEvent.isPending;
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -94,9 +96,9 @@ export default function CreateEvent() {
 
       let imageUrl: string | undefined;
       if (image) {
-        // TODO: Implement image upload to S3 or cloud storage
-        // For now, use a placeholder
-        imageUrl = `https://via.placeholder.com/600x400?text=${encodeURIComponent(title)}`;
+        setIsUploading(true);
+        imageUrl = await uploadImage(image);
+        setIsUploading(false);
       }
 
       await createEvent.mutateAsync({
@@ -120,6 +122,7 @@ export default function CreateEvent() {
 
       setRoute("/community");
     } catch (err) {
+      setIsUploading(false);
       setError(apiErrorMessage(err, "Could not create event"));
     }
   };
@@ -377,7 +380,7 @@ export default function CreateEvent() {
                 disabled={isSubmitting}
                 className="flex-1 h-11 rounded-xl bg-primary text-primary-foreground font-medium"
               >
-                {isSubmitting ? "Creating…" : "Create Event"}
+                {isUploading ? "Uploading…" : isSubmitting ? "Creating…" : "Create Event"}
               </Button>
               <Button
                 type="button"
