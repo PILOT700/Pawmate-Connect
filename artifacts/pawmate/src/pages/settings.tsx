@@ -9,6 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { useGetMySettings, useUpdateMySettings, type UserSettings } from "@workspace/api-client-react";
+import { useAuth } from "@/contexts/auth-context";
 import { useToast } from "@/hooks/use-toast";
 import { apiErrorMessage } from "@/lib/api-error";
 
@@ -94,6 +95,7 @@ function Section({ title, children }: SectionProps) {
 
 export default function Settings() {
   const { toast } = useToast();
+  const { user } = useAuth();
   const { data: settingsData, isLoading } = useGetMySettings();
   const updateMutation = useUpdateMySettings();
 
@@ -302,7 +304,7 @@ export default function Settings() {
             icon={<Globe className="w-4 h-4 text-muted-foreground" />}
             iconBg="bg-secondary"
             label="Language"
-            description="English"
+            description={user?.language === "en" ? "English" : user?.language}
             chevron
             testId="setting-language"
           />
@@ -329,7 +331,7 @@ export default function Settings() {
             icon={<Mail className="w-4 h-4 text-muted-foreground" />}
             iconBg="bg-secondary"
             label="Change email"
-            description="hello@example.com"
+            description={user?.email}
             chevron
             testId="setting-email"
           />
@@ -337,7 +339,7 @@ export default function Settings() {
             icon={<Shield className="w-4 h-4 text-muted-foreground" />}
             iconBg="bg-secondary"
             label="Two-factor authentication"
-            description="Not enabled"
+            description={user?.twoFactorEnabled ? "Enabled" : "Not enabled"}
             chevron
             testId="setting-2fa"
           />

@@ -1670,6 +1670,8 @@ components:
         organizerId:
           type: string
           format: uuid
+        organizer:
+          $ref: "#/components/schemas/EventOrganizer"
         category:
           $ref: "#/components/schemas/EventCategory"
         title:
@@ -1711,6 +1713,7 @@ components:
       required:
         - id
         - organizerId
+        - organizer
         - category
         - title
         - description
@@ -1724,6 +1727,21 @@ components:
         - saved
         - createdAt
         - updatedAt
+
+    EventOrganizer:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        firstName:
+          type: string
+        avatarUrl:
+          type: string
+          nullable: true
+      required:
+        - id
+        - firstName
 
     CreateEventRequest:
       type: object

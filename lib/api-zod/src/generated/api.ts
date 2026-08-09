@@ -684,6 +684,11 @@ export const ListEventsResponse = zod.object({
   "items": zod.array(zod.object({
   "id": zod.string().uuid(),
   "organizerId": zod.string().uuid(),
+  "organizer": zod.object({
+  "id": zod.string().uuid(),
+  "firstName": zod.string(),
+  "avatarUrl": zod.string().nullish()
+}),
   "category": zod.enum(['meetup', 'cafe', 'adoption', 'training', 'trail']),
   "title": zod.string(),
   "description": zod.string(),
@@ -735,6 +740,11 @@ export const GetEventParams = zod.object({
 export const GetEventResponse = zod.object({
   "id": zod.string().uuid(),
   "organizerId": zod.string().uuid(),
+  "organizer": zod.object({
+  "id": zod.string().uuid(),
+  "firstName": zod.string(),
+  "avatarUrl": zod.string().nullish()
+}),
   "category": zod.enum(['meetup', 'cafe', 'adoption', 'training', 'trail']),
   "title": zod.string(),
   "description": zod.string(),

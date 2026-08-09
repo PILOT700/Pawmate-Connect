@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { and, count, desc, eq, inArray } from "drizzle-orm";
-import { db, communityEventsTable, eventRsvpsTable, eventSavesTable } from "@workspace/db";
+import { db, communityEventsTable, eventRsvpsTable, eventSavesTable, usersTable } from "@workspace/db";
 import {
   ListEventsQueryParams,
   ListEventsResponse,
@@ -17,6 +17,28 @@ import { HttpError } from "../lib/http-error";
 import { requireAuth } from "../middlewares/require-auth";
 
 const router: IRouter = Router();
+
+type EventOrganizer = { id: string; firstName: string; avatarUrl: string | null };
+
+/** Looks up the display details every event response embeds for its organizer. */
+async function fetchOrganizers(organizerIds: string[]): Promise<Map<string, EventOrganizer>> {
+  const unique = [...new Set(organizerIds)];
+
+  if (unique.length === 0) {
+    return new Map();
+  }
+
+  const rows = await db
+    .select({
+      id: usersTable.id,
+      firstName: usersTable.firstName,
+      avatarUrl: usersTable.avatarUrl,
+    })
+    .from(usersTable)
+    .where(inArray(usersTable.id, unique));
+
+  return new Map(rows.map((row) => [row.id, row]));
+}
 
 async function assertEventExists(eventId: string): Promise<void> {
   const [event] = await db
@@ -74,9 +96,11 @@ router.get("/events", requireAuth, async (req, res) => {
 
   const rsvpedIds = new Set(myRsvps.map((row) => row.eventId));
   const savedIds = new Set(mySaves.map((row) => row.eventId));
+  const organizers = await fetchOrganizers(events.map((event) => event.organizerId));
 
   const items = events.map((event) => ({
     ...event,
+    organizer: organizers.get(event.organizerId),
     attendeeCount: rsvpCounts.find((row) => row.eventId === event.id)?.value ?? 0,
     rsvped: rsvpedIds.has(event.id),
     saved: savedIds.has(event.id),
@@ -93,7 +117,17 @@ router.post("/events", requireAuth, async (req, res) => {
     .values({ ...body, organizerId: req.user!.id })
     .returning();
 
-  res.status(201).json(GetEventResponse.parse({ ...event, attendeeCount: 0, rsvped: false, saved: false }));
+  const organizers = await fetchOrganizers([req.user!.id]);
+
+  res.status(201).json(
+    GetEventResponse.parse({
+      ...event,
+      organizer: organizers.get(req.user!.id),
+      attendeeCount: 0,
+      rsvped: false,
+      saved: false,
+    }),
+  );
 });
 
 router.get("/events/:eventId", requireAuth, async (req, res) => {
@@ -124,9 +158,12 @@ router.get("/events/:eventId", requireAuth, async (req, res) => {
       .limit(1),
   ]);
 
+  const organizers = await fetchOrganizers([event.organizerId]);
+
   res.json(
     GetEventResponse.parse({
       ...event,
+      organizer: organizers.get(event.organizerId),
       attendeeCount: attendees?.value ?? 0,
       rsvped: myRsvp.length > 0,
       saved: mySave.length > 0,

@@ -6,10 +6,12 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { EventCategory } from './eventCategory';
+import type { EventOrganizer } from './eventOrganizer';
 
 export interface CommunityEvent {
   id: string;
   organizerId: string;
+  organizer: EventOrganizer;
   category: EventCategory;
   title: string;
   description: string;

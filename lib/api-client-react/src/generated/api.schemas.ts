@@ -343,9 +343,16 @@ export interface PlaydateList {
   total: number;
 }
 
+export interface EventOrganizer {
+  id: string;
+  firstName: string;
+  avatarUrl?: string | null;
+}
+
 export interface CommunityEvent {
   id: string;
   organizerId: string;
+  organizer: EventOrganizer;
   category: EventCategory;
   title: string;
   description: string;

@@ -55,6 +55,10 @@ export default defineConfig({
       mode: "split",
       clean: true,
       prettier: true,
+      // The generated index re-exports both generated/api and generated/types,
+      // which collide on names like ListMessagesParams. src/index.ts is
+      // maintained by hand instead.
+      indexFiles: false,
       override: {
         zod: {
           coerce: {
