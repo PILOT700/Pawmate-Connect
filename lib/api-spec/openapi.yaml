@@ -227,6 +227,27 @@ paths:
         "401":
           $ref: "#/components/responses/Unauthorized"
 
+  /users/{userId}/pets:
+    parameters:
+      - $ref: "#/components/parameters/userId"
+    get:
+      operationId: listUserPets
+      tags: [pets]
+      summary: List another user's pets
+      responses:
+        "200":
+          description: Pets
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Pet"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
   /pets/{petId}:
     parameters:
       - $ref: "#/components/parameters/petId"

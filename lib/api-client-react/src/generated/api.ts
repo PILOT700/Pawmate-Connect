@@ -890,6 +890,83 @@ export const useCreateMyPet = <TError = ErrorType<UnauthorizedResponse>,
       return useMutation(getCreateMyPetMutationOptions(options));
     }
 
+export const getListUserPetsUrl = (userId: string,) => {
+
+
+
+
+  return `/api/users/${userId}/pets`
+}
+
+/**
+ * @summary List another user's pets
+ */
+export const listUserPets = async (userId: string, options?: RequestInit): Promise<Pet[]> => {
+
+  return customFetch<Pet[]>(getListUserPetsUrl(userId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListUserPetsQueryKey = (userId: string,) => {
+    return [
+    `/api/users/${userId}/pets`
+    ] as const;
+    }
+
+
+export const getListUserPetsQueryOptions = <TData = Awaited<ReturnType<typeof listUserPets>>, TError = ErrorType<UnauthorizedResponse | NotFoundResponse>>(userId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listUserPets>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListUserPetsQueryKey(userId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listUserPets>>> = ({ signal }) => listUserPets(userId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(userId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listUserPets>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListUserPetsQueryResult = NonNullable<Awaited<ReturnType<typeof listUserPets>>>
+export type ListUserPetsQueryError = ErrorType<UnauthorizedResponse | NotFoundResponse>
+
+
+/**
+ * @summary List another user's pets
+ */
+
+export function useListUserPets<TData = Awaited<ReturnType<typeof listUserPets>>, TError = ErrorType<UnauthorizedResponse | NotFoundResponse>>(
+ userId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listUserPets>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListUserPetsQueryOptions(userId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
 export const getUpdatePetUrl = (petId: string,) => {
 
 

@@ -204,6 +204,28 @@ export const CreateMyPetBody = zod.object({
 
 
 /**
+ * @summary List another user's pets
+ */
+export const ListUserPetsParams = zod.object({
+  "userId": zod.coerce.string().uuid()
+})
+
+export const ListUserPetsResponseItem = zod.object({
+  "id": zod.string().uuid(),
+  "userId": zod.string().uuid(),
+  "name": zod.string(),
+  "species": zod.enum(['dog', 'cat', 'rabbit', 'bird', 'fish', 'other']),
+  "breed": zod.string().nullish(),
+  "ageYears": zod.number().nullish(),
+  "photoUrl": zod.string().nullish(),
+  "traits": zod.array(zod.string()),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+export const ListUserPetsResponse = zod.array(ListUserPetsResponseItem)
+
+
+/**
  * @summary Update one of the logged-in user's pets
  */
 export const UpdatePetParams = zod.object({

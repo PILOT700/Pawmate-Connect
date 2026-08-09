@@ -3,6 +3,8 @@ import { and, eq } from "drizzle-orm";
 import { db, petsTable } from "@workspace/db";
 import {
   ListMyPetsResponse,
+  ListUserPetsParams,
+  ListUserPetsResponse,
   CreateMyPetBody,
   UpdatePetParams,
   UpdatePetBody,
@@ -17,6 +19,13 @@ const router: IRouter = Router();
 router.get("/users/me/pets", requireAuth, async (req, res) => {
   const pets = await db.select().from(petsTable).where(eq(petsTable.userId, req.user!.id));
   res.json(ListMyPetsResponse.parse(pets));
+});
+
+// Registered after /users/me/pets so the literal "me" isn't swallowed by :userId.
+router.get("/users/:userId/pets", requireAuth, async (req, res) => {
+  const { userId } = ListUserPetsParams.parse(req.params);
+  const pets = await db.select().from(petsTable).where(eq(petsTable.userId, userId));
+  res.json(ListUserPetsResponse.parse(pets));
 });
 
 router.post("/users/me/pets", requireAuth, async (req, res) => {
