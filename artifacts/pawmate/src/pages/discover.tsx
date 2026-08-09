@@ -5,6 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Heart, MapPin, X, Bookmark, Sparkles, MessageCircle, RefreshCw, ChevronRight } from "lucide-react";
 import { useEffect, useState } from "react";
 import { MatchCelebrationModal } from "@/components/match-celebration-modal";
+import { calcCompatScore } from "@/components/compatibility-score";
 import {
   useListDiscoverProfiles,
   useListMyPets,
@@ -41,38 +42,6 @@ interface SparkView {
   pet?: { name: string; breed: string | null; image: string };
   prompt: string;
   compatScore: number;
-}
-
-// Same weighting as components/compatibility-score.tsx, fed with the real
-// logged-in user's data instead of that component's hardcoded baseline.
-const PET_COMPAT: Record<string, Record<string, number>> = {
-  dog: { dog: 92, cat: 72, rabbit: 75, bird: 65, fish: 58, other: 68 },
-  cat: { cat: 95, dog: 72, rabbit: 80, bird: 68, fish: 60, other: 70 },
-  rabbit: { rabbit: 90, cat: 80, dog: 75, bird: 70, fish: 62, other: 72 },
-  bird: { bird: 88, cat: 68, dog: 65, rabbit: 70, fish: 64, other: 66 },
-  fish: { fish: 85, cat: 60, dog: 58, rabbit: 62, bird: 64, other: 60 },
-  other: { other: 80, cat: 70, dog: 68, rabbit: 72, bird: 66, fish: 60 },
-};
-
-function calcCompatScore(opts: {
-  myPetSpecies?: Species;
-  myLifestyle: string[];
-  myLookingFor: LookingFor[];
-  theirPetSpecies?: Species;
-  theirLifestyle: string[];
-  theirLookingFor: LookingFor[];
-}): number {
-  const petScore =
-    opts.myPetSpecies && opts.theirPetSpecies
-      ? (PET_COMPAT[opts.myPetSpecies]?.[opts.theirPetSpecies] ?? 65)
-      : 65;
-  const commonLifestyle = opts.theirLifestyle.filter((t) => opts.myLifestyle.includes(t)).length;
-  const lifestyleScore = opts.theirLifestyle.length
-    ? Math.round(50 + (commonLifestyle / Math.max(opts.myLifestyle.length, opts.theirLifestyle.length, 1)) * 50)
-    : 60;
-  const sharedIntent = opts.theirLookingFor.some((v) => opts.myLookingFor.includes(v));
-  const intentScore = sharedIntent ? 92 : 70;
-  return Math.min(Math.round(petScore * 0.4 + lifestyleScore * 0.35 + intentScore * 0.25), 99);
 }
 
 function lookingForLabel(values: LookingFor[]): string {
@@ -382,7 +351,8 @@ export default function Discover() {
           theirPetSpecies: sparkCandidate.pets[0]?.species,
           theirLifestyle: sparkCandidate.lifestyleTags,
           theirLookingFor: sparkCandidate.lookingFor,
-        }),
+          theirTraits: sparkCandidate.pets[0]?.traits,
+        }).total,
       }
     : null;
 

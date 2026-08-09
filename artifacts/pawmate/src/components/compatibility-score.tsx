@@ -1,48 +1,70 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { PawPrint, Heart, Sun, Sparkles } from "lucide-react";
+import {
+  useGetMyProfile,
+  useListMyPets,
+  getGetMyProfileQueryKey,
+  getListMyPetsQueryKey,
+  type LookingFor,
+  type Species,
+} from "@workspace/api-client-react";
 
 export interface CompatibilityInput {
-  theirPetSpecies: string;
+  theirPetSpecies?: Species;
   theirLifestyle: string[];
-  theirLookingFor: string;
+  theirLookingFor: LookingFor[];
   theirTraits: string[];
 }
 
-const YOUR_PET = "Cat";
-const YOUR_LIFESTYLE = ["Morning person", "Homebody", "Coffee enthusiast", "Creative", "Outdoorsy"];
-const YOUR_LOOKING_FOR = "Friendship";
-
-const PET_COMPAT: Record<string, Record<string, number>> = {
-  Cat: { Cat: 95, Dog: 72, Rabbit: 80, Bird: 68, Fish: 60, Other: 70 },
-  Dog: { Dog: 92, Cat: 72, Rabbit: 75, Bird: 65, Fish: 58, Other: 68 },
-  Rabbit: { Rabbit: 90, Cat: 80, Dog: 75, Bird: 70, Fish: 62, Other: 72 },
-  Bird: { Bird: 88, Cat: 68, Dog: 65, Rabbit: 70, Fish: 64, Other: 66 },
-  Fish: { Fish: 85, Cat: 60, Dog: 58, Rabbit: 62, Bird: 64, Other: 60 },
-  Other: { Other: 80, Cat: 70, Dog: 68, Rabbit: 72, Bird: 66, Fish: 60 },
-};
-
-const INTENT_COMPAT: Record<string, Record<string, number>> = {
-  Friendship: { Friendship: 100, Relationship: 65, "Pet playdates": 85, "Casual meetups": 90, "Open to anything": 88 },
-  Relationship: { Relationship: 100, Friendship: 65, "Pet playdates": 70, "Casual meetups": 75, "Open to anything": 90 },
-  "Pet playdates": { "Pet playdates": 100, Friendship: 85, Relationship: 70, "Casual meetups": 80, "Open to anything": 85 },
-  "Casual meetups": { "Casual meetups": 100, Friendship: 90, Relationship: 75, "Pet playdates": 80, "Open to anything": 88 },
-  "Open to anything": { "Open to anything": 100, Friendship: 88, Relationship: 90, "Pet playdates": 85, "Casual meetups": 88 },
-};
-
-function calcLifestyleScore(theirLifestyle: string[]): number {
-  if (!theirLifestyle.length) return 60;
-  const common = theirLifestyle.filter(t => YOUR_LIFESTYLE.includes(t)).length;
-  const ratio = common / Math.max(YOUR_LIFESTYLE.length, theirLifestyle.length);
-  return Math.round(50 + ratio * 50);
+export interface CompatibilityScores {
+  total: number;
+  petScore: number;
+  lifestyleScore: number;
+  intentScore: number;
 }
 
-function calcScore(input: CompatibilityInput) {
-  const petScore = PET_COMPAT[YOUR_PET]?.[input.theirPetSpecies] ?? 65;
-  const lifestyleScore = calcLifestyleScore(input.theirLifestyle);
-  const intentScore = INTENT_COMPAT[YOUR_LOOKING_FOR]?.[input.theirLookingFor] ?? 70;
-  const traitBonus = input.theirTraits.length >= 2 ? 5 : 0;
-  const total = Math.round(petScore * 0.35 + lifestyleScore * 0.35 + intentScore * 0.25 + traitBonus * 0.05);
+// Keyed by the API's Species values, which are lowercase.
+const PET_COMPAT: Record<string, Record<string, number>> = {
+  dog: { dog: 92, cat: 72, rabbit: 75, bird: 65, fish: 58, other: 68 },
+  cat: { cat: 95, dog: 72, rabbit: 80, bird: 68, fish: 60, other: 70 },
+  rabbit: { rabbit: 90, cat: 80, dog: 75, bird: 70, fish: 62, other: 72 },
+  bird: { bird: 88, cat: 68, dog: 65, rabbit: 70, fish: 64, other: 66 },
+  fish: { fish: 85, cat: 60, dog: 58, rabbit: 62, bird: 64, other: 60 },
+  other: { other: 80, cat: 70, dog: 68, rabbit: 72, bird: 66, fish: 60 },
+};
+
+/**
+ * Scores how well two members line up. Both sides come from real profile
+ * data — there is no assumed baseline for the viewer.
+ */
+export function calcCompatScore(opts: {
+  myPetSpecies?: Species;
+  myLifestyle: string[];
+  myLookingFor: LookingFor[];
+  theirPetSpecies?: Species;
+  theirLifestyle: string[];
+  theirLookingFor: LookingFor[];
+  theirTraits?: string[];
+}): CompatibilityScores {
+  const petScore =
+    opts.myPetSpecies && opts.theirPetSpecies
+      ? (PET_COMPAT[opts.myPetSpecies]?.[opts.theirPetSpecies] ?? 65)
+      : 65;
+
+  const common = opts.theirLifestyle.filter((t) => opts.myLifestyle.includes(t)).length;
+  const lifestyleScore = opts.theirLifestyle.length
+    ? Math.round(50 + (common / Math.max(opts.myLifestyle.length, opts.theirLifestyle.length, 1)) * 50)
+    : 60;
+
+  const sharedIntent = opts.theirLookingFor.some((v) => opts.myLookingFor.includes(v));
+  const intentScore = sharedIntent ? 92 : 70;
+
+  const traitBonus = (opts.theirTraits?.length ?? 0) >= 2 ? 5 : 0;
+  const total = Math.round(
+    petScore * 0.35 + lifestyleScore * 0.35 + intentScore * 0.25 + traitBonus * 0.05,
+  );
+
   return { total: Math.min(total, 99), petScore, lifestyleScore, intentScore };
 }
 
@@ -119,7 +141,18 @@ function Bar({ value, color }: { value: number; color: string }) {
 }
 
 export function CompatibilityScore({ input }: { input: CompatibilityInput }) {
-  const { total, petScore, lifestyleScore, intentScore } = calcScore(input);
+  const { data: me } = useGetMyProfile({ query: { queryKey: getGetMyProfileQueryKey() } });
+  const { data: myPets } = useListMyPets({ query: { queryKey: getListMyPetsQueryKey() } });
+
+  const { total, petScore, lifestyleScore, intentScore } = calcCompatScore({
+    myPetSpecies: myPets?.[0]?.species,
+    myLifestyle: me?.lifestyleTags ?? [],
+    myLookingFor: me?.lookingFor ?? [],
+    theirPetSpecies: input.theirPetSpecies,
+    theirLifestyle: input.theirLifestyle,
+    theirLookingFor: input.theirLookingFor,
+    theirTraits: input.theirTraits,
+  });
   const badge = label(total);
 
   return (

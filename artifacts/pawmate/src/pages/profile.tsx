@@ -103,9 +103,9 @@ export default function Profile() {
 
   const heroImage = profile.avatarUrl || FALLBACK_IMAGE;
   const compatInput: CompatibilityInput = {
-    theirPetSpecies: pet?.species ?? "",
+    theirPetSpecies: pet?.species,
     theirLifestyle: profile.lifestyleTags,
-    theirLookingFor: profile.lookingFor[0] ?? "",
+    theirLookingFor: profile.lookingFor,
     theirTraits: pet?.traits ?? [],
   };
 
