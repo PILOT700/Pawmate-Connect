@@ -3,29 +3,61 @@ import { Link } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatDistanceToNow } from "date-fns";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Heart, MapPin, MessageCircle, HeartOff, PawPrint } from "lucide-react";
-import { useListSentLikes } from "@workspace/api-client-react";
+import {
+  useListSentLikes,
+  useRemoveLike,
+  getListSentLikesQueryKey,
+  type SentLike,
+} from "@workspace/api-client-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
+import { apiErrorMessage } from "@/lib/api-error";
 
 const FALLBACK_IMAGE = "/profile1.png";
 const FALLBACK_PET_IMAGE = "/pet1.png";
 
 export default function LikedProfiles() {
   const { data, isLoading } = useListSentLikes();
-  const [removedIds, setRemovedIds] = useState<Set<string>>(new Set());
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const removeLike = useRemoveLike();
+  const [pendingUnlike, setPendingUnlike] = useState<SentLike | null>(null);
   const [removingId, setRemovingId] = useState<string | null>(null);
   const [tab, setTab] = useState<"all" | "mutual">("all");
 
-  // There's no "unlike" endpoint in the API — this only hides the card
-  // locally, it doesn't retract the like server-side.
-  const handleUnlike = (id: string) => {
+  const handleUnlike = async () => {
+    if (!pendingUnlike) return;
+
+    const { id } = pendingUnlike;
+    setPendingUnlike(null);
     setRemovingId(id);
-    setTimeout(() => {
-      setRemovedIds((prev) => new Set(prev).add(id));
+
+    try {
+      await removeLike.mutateAsync({ likeId: id });
+      await queryClient.invalidateQueries({ queryKey: getListSentLikesQueryKey() });
+    } catch (err) {
+      toast({
+        variant: "destructive",
+        title: "Couldn't remove the like",
+        description: apiErrorMessage(err, "Please try again."),
+      });
+    } finally {
       setRemovingId(null);
-    }, 300);
+    }
   };
 
-  const liked = (data?.items ?? []).filter((item) => !removedIds.has(item.id));
+  const liked = data?.items ?? [];
   const mutualCount = liked.filter((item) => item.mutualMatch).length;
   const visible = tab === "mutual" ? liked.filter((item) => item.mutualMatch) : liked;
 
@@ -179,7 +211,8 @@ export default function LikedProfiles() {
                           variant="outline"
                           size="icon"
                           className="w-10 h-10 rounded-full border-border hover:bg-destructive/10 hover:border-destructive/30 hover:text-destructive transition-colors flex-shrink-0"
-                          onClick={() => handleUnlike(sentLike.id)}
+                          onClick={() => setPendingUnlike(sentLike)}
+                          disabled={removingId === sentLike.id}
                           title="Unlike"
                           data-testid={`btn-unlike-${sentLike.id}`}
                         >
@@ -208,6 +241,27 @@ export default function LikedProfiles() {
           </div>
         )}
       </div>
+
+      <AlertDialog open={!!pendingUnlike} onOpenChange={(open) => !open && setPendingUnlike(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Remove your like{pendingUnlike ? ` for ${pendingUnlike.likedUser.firstName}` : ""}?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingUnlike?.mutualMatch
+                ? "You're matched, so this also ends the match — your conversation and any planned playdates will be deleted for both of you."
+                : "They'll no longer appear in your liked profiles. You can like them again from Discover."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="btn-unlike-cancel">Keep it</AlertDialogCancel>
+            <AlertDialogAction onClick={handleUnlike} data-testid="btn-unlike-confirm">
+              {pendingUnlike?.mutualMatch ? "Unmatch" : "Remove like"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

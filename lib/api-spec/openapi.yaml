@@ -421,6 +421,21 @@ paths:
         "401":
           $ref: "#/components/responses/Unauthorized"
 
+  /likes/{likeId}:
+    parameters:
+      - $ref: "#/components/parameters/likeId"
+    delete:
+      operationId: removeLike
+      tags: [likes]
+      summary: Retract a like, ending the match if there was one
+      responses:
+        "204":
+          description: Like removed
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
   # ---------------------------------------------------------------- passes --
   /passes:
     post:
@@ -908,6 +923,13 @@ components:
         format: uuid
     petId:
       name: petId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    likeId:
+      name: likeId
       in: path
       required: true
       schema:

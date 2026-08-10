@@ -1,8 +1,14 @@
 import { Router, type IRouter } from "express";
 import { and, count, desc, eq, inArray, or } from "drizzle-orm";
 import { db, usersTable, petsTable, likesTable, matchesTable } from "@workspace/db";
-import { CreateLikeBody, ListSentLikesQueryParams, ListSentLikesResponse } from "@workspace/api-zod";
+import {
+  CreateLikeBody,
+  ListSentLikesQueryParams,
+  ListSentLikesResponse,
+  RemoveLikeParams,
+} from "@workspace/api-zod";
 import { parsePagination } from "../lib/pagination";
+import { HttpError } from "../lib/http-error";
 import { requireAuth } from "../middlewares/require-auth";
 
 const router: IRouter = Router();
@@ -62,6 +68,7 @@ router.post("/likes", requireAuth, async (req, res) => {
   res.status(201).json({ like: existingLike, isMatch: Boolean(reciprocal), match });
 });
 
+// Registered before /likes/:likeId so the literal "sent" isn't read as an id.
 router.get("/likes/sent", requireAuth, async (req, res) => {
   const query = ListSentLikesQueryParams.parse(req.query);
   const { limit, offset } = parsePagination(query);
@@ -110,6 +117,33 @@ router.get("/likes/sent", requireAuth, async (req, res) => {
   }));
 
   res.json(ListSentLikesResponse.parse({ items, total: totalRow?.value ?? 0 }));
+});
+
+router.delete("/likes/:likeId", requireAuth, async (req, res) => {
+  const { likeId } = RemoveLikeParams.parse(req.params);
+  const meId = req.user!.id;
+
+  const [like] = await db
+    .select()
+    .from(likesTable)
+    .where(and(eq(likesTable.id, likeId), eq(likesTable.likerId, meId)))
+    .limit(1);
+
+  if (!like) {
+    throw HttpError.notFound("Like not found");
+  }
+
+  await db.delete(likesTable).where(eq(likesTable.id, likeId));
+
+  // The pair is no longer mutual, so any match between them goes too. Messages,
+  // playdates, and read markers cascade off the match row.
+  const [userOneId, userTwoId] = orderPair(meId, like.likedUserId);
+
+  await db
+    .delete(matchesTable)
+    .where(and(eq(matchesTable.userOneId, userOneId), eq(matchesTable.userTwoId, userTwoId)));
+
+  res.status(204).end();
 });
 
 export default router;

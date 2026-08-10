@@ -468,6 +468,14 @@ export const ListSentLikesResponse = zod.object({
 
 
 /**
+ * @summary Retract a like, ending the match if there was one
+ */
+export const RemoveLikeParams = zod.object({
+  "likeId": zod.coerce.string().uuid()
+})
+
+
+/**
  * @summary Skip a candidate profile
  */
 export const CreatePassBody = zod.object({

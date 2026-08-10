@@ -1644,6 +1644,76 @@ export function useListSentLikes<TData = Awaited<ReturnType<typeof listSentLikes
 
 
 
+export const getRemoveLikeUrl = (likeId: string,) => {
+
+
+
+
+  return `/api/likes/${likeId}`
+}
+
+/**
+ * @summary Retract a like, ending the match if there was one
+ */
+export const removeLike = async (likeId: string, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getRemoveLikeUrl(likeId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getRemoveLikeMutationOptions = <TError = ErrorType<UnauthorizedResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removeLike>>, TError,{likeId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof removeLike>>, TError,{likeId: string}, TContext> => {
+
+const mutationKey = ['removeLike'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof removeLike>>, {likeId: string}> = (props) => {
+          const {likeId} = props ?? {};
+
+          return  removeLike(likeId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RemoveLikeMutationResult = NonNullable<Awaited<ReturnType<typeof removeLike>>>
+
+    export type RemoveLikeMutationError = ErrorType<UnauthorizedResponse | NotFoundResponse>
+
+    /**
+ * @summary Retract a like, ending the match if there was one
+ */
+export const useRemoveLike = <TError = ErrorType<UnauthorizedResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removeLike>>, TError,{likeId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof removeLike>>,
+        TError,
+        {likeId: string},
+        TContext
+      > => {
+      return useMutation(getRemoveLikeMutationOptions(options));
+    }
+
 export const getCreatePassUrl = () => {
 
 
