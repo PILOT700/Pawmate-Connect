@@ -185,6 +185,33 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Featured photo — bridges the community grid into the testimonial */}
+      <section className="py-24 bg-gradient-to-b from-background to-card">
+        <div className="container mx-auto px-4 md:px-8 flex justify-center">
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-80px" }}
+            transition={{ duration: 0.6, ease: "easeOut" }}
+            className="relative w-full max-w-[340px] sm:max-w-[380px]"
+          >
+            {/* Soft halo so the portrait sits on the page rather than floating on it */}
+            <div
+              className="absolute -inset-6 rounded-[3.5rem] bg-primary/10 blur-3xl"
+              aria-hidden="true"
+            />
+            <div className="relative rounded-[2.5rem] overflow-hidden border-4 border-white shadow-xl">
+              <img
+                src="/pawmate-couple.jpg"
+                alt="A couple sitting together on the shore"
+                className="w-full h-auto object-cover"
+                loading="lazy"
+              />
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
       {/* Trust / Testimonial */}
       <section id="testimonials" className="py-24 bg-card relative overflow-hidden">
         <Quote className="absolute top-12 left-12 w-48 h-48 text-primary/5 -rotate-12 pointer-events-none" />
