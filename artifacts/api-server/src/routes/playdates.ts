@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { count, desc, eq, inArray, or } from "drizzle-orm";
-import { db, matchesTable, playdatesTable, messagesTable } from "@workspace/db";
+import { db, matchesTable, playdatesTable, messagesTable, usersTable } from "@workspace/db";
 import {
   ProposePlaydateParams,
   ProposePlaydateBody,
@@ -12,6 +12,7 @@ import {
 } from "@workspace/api-zod";
 import { parsePagination } from "../lib/pagination";
 import { requireMatchParticipant } from "../lib/match-access";
+import { createNotifications } from "../lib/notifications";
 import { HttpError } from "../lib/http-error";
 import { requireAuth } from "../middlewares/require-auth";
 
@@ -28,7 +29,7 @@ router.post("/matches/:matchId/playdates", requireAuth, async (req, res) => {
   const body = ProposePlaydateBody.parse(req.body);
   const meId = req.user!.id;
 
-  await requireMatchParticipant(matchId, meId);
+  const match = await requireMatchParticipant(matchId, meId);
 
   const [playdate] = await db
     .insert(playdatesTable)
@@ -45,6 +46,26 @@ router.post("/matches/:matchId/playdates", requireAuth, async (req, res) => {
   await db
     .insert(messagesTable)
     .values({ matchId, senderId: meId, kind: "playdate", playdateId: playdate!.id });
+
+  const recipientId = match.userOneId === meId ? match.userTwoId : match.userOneId;
+
+  const [proposer] = await db
+    .select({ firstName: usersTable.firstName, avatarUrl: usersTable.avatarUrl })
+    .from(usersTable)
+    .where(eq(usersTable.id, meId))
+    .limit(1);
+
+  await createNotifications([
+    {
+      userId: recipientId,
+      type: "playdate",
+      title: "Playdate invite",
+      body: `${proposer?.firstName ?? "Your match"} suggested ${body.place}.`,
+      relatedEntityType: "match",
+      relatedEntityId: matchId,
+      avatarUrl: proposer?.avatarUrl ?? null,
+    },
+  ]);
 
   res.status(201).json(RespondToPlaydateResponse.parse(playdate));
 });

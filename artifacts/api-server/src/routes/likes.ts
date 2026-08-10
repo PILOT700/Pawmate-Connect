@@ -9,6 +9,7 @@ import {
 } from "@workspace/api-zod";
 import { parsePagination } from "../lib/pagination";
 import { HttpError } from "../lib/http-error";
+import { createNotifications } from "../lib/notifications";
 import { requireAuth } from "../middlewares/require-auth";
 
 const router: IRouter = Router();
@@ -63,6 +64,29 @@ router.post("/likes", requireAuth, async (req, res) => {
           .where(and(eq(matchesTable.userOneId, userOneId), eq(matchesTable.userTwoId, userTwoId)))
           .limit(1)
       )[0];
+
+    // Only announce a match the first time it is formed.
+    if (created && match) {
+      const pair = await db
+        .select({ id: usersTable.id, firstName: usersTable.firstName, avatarUrl: usersTable.avatarUrl })
+        .from(usersTable)
+        .where(inArray(usersTable.id, [meId, body.likedUserId]));
+
+      await createNotifications(
+        pair.map((person) => {
+          const other = pair.find((candidate) => candidate.id !== person.id);
+          return {
+            userId: person.id,
+            type: "match" as const,
+            title: "New match",
+            body: `You and ${other?.firstName ?? "someone"} liked each other.`,
+            relatedEntityType: "match",
+            relatedEntityId: match!.id,
+            avatarUrl: other?.avatarUrl ?? null,
+          };
+        }),
+      );
+    }
   }
 
   res.status(201).json({ like: existingLike, isMatch: Boolean(reciprocal), match });

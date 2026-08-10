@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { count, eq } from "drizzle-orm";
-import { db, messagesTable, messageReadsTable } from "@workspace/db";
+import { db, messagesTable, messageReadsTable, usersTable } from "@workspace/db";
 import {
   ListMessagesParams,
   ListMessagesQueryParams,
@@ -11,6 +11,7 @@ import {
 } from "@workspace/api-zod";
 import { parsePagination } from "../lib/pagination";
 import { requireMatchParticipant } from "../lib/match-access";
+import { createNotifications } from "../lib/notifications";
 import { requireAuth } from "../middlewares/require-auth";
 
 const router: IRouter = Router();
@@ -36,12 +37,32 @@ router.post("/matches/:matchId/messages", requireAuth, async (req, res) => {
   const { matchId } = SendMessageParams.parse(req.params);
   const body = SendMessageBody.parse(req.body);
 
-  await requireMatchParticipant(matchId, req.user!.id);
+  const match = await requireMatchParticipant(matchId, req.user!.id);
 
   const [message] = await db
     .insert(messagesTable)
     .values({ matchId, senderId: req.user!.id, kind: "text", text: body.text })
     .returning();
+
+  const recipientId = match.userOneId === req.user!.id ? match.userTwoId : match.userOneId;
+
+  const [sender] = await db
+    .select({ firstName: usersTable.firstName, avatarUrl: usersTable.avatarUrl })
+    .from(usersTable)
+    .where(eq(usersTable.id, req.user!.id))
+    .limit(1);
+
+  await createNotifications([
+    {
+      userId: recipientId,
+      type: "message",
+      title: `New message from ${sender?.firstName ?? "a match"}`,
+      body: body.text,
+      relatedEntityType: "match",
+      relatedEntityId: matchId,
+      avatarUrl: sender?.avatarUrl ?? null,
+    },
+  ]);
 
   res.status(201).json(message);
 });
