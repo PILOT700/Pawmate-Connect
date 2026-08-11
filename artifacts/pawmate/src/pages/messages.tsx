@@ -6,11 +6,11 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { motion, AnimatePresence } from "framer-motion";
 import { format, isToday, isYesterday, differenceInCalendarDays } from "date-fns";
-import { pushNotification } from "@/lib/notif-store";
 import {
   useListMatches,
   useListMessages,
   getListMessagesQueryKey,
+  getListMatchesQueryKey,
   useSendMessage,
   useMarkMatchRead,
   useListPlaydates,
@@ -649,7 +649,22 @@ export default function Messages() {
   const [composeOpen, setComposeOpen] = useState(false);
   const [search, setSearch] = useState("");
 
-  const { data: matchesData, isLoading: matchesLoading, refetch: refetchMatches } = useListMatches({ pageSize: 50 });
+  // There's no realtime channel, so an incoming message would otherwise only
+  // appear after leaving and re-entering the conversation. Polling is paused
+  // while the tab is in the background.
+  const OPEN_CHAT_POLL_MS = 5000;
+  const CONVERSATION_LIST_POLL_MS = 15000;
+
+  const { data: matchesData, isLoading: matchesLoading, refetch: refetchMatches } = useListMatches(
+    { pageSize: 50 },
+    {
+      query: {
+        queryKey: getListMatchesQueryKey({ pageSize: 50 }),
+        refetchInterval: CONVERSATION_LIST_POLL_MS,
+        refetchIntervalInBackground: false,
+      },
+    },
+  );
   const {
     data: messagesData,
     isLoading: messagesLoading,
@@ -657,7 +672,14 @@ export default function Messages() {
   } = useListMessages(
     activeMatchId ?? "",
     { pageSize: 100 },
-    { query: { queryKey: getListMessagesQueryKey(activeMatchId ?? "", { pageSize: 100 }), enabled: !!activeMatchId } },
+    {
+      query: {
+        queryKey: getListMessagesQueryKey(activeMatchId ?? "", { pageSize: 100 }),
+        enabled: !!activeMatchId,
+        refetchInterval: OPEN_CHAT_POLL_MS,
+        refetchIntervalInBackground: false,
+      },
+    },
   );
   const { data: playdatesData, refetch: refetchPlaydates } = useListPlaydates({ pageSize: 100 });
 
@@ -727,15 +749,6 @@ export default function Messages() {
     try {
       await proposePlaydate.mutateAsync({ matchId: activeMatchId, data });
       await Promise.all([refetchMessages(), refetchPlaydates(), refetchMatches()]);
-      pushNotification({
-        type: "playdate",
-        title: `Playdate request sent to ${activeMatch.otherUser.firstName}`,
-        body: `${data.place} · ${formatPlaydateDate(new Date(data.date).toISOString())} at ${data.timeSlot}`,
-        time: "Just now",
-        avatar: activeMatch.otherUser.avatarUrl || FALLBACK_IMAGE,
-        petName: activeMatch.otherPet?.name,
-        href: "/messages",
-      });
     } catch (err) {
       toast({
         variant: "destructive",
@@ -751,19 +764,6 @@ export default function Messages() {
       await respondToPlaydate.mutateAsync({ playdateId, data: { status } });
       await Promise.all([refetchMessages(), refetchPlaydates(), refetchMatches()]);
       const pd = playdatesById.get(playdateId);
-      if (pd && activeMatch) {
-        pushNotification({
-          type: "playdate",
-          title: status === "accepted"
-            ? `You accepted the playdate with ${activeMatch.otherUser.firstName}`
-            : `You declined the playdate with ${activeMatch.otherUser.firstName}`,
-          body: `${pd.place} · ${formatPlaydateDate(pd.date)} at ${pd.timeSlot}`,
-          time: "Just now",
-          avatar: activeMatch.otherUser.avatarUrl || FALLBACK_IMAGE,
-          petName: activeMatch.otherPet?.name,
-          href: "/messages",
-        });
-      }
     } catch (err) {
       toast({
         variant: "destructive",

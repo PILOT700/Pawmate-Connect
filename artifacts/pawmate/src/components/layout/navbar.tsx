@@ -4,9 +4,13 @@ import { Menu, X, Bell, User, PawPrint, Heart, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import { NotificationsDrawer } from "@/components/notifications-drawer";
-import { useLogoutUser } from "@workspace/api-client-react";
+import {
+  useLogoutUser,
+  useListNotifications,
+  getListNotificationsQueryKey,
+} from "@workspace/api-client-react";
 import { useAuth } from "@/contexts/auth-context";
-import { useNotifications } from "@/lib/notif-store";
+
 
 const publicNavLinks = [
   { label: "How it works", href: "/#how-it-works" },
@@ -22,11 +26,18 @@ export function Navbar() {
   const [notifOpen, setNotifOpen] = useState(false);
 
   const { user, refreshSession } = useAuth();
-  const notifications = useNotifications();
   const logout = useLogoutUser();
 
   const isLoggedIn = Boolean(user);
-  const unreadCount = notifications.filter((n) => !n.read).length;
+  // Polled so the badge reflects notifications created while the tab is open.
+  const { data: notificationsData } = useListNotifications(undefined, {
+    query: {
+      queryKey: getListNotificationsQueryKey(),
+      refetchInterval: 30000,
+      refetchIntervalInBackground: false,
+    },
+  });
+  const unreadCount = (notificationsData?.items ?? []).filter((n) => !n.read).length;
 
   const handleLogout = async () => {
     await logout.mutateAsync();
