@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import {
   Bell, Lock, Eye, Heart, MessageCircle, User, PawPrint,
   ChevronRight, Moon, Globe, Trash2, LogOut, Shield, MapPin,
@@ -8,7 +8,23 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { useGetMySettings, useUpdateMySettings, type UserSettings } from "@workspace/api-client-react";
+import {
+  useGetMySettings,
+  useUpdateMySettings,
+  useLogoutUser,
+  useDeleteMyAccount,
+  type UserSettings,
+} from "@workspace/api-client-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useAuth } from "@/contexts/auth-context";
 import { useToast } from "@/hooks/use-toast";
 import { apiErrorMessage } from "@/lib/api-error";
@@ -95,9 +111,36 @@ function Section({ title, children }: SectionProps) {
 
 export default function Settings() {
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, refreshSession } = useAuth();
+  const [, setLocation] = useLocation();
   const { data: settingsData, isLoading } = useGetMySettings();
   const updateMutation = useUpdateMySettings();
+  const logout = useLogoutUser();
+  const deleteAccount = useDeleteMyAccount();
+  const [deleteOpen, setDeleteOpen] = useState(false);
+
+  const handleLogout = async () => {
+    await logout.mutateAsync();
+    await refreshSession();
+    setLocation("/");
+  };
+
+  const handleDeleteAccount = async () => {
+    setDeleteOpen(false);
+
+    try {
+      await deleteAccount.mutateAsync();
+      // The account is gone, so the cached session has to go with it.
+      await refreshSession();
+      setLocation("/");
+    } catch (err) {
+      toast({
+        variant: "destructive",
+        title: "Couldn't delete your account",
+        description: apiErrorMessage(err, "Please try again."),
+      });
+    }
+  };
 
   type EditableSettings = Omit<UserSettings, "userId">;
 
@@ -305,74 +348,23 @@ export default function Settings() {
             iconBg="bg-secondary"
             label="Language"
             description={user?.language === "en" ? "English" : user?.language}
-            chevron
             testId="setting-language"
           />
-          <SettingRow
-            icon={<ToggleLeft className="w-4 h-4 text-muted-foreground" />}
-            iconBg="bg-secondary"
-            label="Discovery preferences"
-            description="Age range, distance, pet type"
-            chevron
-            testId="setting-discovery"
-          />
-        </Section>
-
-        {/* Account */}
-        <Section title="Account">
-          <SettingRow
-            icon={<Lock className="w-4 h-4 text-muted-foreground" />}
-            iconBg="bg-secondary"
-            label="Change password"
-            chevron
-            testId="setting-password"
-          />
-          <SettingRow
-            icon={<Mail className="w-4 h-4 text-muted-foreground" />}
-            iconBg="bg-secondary"
-            label="Change email"
-            description={user?.email}
-            chevron
-            testId="setting-email"
-          />
-          <SettingRow
-            icon={<Shield className="w-4 h-4 text-muted-foreground" />}
-            iconBg="bg-secondary"
-            label="Two-factor authentication"
-            description={user?.twoFactorEnabled ? "Enabled" : "Not enabled"}
-            chevron
-            testId="setting-2fa"
-          />
-        </Section>
-
-        {/* Support */}
-        <Section title="Support">
-          <SettingRow
-            icon={<Shield className="w-4 h-4 text-muted-foreground" />}
-            iconBg="bg-secondary"
-            label="Privacy policy"
-            chevron
-            testId="setting-privacy-policy"
-          />
-          <SettingRow
-            icon={<Globe className="w-4 h-4 text-muted-foreground" />}
-            iconBg="bg-secondary"
-            label="Terms of service"
-            chevron
-            testId="setting-terms"
-          />
-          <SettingRow
-            icon={<MessageCircle className="w-4 h-4 text-muted-foreground" />}
-            iconBg="bg-secondary"
-            label="Contact support"
-            chevron
-            testId="setting-support"
-          />
+          <Link href="/onboarding" data-testid="link-settings-discovery">
+            <SettingRow
+              icon={<ToggleLeft className="w-4 h-4 text-muted-foreground" />}
+              iconBg="bg-secondary"
+              label="Discovery preferences"
+              description="Age range, distance, pet type"
+              chevron
+              testId="setting-discovery"
+            />
+          </Link>
         </Section>
 
         {/* Danger zone */}
         <Section title="Danger Zone">
-          <Link href="/" data-testid="link-settings-signout">
+          <button type="button" onClick={handleLogout} className="w-full text-left" data-testid="btn-settings-signout">
             <SettingRow
               icon={<LogOut className="w-4 h-4 text-destructive" />}
               iconBg="bg-destructive/10"
@@ -380,20 +372,40 @@ export default function Settings() {
               danger
               testId="setting-sign-out"
             />
-          </Link>
-          <SettingRow
-            icon={<Trash2 className="w-4 h-4 text-destructive" />}
-            iconBg="bg-destructive/10"
-            label="Delete account"
-            description="Permanently remove your profile and all data"
-            danger
-            testId="setting-delete-account"
-          />
+          </button>
+          <button type="button" onClick={() => setDeleteOpen(true)} className="w-full text-left" data-testid="btn-settings-delete">
+            <SettingRow
+              icon={<Trash2 className="w-4 h-4 text-destructive" />}
+              iconBg="bg-destructive/10"
+              label="Delete account"
+              description="Permanently remove your profile and all data"
+              danger
+              testId="setting-delete-account"
+            />
+          </button>
         </Section>
 
         {/* Version */}
         <p className="text-center text-xs text-muted-foreground/50 pb-4">Pawmate v1.0 · Made with care for pet lovers</p>
       </div>
+
+      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete your account?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This removes your profile, pets, matches, messages, and everything you've
+              posted. It cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="btn-delete-cancel">Keep my account</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteAccount} data-testid="btn-delete-confirm">
+              Delete permanently
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

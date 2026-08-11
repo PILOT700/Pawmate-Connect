@@ -1,12 +1,15 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
-import { PawPrint, Dog, Cat, Rabbit, Bird, Fish, Heart, Users, Coffee, Sparkles, MapPin, ChevronRight, Check } from "lucide-react";
+import { PawPrint, Dog, Cat, Rabbit, Bird, Fish, Heart, Users, Coffee, Sparkles, MapPin, ChevronRight, Check, Loader } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   useUpdateMyPreferences,
+  useGetMyPreferences,
+  getGetMyPreferencesQueryKey,
   type Species,
   type LookingFor,
+  type UserPreferences,
 } from "@workspace/api-client-react";
 import { useAuth } from "@/contexts/auth-context";
 import { useToast } from "@/hooks/use-toast";
@@ -54,17 +57,30 @@ const variants = {
   exit: (dir: number) => ({ x: dir > 0 ? -60 : 60, opacity: 0 }),
 };
 
-export default function Onboarding() {
+/**
+ * Mounted only once preferences are loaded, so the pickers can start on the
+ * saved values instead of being filled in after the first paint.
+ */
+function OnboardingSteps({
+  preferences,
+  isEditing,
+}: {
+  preferences: UserPreferences;
+  isEditing: boolean;
+}) {
   const [, navigate] = useLocation();
   const { refreshSession } = useAuth();
   const { toast } = useToast();
   const [step, setStep] = useState(0);
   const [dir, setDir] = useState(1);
 
-  const [pets, setPets] = useState<string[]>([]);
-  const [lookingFor, setLookingFor] = useState<string[]>([]);
-  const [distance, setDistance] = useState(25);
-  const [ageRange, setAgeRange] = useState([25, 55]);
+  const [pets, setPets] = useState<string[]>(preferences.petTypePrefs ?? []);
+  const [lookingFor, setLookingFor] = useState<string[]>(preferences.lookingForPrefs ?? []);
+  const [distance, setDistance] = useState(preferences.maxDistanceMiles ?? 25);
+  const [ageRange, setAgeRange] = useState([
+    preferences.ageRangeMin ?? 25,
+    preferences.ageRangeMax ?? 55,
+  ]);
 
   const savePreferences = useUpdateMyPreferences();
 
@@ -83,7 +99,7 @@ export default function Onboarding() {
       // The server stamps onboardingCompletedAt on this call, so the cached
       // session must be refreshed before we route off it.
       await refreshSession();
-      navigate("/create-profile");
+      navigate(isEditing ? "/settings" : "/create-profile");
     } catch (err) {
       toast({
         variant: "destructive",
@@ -393,5 +409,28 @@ export default function Onboarding() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function Onboarding() {
+  const { user } = useAuth();
+  const { data: preferences, isLoading } = useGetMyPreferences({
+    query: { queryKey: getGetMyPreferencesQueryKey() },
+  });
+
+  if (isLoading || !preferences) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader className="w-6 h-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  return (
+    <OnboardingSteps
+      preferences={preferences}
+      // Reached from Settings rather than as a first-run step.
+      isEditing={Boolean(user?.onboardingCompletedAt)}
+    />
   );
 }
