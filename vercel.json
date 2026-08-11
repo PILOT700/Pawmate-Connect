@@ -5,7 +5,7 @@
       "destination": "https://pawmate-api-ov14.onrender.com/api/:path*"
     },
     {
-      "source": "/(.*)",
+      "source": "/((?!.*\\.[a-zA-Z0-9]+$).*)",
       "destination": "/index.html"
     }
   ]
