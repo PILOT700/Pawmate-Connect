@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Camera, Check } from "lucide-react";
+import { Camera, Check, Loader } from "lucide-react";
 import {
   useUpdateMyProfile,
   useCreateMyPet,
@@ -17,6 +17,8 @@ import {
   getListMyPetsQueryKey,
   type Species,
   type LookingFor,
+  type User,
+  type Pet,
 } from "@workspace/api-client-react";
 import { useAuth } from "@/contexts/auth-context";
 import { useToast } from "@/hooks/use-toast";
@@ -41,68 +43,48 @@ function lookingForToIntent(values: LookingFor[]): string {
   return "both";
 }
 
-export default function CreateProfile() {
+/**
+ * The wizard itself. It is mounted only once its data is in hand, so every
+ * field can start from the saved value — filling them in afterwards would
+ * mean setting state mid-transition, which stalls the step animation.
+ */
+function ProfileWizard({
+  me,
+  existingPet,
+  isEditing,
+}: {
+  me: User;
+  existingPet?: Pet;
+  isEditing: boolean;
+}) {
   const [, setLocation] = useLocation();
   const { refreshSession } = useAuth();
   const { toast } = useToast();
   const [step, setStep] = useState(1);
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [selectedTags, setSelectedTags] = useState<string[]>(me.lifestyleTags ?? []);
 
-  const [name, setName] = useState("");
-  const [age, setAge] = useState("");
-  const [city, setCity] = useState("");
-  // Defaults mirror what the selects show, so an untouched form saves what the
-  // user actually sees.
-  const [intent, setIntent] = useState("both");
-  const [bio, setBio] = useState("");
-  const [petName, setPetName] = useState("");
-  const [petSpecies, setPetSpecies] = useState("dog");
-  const [petBreed, setPetBreed] = useState("");
-  const [petAge, setPetAge] = useState("");
+  const [name, setName] = useState(me.firstName ?? "");
+  const [age, setAge] = useState(me.age != null ? String(me.age) : "");
+  const [city, setCity] = useState(me.city ?? "");
+  const [intent, setIntent] = useState(lookingForToIntent(me.lookingFor));
+  const [bio, setBio] = useState(me.bio ?? "");
+  const [petName, setPetName] = useState(existingPet?.name ?? "");
+  const [petSpecies, setPetSpecies] = useState<string>(existingPet?.species ?? "dog");
+  const [petBreed, setPetBreed] = useState(existingPet?.breed ?? "");
+  const [petAge, setPetAge] = useState(
+    existingPet?.ageYears != null ? String(existingPet.ageYears) : "",
+  );
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
-  const [avatarPreview, setAvatarPreview] = useState<string>("");
+  const [avatarPreview, setAvatarPreview] = useState<string>(me.avatarUrl ?? "");
   const [petPhotoFile, setPetPhotoFile] = useState<File | null>(null);
-  const [petPhotoPreview, setPetPhotoPreview] = useState<string>("");
+  const [petPhotoPreview, setPetPhotoPreview] = useState<string>(existingPet?.photoUrl ?? "");
   const [isUploading, setIsUploading] = useState(false);
-
-  const { data: me } = useGetMyProfile({ query: { queryKey: getGetMyProfileQueryKey() } });
-  const { data: myPets } = useListMyPets({ query: { queryKey: getListMyPetsQueryKey() } });
-  const existingPet = myPets?.[0];
-
-  // Someone who already finished onboarding is editing, not signing up.
-  const isEditing = Boolean(me?.onboardingCompletedAt);
 
   const updateProfile = useUpdateMyProfile();
   const createPet = useCreateMyPet();
   const updatePet = useUpdatePet();
   const isSaving =
     isUploading || updateProfile.isPending || createPet.isPending || updatePet.isPending;
-
-  // Fill the form from what's already saved — once, so it doesn't fight typing.
-  const prefilled = useRef(false);
-
-  useEffect(() => {
-    if (prefilled.current || !me) return;
-    prefilled.current = true;
-
-    setName(me.firstName ?? "");
-    setAge(me.age != null ? String(me.age) : "");
-    setCity(me.city ?? "");
-    setBio(me.bio ?? "");
-    setIntent(lookingForToIntent(me.lookingFor));
-    setSelectedTags(me.lifestyleTags ?? []);
-    if (me.avatarUrl) setAvatarPreview(me.avatarUrl);
-  }, [me]);
-
-  useEffect(() => {
-    if (!existingPet) return;
-
-    setPetName(existingPet.name);
-    setPetSpecies(existingPet.species);
-    setPetBreed(existingPet.breed ?? "");
-    setPetAge(existingPet.ageYears != null ? String(existingPet.ageYears) : "");
-    if (existingPet.photoUrl) setPetPhotoPreview(existingPet.photoUrl);
-  }, [existingPet]);
 
   const handlePhotoSelect = (
     e: React.ChangeEvent<HTMLInputElement>,
@@ -410,5 +392,31 @@ export default function CreateProfile() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function CreateProfile() {
+  const { data: me, isLoading: profileLoading } = useGetMyProfile({
+    query: { queryKey: getGetMyProfileQueryKey() },
+  });
+  const { data: myPets, isLoading: petsLoading } = useListMyPets({
+    query: { queryKey: getListMyPetsQueryKey() },
+  });
+
+  if (profileLoading || petsLoading || !me) {
+    return (
+      <div className="min-h-[calc(100vh-5rem)] bg-background flex items-center justify-center">
+        <Loader className="w-6 h-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  return (
+    <ProfileWizard
+      me={me}
+      existingPet={myPets?.[0]}
+      // Someone who already finished onboarding is editing, not signing up.
+      isEditing={Boolean(me.onboardingCompletedAt)}
+    />
   );
 }
