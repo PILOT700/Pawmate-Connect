@@ -4,7 +4,7 @@ import { Link, useLocation } from "wouter";
 import {
   Bell, Lock, Eye, Heart, MessageCircle, User, PawPrint,
   ChevronRight, Moon, Globe, Trash2, LogOut, Shield, MapPin,
-  Smartphone, Mail, ToggleLeft
+  Smartphone, Mail, ToggleLeft, Ban
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -13,6 +13,9 @@ import {
   useUpdateMySettings,
   useLogoutUser,
   useDeleteMyAccount,
+  useListBlockedUsers,
+  useUnblockUser,
+  getListBlockedUsersQueryKey,
   type UserSettings,
 } from "@workspace/api-client-react";
 import {
@@ -25,6 +28,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/auth-context";
 import { useToast } from "@/hooks/use-toast";
 import { apiErrorMessage } from "@/lib/api-error";
@@ -117,12 +121,31 @@ export default function Settings() {
   const updateMutation = useUpdateMySettings();
   const logout = useLogoutUser();
   const deleteAccount = useDeleteMyAccount();
+  const queryClient = useQueryClient();
+  const { data: blockedUsers } = useListBlockedUsers({
+    query: { queryKey: getListBlockedUsersQueryKey() },
+  });
+  const unblock = useUnblockUser();
   const [deleteOpen, setDeleteOpen] = useState(false);
 
   const handleLogout = async () => {
     await logout.mutateAsync();
     await refreshSession();
     setLocation("/");
+  };
+
+  const handleUnblock = async (userId: string, firstName: string) => {
+    try {
+      await unblock.mutateAsync({ userId });
+      await queryClient.invalidateQueries({ queryKey: getListBlockedUsersQueryKey() });
+      toast({ title: "Unblocked", description: `${firstName} can see you again.` });
+    } catch (err) {
+      toast({
+        variant: "destructive",
+        title: "Couldn't unblock",
+        description: apiErrorMessage(err, "Please try again."),
+      });
+    }
   };
 
   const handleDeleteAccount = async () => {
@@ -361,6 +384,39 @@ export default function Settings() {
             />
           </Link>
         </Section>
+
+        {/* Blocked members — only worth showing when there are any */}
+        {blockedUsers && blockedUsers.length > 0 && (
+          <Section title="Blocked">
+            {blockedUsers.map((blocked) => (
+              <div key={blocked.id} className="flex items-center gap-4 py-4 px-1">
+                <div className="w-9 h-9 rounded-xl bg-secondary flex items-center justify-center flex-shrink-0 overflow-hidden">
+                  {blocked.avatarUrl ? (
+                    <img src={blocked.avatarUrl} alt={blocked.firstName} className="w-full h-full object-cover" />
+                  ) : (
+                    <Ban className="w-4 h-4 text-muted-foreground" />
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-foreground">{blocked.firstName}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Blocked {new Date(blocked.blockedAt).toLocaleDateString()}
+                  </p>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="rounded-full flex-shrink-0"
+                  onClick={() => handleUnblock(blocked.id, blocked.firstName)}
+                  disabled={unblock.isPending}
+                  data-testid={`btn-unblock-${blocked.id}`}
+                >
+                  Unblock
+                </Button>
+              </div>
+            ))}
+          </Section>
+        )}
 
         {/* Danger zone */}
         <Section title="Danger Zone">

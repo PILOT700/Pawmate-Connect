@@ -476,6 +476,48 @@ export const RemoveLikeParams = zod.object({
 
 
 /**
+ * @summary List members the logged-in user has blocked
+ */
+export const ListBlockedUsersResponseItem = zod.object({
+  "id": zod.string().uuid(),
+  "firstName": zod.string(),
+  "avatarUrl": zod.string().nullish(),
+  "blockedAt": zod.coerce.date()
+})
+export const ListBlockedUsersResponse = zod.array(ListBlockedUsersResponseItem)
+
+
+/**
+ * @summary Block a member, ending any match between them
+ */
+export const BlockUserBody = zod.object({
+  "userId": zod.string().uuid()
+})
+
+
+/**
+ * @summary Lift a block
+ */
+export const UnblockUserParams = zod.object({
+  "userId": zod.coerce.string().uuid()
+})
+
+
+/**
+ * @summary Report a member
+ */
+export const reportUserBodyDetailsMax = 1000;
+
+
+
+export const ReportUserBody = zod.object({
+  "userId": zod.string().uuid(),
+  "reason": zod.enum(['harassment', 'spam', 'fake_profile', 'inappropriate_content', 'animal_welfare', 'other']),
+  "details": zod.string().max(reportUserBodyDetailsMax).optional()
+})
+
+
+/**
  * @summary Skip a candidate profile
  */
 export const CreatePassBody = zod.object({

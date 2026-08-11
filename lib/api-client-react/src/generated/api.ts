@@ -20,6 +20,8 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  BlockUserRequest,
+  BlockedUser,
   CommunityEvent,
   CommunityEventList,
   ConflictResponse,
@@ -54,6 +56,7 @@ import type {
   Playdate,
   PlaydateList,
   RegisterRequest,
+  ReportUserRequest,
   SendMessageRequest,
   SentLikeList,
   Story,
@@ -1712,6 +1715,295 @@ export const useRemoveLike = <TError = ErrorType<UnauthorizedResponse | NotFound
         TContext
       > => {
       return useMutation(getRemoveLikeMutationOptions(options));
+    }
+
+export const getListBlockedUsersUrl = () => {
+
+
+
+
+  return `/api/blocks`
+}
+
+/**
+ * @summary List members the logged-in user has blocked
+ */
+export const listBlockedUsers = async ( options?: RequestInit): Promise<BlockedUser[]> => {
+
+  return customFetch<BlockedUser[]>(getListBlockedUsersUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListBlockedUsersQueryKey = () => {
+    return [
+    `/api/blocks`
+    ] as const;
+    }
+
+
+export const getListBlockedUsersQueryOptions = <TData = Awaited<ReturnType<typeof listBlockedUsers>>, TError = ErrorType<UnauthorizedResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listBlockedUsers>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListBlockedUsersQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listBlockedUsers>>> = ({ signal }) => listBlockedUsers({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listBlockedUsers>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListBlockedUsersQueryResult = NonNullable<Awaited<ReturnType<typeof listBlockedUsers>>>
+export type ListBlockedUsersQueryError = ErrorType<UnauthorizedResponse>
+
+
+/**
+ * @summary List members the logged-in user has blocked
+ */
+
+export function useListBlockedUsers<TData = Awaited<ReturnType<typeof listBlockedUsers>>, TError = ErrorType<UnauthorizedResponse>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listBlockedUsers>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListBlockedUsersQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getBlockUserUrl = () => {
+
+
+
+
+  return `/api/blocks`
+}
+
+/**
+ * @summary Block a member, ending any match between them
+ */
+export const blockUser = async (blockUserRequest: BlockUserRequest, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getBlockUserUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      blockUserRequest,)
+  }
+);}
+
+
+
+
+export const getBlockUserMutationOptions = <TError = ErrorType<UnauthorizedResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof blockUser>>, TError,{data: BodyType<BlockUserRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof blockUser>>, TError,{data: BodyType<BlockUserRequest>}, TContext> => {
+
+const mutationKey = ['blockUser'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof blockUser>>, {data: BodyType<BlockUserRequest>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  blockUser(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type BlockUserMutationResult = NonNullable<Awaited<ReturnType<typeof blockUser>>>
+    export type BlockUserMutationBody = BodyType<BlockUserRequest>
+    export type BlockUserMutationError = ErrorType<UnauthorizedResponse | NotFoundResponse>
+
+    /**
+ * @summary Block a member, ending any match between them
+ */
+export const useBlockUser = <TError = ErrorType<UnauthorizedResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof blockUser>>, TError,{data: BodyType<BlockUserRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof blockUser>>,
+        TError,
+        {data: BodyType<BlockUserRequest>},
+        TContext
+      > => {
+      return useMutation(getBlockUserMutationOptions(options));
+    }
+
+export const getUnblockUserUrl = (userId: string,) => {
+
+
+
+
+  return `/api/blocks/${userId}`
+}
+
+/**
+ * @summary Lift a block
+ */
+export const unblockUser = async (userId: string, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getUnblockUserUrl(userId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getUnblockUserMutationOptions = <TError = ErrorType<UnauthorizedResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof unblockUser>>, TError,{userId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof unblockUser>>, TError,{userId: string}, TContext> => {
+
+const mutationKey = ['unblockUser'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof unblockUser>>, {userId: string}> = (props) => {
+          const {userId} = props ?? {};
+
+          return  unblockUser(userId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UnblockUserMutationResult = NonNullable<Awaited<ReturnType<typeof unblockUser>>>
+
+    export type UnblockUserMutationError = ErrorType<UnauthorizedResponse | NotFoundResponse>
+
+    /**
+ * @summary Lift a block
+ */
+export const useUnblockUser = <TError = ErrorType<UnauthorizedResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof unblockUser>>, TError,{userId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof unblockUser>>,
+        TError,
+        {userId: string},
+        TContext
+      > => {
+      return useMutation(getUnblockUserMutationOptions(options));
+    }
+
+export const getReportUserUrl = () => {
+
+
+
+
+  return `/api/reports`
+}
+
+/**
+ * @summary Report a member
+ */
+export const reportUser = async (reportUserRequest: ReportUserRequest, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getReportUserUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      reportUserRequest,)
+  }
+);}
+
+
+
+
+export const getReportUserMutationOptions = <TError = ErrorType<UnauthorizedResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reportUser>>, TError,{data: BodyType<ReportUserRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof reportUser>>, TError,{data: BodyType<ReportUserRequest>}, TContext> => {
+
+const mutationKey = ['reportUser'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof reportUser>>, {data: BodyType<ReportUserRequest>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  reportUser(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReportUserMutationResult = NonNullable<Awaited<ReturnType<typeof reportUser>>>
+    export type ReportUserMutationBody = BodyType<ReportUserRequest>
+    export type ReportUserMutationError = ErrorType<UnauthorizedResponse | NotFoundResponse>
+
+    /**
+ * @summary Report a member
+ */
+export const useReportUser = <TError = ErrorType<UnauthorizedResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reportUser>>, TError,{data: BodyType<ReportUserRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof reportUser>>,
+        TError,
+        {data: BodyType<ReportUserRequest>},
+        TContext
+      > => {
+      return useMutation(getReportUserMutationOptions(options));
     }
 
 export const getCreatePassUrl = () => {

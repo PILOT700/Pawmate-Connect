@@ -15,6 +15,8 @@ import eventsRouter from "./events";
 import commentsRouter from "./comments";
 import storiesRouter from "./stories";
 import notificationsRouter from "./notifications";
+import blocksRouter from "./blocks";
+import reportsRouter from "./reports";
 
 const router: IRouter = Router();
 
@@ -35,5 +37,7 @@ router.use(playdatesRouter);
 router.use(eventsRouter);
 router.use(commentsRouter);
 router.use(notificationsRouter);
+router.use(blocksRouter);
+router.use(reportsRouter);
 
 export default router;

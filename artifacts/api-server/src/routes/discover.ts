@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { and, count, desc, eq, inArray, ne, notInArray, sql } from "drizzle-orm";
-import { db, usersTable, petsTable, likesTable, passesTable } from "@workspace/db";
+import { db, usersTable, petsTable, likesTable, passesTable, blocksTable } from "@workspace/db";
 import { ListDiscoverProfilesQueryParams, ListDiscoverProfilesResponse } from "@workspace/api-zod";
 import { parsePagination } from "../lib/pagination";
 import { requireAuth } from "../middlewares/require-auth";
@@ -15,10 +15,22 @@ router.get("/discover", requireAuth, async (req, res) => {
   const likedIds = db.select({ id: likesTable.likedUserId }).from(likesTable).where(eq(likesTable.likerId, meId));
   const passedIds = db.select({ id: passesTable.passedUserId }).from(passesTable).where(eq(passesTable.userId, meId));
 
+  // A block hides the pair from each other, so both directions are excluded.
+  const blockedIds = db
+    .select({ id: blocksTable.blockedUserId })
+    .from(blocksTable)
+    .where(eq(blocksTable.blockerId, meId));
+  const blockedMeIds = db
+    .select({ id: blocksTable.blockerId })
+    .from(blocksTable)
+    .where(eq(blocksTable.blockedUserId, meId));
+
   const filters = [
     ne(usersTable.id, meId),
     notInArray(usersTable.id, likedIds),
     notInArray(usersTable.id, passedIds),
+    notInArray(usersTable.id, blockedIds),
+    notInArray(usersTable.id, blockedMeIds),
   ];
 
   if (query.lookingFor) {

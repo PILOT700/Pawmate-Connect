@@ -370,6 +370,36 @@ export interface CommunityEvent {
   updatedAt: string;
 }
 
+export interface BlockedUser {
+  id: string;
+  firstName: string;
+  avatarUrl?: string | null;
+  blockedAt: string;
+}
+
+export interface BlockUserRequest {
+  userId: string;
+}
+
+export type ReportReason = typeof ReportReason[keyof typeof ReportReason];
+
+
+export const ReportReason = {
+  harassment: 'harassment',
+  spam: 'spam',
+  fake_profile: 'fake_profile',
+  inappropriate_content: 'inappropriate_content',
+  animal_welfare: 'animal_welfare',
+  other: 'other',
+} as const;
+
+export interface ReportUserRequest {
+  userId: string;
+  reason: ReportReason;
+  /** @maxLength 1000 */
+  details?: string;
+}
+
 export interface CreateEventRequest {
   category: EventCategory;
   /** @minLength 1 */

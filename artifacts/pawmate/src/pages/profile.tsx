@@ -1,8 +1,42 @@
-import { useParams, Link } from "wouter";
-import { useEffect } from "react";
+import { useParams, Link, useLocation } from "wouter";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Heart, MapPin, MessageCircle, ArrowLeft, Loader, PawPrint } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Heart,
+  MapPin,
+  MessageCircle,
+  ArrowLeft,
+  Loader,
+  PawPrint,
+  MoreHorizontal,
+  Ban,
+  Flag,
+} from "lucide-react";
 import { motion } from "framer-motion";
 import { CompatibilityScore } from "@/components/compatibility-score";
 import type { CompatibilityInput } from "@/components/compatibility-score";
@@ -15,6 +49,9 @@ import {
   useListUserPets,
   useListUserStories,
   useMarkStoryViewed,
+  useBlockUser,
+  useReportUser,
+  type ReportReason,
   getGetMyProfileQueryKey,
   getGetUserProfileQueryKey,
   getListMyPetsQueryKey,
@@ -22,12 +59,32 @@ import {
   getListUserStoriesQueryKey,
 } from "@workspace/api-client-react";
 import { useAuth } from "@/contexts/auth-context";
+import { useToast } from "@/hooks/use-toast";
+import { apiErrorMessage } from "@/lib/api-error";
 
 const FALLBACK_IMAGE = "/profile1.png";
+
+const REPORT_REASONS: { value: ReportReason; label: string }[] = [
+  { value: "harassment", label: "Harassment or abuse" },
+  { value: "spam", label: "Spam or scam" },
+  { value: "fake_profile", label: "Fake profile" },
+  { value: "inappropriate_content", label: "Inappropriate content" },
+  { value: "animal_welfare", label: "Animal welfare concern" },
+  { value: "other", label: "Something else" },
+];
 
 export default function Profile() {
   const { id } = useParams();
   const { user: currentUser } = useAuth();
+  const { toast } = useToast();
+  const [, setLocation] = useLocation();
+
+  const blockUser = useBlockUser();
+  const reportUser = useReportUser();
+  const [blockOpen, setBlockOpen] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
+  const [reportReason, setReportReason] = useState<ReportReason>("harassment");
+  const [reportDetails, setReportDetails] = useState("");
 
   // "/profile/me" and a link to your own id are the same page.
   const isOwnProfile = !id || id === "me" || id === currentUser?.id;
@@ -77,6 +134,42 @@ export default function Profile() {
     // markViewedMutation is intentionally excluded — it is recreated each render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storiesData]);
+
+  const handleBlock = async () => {
+    if (!id) return;
+    setBlockOpen(false);
+
+    try {
+      await blockUser.mutateAsync({ data: { userId: id } });
+      toast({ title: "Blocked", description: "You won't see each other on Pawmate." });
+      setLocation("/discover");
+    } catch (err) {
+      toast({
+        variant: "destructive",
+        title: "Couldn't block this member",
+        description: apiErrorMessage(err, "Please try again."),
+      });
+    }
+  };
+
+  const handleReport = async () => {
+    if (!id) return;
+    setReportOpen(false);
+
+    try {
+      await reportUser.mutateAsync({
+        data: { userId: id, reason: reportReason, details: reportDetails || undefined },
+      });
+      setReportDetails("");
+      toast({ title: "Report sent", description: "Thanks — we'll take a look." });
+    } catch (err) {
+      toast({
+        variant: "destructive",
+        title: "Couldn't send the report",
+        description: apiErrorMessage(err, "Please try again."),
+      });
+    }
+  };
 
   if (profileLoading) {
     return (
@@ -174,6 +267,31 @@ export default function Profile() {
                       <MessageCircle className="w-5 h-5 mr-2" /> Message
                     </Button>
                   </Link>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        size="lg"
+                        variant="outline"
+                        className="rounded-full h-14 w-14 p-0 border-border flex-shrink-0"
+                        aria-label={`More options for ${profile.firstName}`}
+                        data-testid="btn-profile-more"
+                      >
+                        <MoreHorizontal className="w-5 h-5" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => setReportOpen(true)} data-testid="menu-report">
+                        <Flag className="w-4 h-4 mr-2" /> Report {profile.firstName}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => setBlockOpen(true)}
+                        className="text-destructive focus:text-destructive"
+                        data-testid="menu-block"
+                      >
+                        <Ban className="w-4 h-4 mr-2" /> Block {profile.firstName}
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </>
               )}
             </div>
@@ -278,6 +396,72 @@ export default function Profile() {
           </div>
         </motion.div>
       </div>
+
+      <AlertDialog open={blockOpen} onOpenChange={setBlockOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Block {profile.firstName}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You'll stop seeing each other on Pawmate, and any match between you ends —
+              along with the conversation. They aren't told they were blocked. You can
+              undo this in Settings.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="btn-block-cancel">Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleBlock} data-testid="btn-block-confirm">
+              Block
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={reportOpen} onOpenChange={setReportOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Report {profile.firstName}</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tell us what's wrong. Reports are private — {profile.firstName} won't know
+              who filed one.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <div className="space-y-4 py-2">
+            <Select
+              value={reportReason}
+              onValueChange={(v) => setReportReason(v as ReportReason)}
+            >
+              <SelectTrigger className="h-11 rounded-xl" data-testid="select-report-reason">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {REPORT_REASONS.map((reason) => (
+                  <SelectItem key={reason.value} value={reason.value}>
+                    {reason.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Textarea
+              value={reportDetails}
+              onChange={(e) => setReportDetails(e.target.value)}
+              placeholder="Anything else we should know? (optional)"
+              maxLength={1000}
+              className="rounded-xl resize-none"
+              rows={3}
+              data-testid="input-report-details"
+            />
+          </div>
+
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="btn-report-cancel">Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleReport} data-testid="btn-report-confirm">
+              Send report
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -42,6 +42,10 @@ tags:
     description: Profile "moments" stories
   - name: notifications
     description: In-app notifications
+  - name: blocks
+    description: Blocking other members
+  - name: reports
+    description: Reporting other members
 paths:
   /healthz:
     get:
@@ -431,6 +435,76 @@ paths:
       responses:
         "204":
           description: Like removed
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ---------------------------------------------------------------- blocks --
+  /blocks:
+    get:
+      operationId: listBlockedUsers
+      tags: [blocks]
+      summary: List members the logged-in user has blocked
+      responses:
+        "200":
+          description: Blocked members
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BlockedUser"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      operationId: blockUser
+      tags: [blocks]
+      summary: Block a member, ending any match between them
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BlockUserRequest"
+      responses:
+        "204":
+          description: Member blocked
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /blocks/{userId}:
+    parameters:
+      - $ref: "#/components/parameters/userId"
+    delete:
+      operationId: unblockUser
+      tags: [blocks]
+      summary: Lift a block
+      responses:
+        "204":
+          description: Block lifted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # --------------------------------------------------------------- reports --
+  /reports:
+    post:
+      operationId: reportUser
+      tags: [reports]
+      summary: Report a member
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReportUserRequest"
+      responses:
+        "204":
+          description: Report filed
         "401":
           $ref: "#/components/responses/Unauthorized"
         "404":
@@ -1749,6 +1823,59 @@ components:
         - saved
         - createdAt
         - updatedAt
+
+    BlockedUser:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        firstName:
+          type: string
+        avatarUrl:
+          type: string
+          nullable: true
+        blockedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - firstName
+        - blockedAt
+
+    BlockUserRequest:
+      type: object
+      properties:
+        userId:
+          type: string
+          format: uuid
+      required:
+        - userId
+
+    ReportReason:
+      type: string
+      enum:
+        - harassment
+        - spam
+        - fake_profile
+        - inappropriate_content
+        - animal_welfare
+        - other
+
+    ReportUserRequest:
+      type: object
+      properties:
+        userId:
+          type: string
+          format: uuid
+        reason:
+          $ref: "#/components/schemas/ReportReason"
+        details:
+          type: string
+          maxLength: 1000
+      required:
+        - userId
+        - reason
 
     EventOrganizer:
       type: object

@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
-import { eq } from "drizzle-orm";
-import { db, usersTable } from "@workspace/db";
+import { and, eq, or } from "drizzle-orm";
+import { db, usersTable, blocksTable } from "@workspace/db";
 import {
   GetMyProfileResponse,
   UpdateMyProfileBody,
@@ -40,6 +40,23 @@ router.get("/users/:userId", requireAuth, async (req, res) => {
   const [user] = await db.select().from(usersTable).where(eq(usersTable.id, userId)).limit(1);
 
   if (!user) {
+    throw HttpError.notFound("User not found");
+  }
+
+  // A block hides the pair from each other, so the profile reads as missing.
+  const meId = req.user!.id;
+  const [block] = await db
+    .select({ id: blocksTable.id })
+    .from(blocksTable)
+    .where(
+      or(
+        and(eq(blocksTable.blockerId, meId), eq(blocksTable.blockedUserId, userId)),
+        and(eq(blocksTable.blockerId, userId), eq(blocksTable.blockedUserId, meId)),
+      ),
+    )
+    .limit(1);
+
+  if (block) {
     throw HttpError.notFound("User not found");
   }
 

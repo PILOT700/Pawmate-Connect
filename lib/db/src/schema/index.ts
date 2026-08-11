@@ -18,3 +18,5 @@ export * from "./event-comment-likes";
 export * from "./stories";
 export * from "./story-views";
 export * from "./notifications";
+export * from "./blocks";
+export * from "./reports";

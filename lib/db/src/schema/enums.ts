@@ -40,9 +40,19 @@ export const notificationTypeEnum = pgEnum("notification_type", [
 
 export const messageKindEnum = pgEnum("message_kind", ["text", "playdate"]);
 
+export const reportReasonEnum = pgEnum("report_reason", [
+  "harassment",
+  "spam",
+  "fake_profile",
+  "inappropriate_content",
+  "animal_welfare",
+  "other",
+]);
+
 export type Species = (typeof speciesEnum.enumValues)[number];
 export type LookingFor = (typeof lookingForEnum.enumValues)[number];
 export type PlaydateStatus = (typeof playdateStatusEnum.enumValues)[number];
 export type EventCategory = (typeof eventCategoryEnum.enumValues)[number];
 export type NotificationType = (typeof notificationTypeEnum.enumValues)[number];
 export type MessageKind = (typeof messageKindEnum.enumValues)[number];
+export type ReportReason = (typeof reportReasonEnum.enumValues)[number];
