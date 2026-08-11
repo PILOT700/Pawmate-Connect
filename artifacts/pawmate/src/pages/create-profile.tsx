@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,11 @@ import { Camera, Check } from "lucide-react";
 import {
   useUpdateMyProfile,
   useCreateMyPet,
+  useUpdatePet,
+  useGetMyProfile,
+  useListMyPets,
+  getGetMyProfileQueryKey,
+  getListMyPetsQueryKey,
   type Species,
   type LookingFor,
 } from "@workspace/api-client-react";
@@ -24,6 +29,17 @@ const INTENT_TO_LOOKING_FOR: Record<string, LookingFor[]> = {
   relationship: ["relationship"],
   both: ["friendship", "relationship"],
 };
+
+/** Collapses the stored values back onto the single choice the picker shows. */
+function lookingForToIntent(values: LookingFor[]): string {
+  const friendship = values.includes("friendship");
+  const relationship = values.includes("relationship");
+
+  if (friendship && relationship) return "both";
+  if (friendship) return "friendship";
+  if (relationship) return "relationship";
+  return "both";
+}
 
 export default function CreateProfile() {
   const [, setLocation] = useLocation();
@@ -49,9 +65,44 @@ export default function CreateProfile() {
   const [petPhotoPreview, setPetPhotoPreview] = useState<string>("");
   const [isUploading, setIsUploading] = useState(false);
 
+  const { data: me } = useGetMyProfile({ query: { queryKey: getGetMyProfileQueryKey() } });
+  const { data: myPets } = useListMyPets({ query: { queryKey: getListMyPetsQueryKey() } });
+  const existingPet = myPets?.[0];
+
+  // Someone who already finished onboarding is editing, not signing up.
+  const isEditing = Boolean(me?.onboardingCompletedAt);
+
   const updateProfile = useUpdateMyProfile();
   const createPet = useCreateMyPet();
-  const isSaving = isUploading || updateProfile.isPending || createPet.isPending;
+  const updatePet = useUpdatePet();
+  const isSaving =
+    isUploading || updateProfile.isPending || createPet.isPending || updatePet.isPending;
+
+  // Fill the form from what's already saved — once, so it doesn't fight typing.
+  const prefilled = useRef(false);
+
+  useEffect(() => {
+    if (prefilled.current || !me) return;
+    prefilled.current = true;
+
+    setName(me.firstName ?? "");
+    setAge(me.age != null ? String(me.age) : "");
+    setCity(me.city ?? "");
+    setBio(me.bio ?? "");
+    setIntent(lookingForToIntent(me.lookingFor));
+    setSelectedTags(me.lifestyleTags ?? []);
+    if (me.avatarUrl) setAvatarPreview(me.avatarUrl);
+  }, [me]);
+
+  useEffect(() => {
+    if (!existingPet) return;
+
+    setPetName(existingPet.name);
+    setPetSpecies(existingPet.species);
+    setPetBreed(existingPet.breed ?? "");
+    setPetAge(existingPet.ageYears != null ? String(existingPet.ageYears) : "");
+    if (existingPet.photoUrl) setPetPhotoPreview(existingPet.photoUrl);
+  }, [existingPet]);
 
   const handlePhotoSelect = (
     e: React.ChangeEvent<HTMLInputElement>,
@@ -88,10 +139,12 @@ export default function CreateProfile() {
 
       await updateProfile.mutateAsync({
         data: {
+          // A name can't be blanked out, so it's only sent when present.
           ...(name ? { firstName: name } : {}),
           ...(age ? { age: Number(age) } : {}),
-          ...(city ? { city } : {}),
-          ...(bio ? { bio } : {}),
+          // Sent even when empty, otherwise clearing them here wouldn't stick.
+          city,
+          bio,
           ...(intent ? { lookingFor: INTENT_TO_LOOKING_FOR[intent] ?? [] } : {}),
           ...(avatarUrl ? { avatarUrl } : {}),
           lifestyleTags: selectedTags,
@@ -99,19 +152,24 @@ export default function CreateProfile() {
       });
 
       if (petName && petSpecies) {
-        await createPet.mutateAsync({
-          data: {
-            name: petName,
-            species: petSpecies as Species,
-            ...(petBreed ? { breed: petBreed } : {}),
-            ...(petAge && !Number.isNaN(Number(petAge)) ? { ageYears: Number(petAge) } : {}),
-            ...(petPhotoUrl ? { photoUrl: petPhotoUrl } : {}),
-          },
-        });
+        const petData = {
+          name: petName,
+          species: petSpecies as Species,
+          ...(petBreed ? { breed: petBreed } : {}),
+          ...(petAge && !Number.isNaN(Number(petAge)) ? { ageYears: Number(petAge) } : {}),
+          ...(petPhotoUrl ? { photoUrl: petPhotoUrl } : {}),
+        };
+
+        // Updating rather than inserting, or every save would add another pet.
+        if (existingPet) {
+          await updatePet.mutateAsync({ petId: existingPet.id, data: petData });
+        } else {
+          await createPet.mutateAsync({ data: petData });
+        }
       }
 
       await refreshSession();
-      setLocation("/discover");
+      setLocation(isEditing ? "/profile/me" : "/discover");
     } catch (err) {
       setIsUploading(false);
       toast({
@@ -154,8 +212,12 @@ export default function CreateProfile() {
                 className="space-y-8"
               >
                 <div>
-                  <h2 className="font-serif text-3xl font-semibold text-foreground mb-2">Tell us about yourself</h2>
-                  <p className="text-muted-foreground">Let's start with the basics.</p>
+                  <h2 className="font-serif text-3xl font-semibold text-foreground mb-2">
+                    {isEditing ? "Your details" : "Tell us about yourself"}
+                  </h2>
+                  <p className="text-muted-foreground">
+                    {isEditing ? "Change anything that's out of date." : "Let's start with the basics."}
+                  </p>
                 </div>
 
                 <div className="flex justify-center mb-8">
@@ -339,7 +401,7 @@ export default function CreateProfile() {
                     Back
                   </Button>
                   <Button className="flex-1 h-14 rounded-full bg-primary text-primary-foreground text-lg" onClick={handleComplete} disabled={isSaving} data-testid="btn-complete-profile">
-                    {isUploading ? "Uploading…" : isSaving ? "Saving…" : "Complete Profile"}
+                    {isUploading ? "Uploading…" : isSaving ? "Saving…" : isEditing ? "Save changes" : "Complete Profile"}
                   </Button>
                 </div>
               </motion.div>
