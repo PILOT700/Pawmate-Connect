@@ -206,7 +206,9 @@ export default function Profile() {
     <div className="min-h-screen bg-background pb-24">
       {/* Hero Image */}
       <div className="relative h-[50vh] md:h-[60vh] w-full">
-        <img src={heroImage} alt={profile.firstName} className="w-full h-full object-cover" />
+        {/* Cropped above centre: a centred crop cuts portraits off at the
+            hairline, since heads sit in the top half of the frame. */}
+        <img src={heroImage} alt={profile.firstName} className="w-full h-full object-cover object-[center_25%]" />
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
 
         <Link href="/discover" className="absolute top-6 left-6 z-10" data-testid="btn-back">
