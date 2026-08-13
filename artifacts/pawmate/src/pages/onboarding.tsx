@@ -6,7 +6,9 @@ import { Button } from "@/components/ui/button";
 import {
   useUpdateMyPreferences,
   useGetMyPreferences,
+  useListMyPets,
   getGetMyPreferencesQueryKey,
+  getListMyPetsQueryKey,
   type Species,
   type LookingFor,
   type UserPreferences,
@@ -14,6 +16,7 @@ import {
 import { useAuth } from "@/contexts/auth-context";
 import { useToast } from "@/hooks/use-toast";
 import { apiErrorMessage } from "@/lib/api-error";
+import { rememberOnboardingPetSpecies } from "@/lib/onboarding-pet";
 
 const TOTAL_STEPS = 3;
 
@@ -63,9 +66,11 @@ const variants = {
  */
 function OnboardingSteps({
   preferences,
+  myPetSpecies,
   isEditing,
 }: {
   preferences: UserPreferences;
+  myPetSpecies: Species[];
   isEditing: boolean;
 }) {
   const [, navigate] = useLocation();
@@ -74,7 +79,9 @@ function OnboardingSteps({
   const [step, setStep] = useState(0);
   const [dir, setDir] = useState(1);
 
-  const [pets, setPets] = useState<string[]>(preferences.petTypePrefs ?? []);
+  // "What's your pet?" is answered about the pets you own, so it restores from
+  // the pet records themselves rather than from discovery preferences.
+  const [pets, setPets] = useState<string[]>(myPetSpecies);
   const [lookingFor, setLookingFor] = useState<string[]>(preferences.lookingForPrefs ?? []);
   const [distance, setDistance] = useState(preferences.maxDistanceMiles ?? 25);
   const [ageRange, setAgeRange] = useState([
@@ -89,13 +96,15 @@ function OnboardingSteps({
     try {
       await savePreferences.mutateAsync({
         data: {
-          petTypePrefs: pets as Species[],
           lookingForPrefs: lookingFor as LookingFor[],
           maxDistanceMiles: distance,
           ageRangeMin: ageRange[0]!,
           ageRangeMax: ageRange[1]!,
         },
       });
+      // The pet itself is created a screen later, in the profile wizard; hand
+      // the answer over so nobody is asked the same question twice.
+      rememberOnboardingPetSpecies(pets[0] as Species | undefined);
       // The server stamps onboardingCompletedAt on this call, so the cached
       // session must be refreshed before we route off it.
       await refreshSession();
@@ -417,8 +426,11 @@ export default function Onboarding() {
   const { data: preferences, isLoading } = useGetMyPreferences({
     query: { queryKey: getGetMyPreferencesQueryKey() },
   });
+  const { data: myPets, isLoading: petsLoading } = useListMyPets({
+    query: { queryKey: getListMyPetsQueryKey() },
+  });
 
-  if (isLoading || !preferences) {
+  if (isLoading || petsLoading || !preferences) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader className="w-6 h-6 animate-spin text-muted-foreground" />
@@ -429,6 +441,7 @@ export default function Onboarding() {
   return (
     <OnboardingSteps
       preferences={preferences}
+      myPetSpecies={[...new Set((myPets ?? []).map(p => p.species))]}
       // Reached from Settings rather than as a first-run step.
       isEditing={Boolean(user?.onboardingCompletedAt)}
     />

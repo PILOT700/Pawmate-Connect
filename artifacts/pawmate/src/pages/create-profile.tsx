@@ -13,10 +13,8 @@ import {
   useUpdatePet,
   useGetMyProfile,
   useListMyPets,
-  useGetMyPreferences,
   getGetMyProfileQueryKey,
   getListMyPetsQueryKey,
-  getGetMyPreferencesQueryKey,
   type Species,
   type LookingFor,
   type User,
@@ -26,6 +24,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { useToast } from "@/hooks/use-toast";
 import { apiErrorMessage } from "@/lib/api-error";
 import { uploadImage } from "@/lib/cloudinary";
+import { clearOnboardingPetSpecies, readOnboardingPetSpecies } from "@/lib/onboarding-pet";
 
 // The intent picker offers "both", which maps onto two API values.
 const INTENT_TO_LOOKING_FOR: Record<string, LookingFor[]> = {
@@ -54,12 +53,10 @@ function ProfileWizard({
   me,
   existingPet,
   isEditing,
-  preferredSpecies,
 }: {
   me: User;
   existingPet?: Pet;
   isEditing: boolean;
-  preferredSpecies?: Species;
 }) {
   const [, setLocation] = useLocation();
   const { refreshSession } = useAuth();
@@ -76,7 +73,7 @@ function ProfileWizard({
   // Falls back to what onboarding was told, so answering "cat" there doesn't
   // hand you a form that says dog.
   const [petSpecies, setPetSpecies] = useState<string>(
-    existingPet?.species ?? preferredSpecies ?? "dog",
+    existingPet?.species ?? readOnboardingPetSpecies() ?? "dog",
   );
   const [petBreed, setPetBreed] = useState(existingPet?.breed ?? "");
   const [petAge, setPetAge] = useState(
@@ -156,6 +153,10 @@ function ProfileWizard({
         } else {
           await createPet.mutateAsync({ data: petData });
         }
+
+        // The pet record is now the answer to "what's your pet?"; the handover
+        // from onboarding has nothing left to do.
+        clearOnboardingPetSpecies();
       }
 
       await refreshSession();
@@ -410,11 +411,8 @@ export default function CreateProfile() {
   const { data: myPets, isLoading: petsLoading } = useListMyPets({
     query: { queryKey: getListMyPetsQueryKey() },
   });
-  const { data: preferences, isLoading: prefsLoading } = useGetMyPreferences({
-    query: { queryKey: getGetMyPreferencesQueryKey() },
-  });
 
-  if (profileLoading || petsLoading || prefsLoading || !me) {
+  if (profileLoading || petsLoading || !me) {
     return (
       <div className="min-h-[calc(100vh-5rem)] bg-background flex items-center justify-center">
         <Loader className="w-6 h-6 animate-spin text-muted-foreground" />
@@ -426,7 +424,6 @@ export default function CreateProfile() {
     <ProfileWizard
       me={me}
       existingPet={myPets?.[0]}
-      preferredSpecies={preferences?.petTypePrefs?.[0]}
       // Someone who already finished onboarding is editing, not signing up.
       isEditing={Boolean(me.onboardingCompletedAt)}
     />
