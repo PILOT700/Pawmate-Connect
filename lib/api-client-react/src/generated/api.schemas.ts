@@ -87,6 +87,17 @@ export interface LoginRequest {
   password: string;
 }
 
+export interface PasswordResetRequest {
+  email: string;
+}
+
+export interface PasswordResetConfirm {
+  /** @minLength 1 */
+  token: string;
+  /** @minLength 6 */
+  password: string;
+}
+
 export interface User {
   id: string;
   email: string;

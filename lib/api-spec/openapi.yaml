@@ -116,6 +116,43 @@ paths:
         "204":
           description: Signed out
 
+  /auth/password-reset/request:
+    post:
+      operationId: requestPasswordReset
+      tags: [auth]
+      summary: Send a password reset link
+      description: >
+        Always answers 204, whether or not an account exists for the address.
+        Anything else would turn this into a way to find out who has an account.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PasswordResetRequest"
+      responses:
+        "204":
+          description: Handled, if there was anything to handle
+
+  /auth/password-reset/confirm:
+    post:
+      operationId: confirmPasswordReset
+      tags: [auth]
+      summary: Set a new password using a reset token
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PasswordResetConfirm"
+      responses:
+        "204":
+          description: Password changed
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
   /auth/me:
     get:
       operationId: getCurrentSession
@@ -1137,6 +1174,25 @@ components:
         password:
           type: string
       required: [email, password]
+
+    PasswordResetRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+      required: [email]
+
+    PasswordResetConfirm:
+      type: object
+      properties:
+        token:
+          type: string
+          minLength: 1
+        password:
+          type: string
+          minLength: 6
+      required: [token, password]
 
     # ------------------------------------------------------------ users --
     User:

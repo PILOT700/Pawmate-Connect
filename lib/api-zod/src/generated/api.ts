@@ -61,6 +61,30 @@ export const LoginUserResponse = zod.object({
 
 
 /**
+ * Always answers 204, whether or not an account exists for the address. Anything else would turn this into a way to find out who has an account.
+
+ * @summary Send a password reset link
+ */
+export const RequestPasswordResetBody = zod.object({
+  "email": zod.string().email()
+})
+
+
+/**
+ * @summary Set a new password using a reset token
+ */
+
+export const confirmPasswordResetBodyPasswordMin = 6;
+
+
+
+export const ConfirmPasswordResetBody = zod.object({
+  "token": zod.string().min(1),
+  "password": zod.string().min(confirmPasswordResetBodyPasswordMin)
+})
+
+
+/**
  * @summary Get the current session's user (for app bootstrap)
  */
 export const GetCurrentSessionResponse = zod.object({

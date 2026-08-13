@@ -1,6 +1,7 @@
 export * from "./enums";
 export * from "./users";
 export * from "./sessions";
+export * from "./password-reset-tokens";
 export * from "./pets";
 export * from "./user-preferences";
 export * from "./user-settings";
