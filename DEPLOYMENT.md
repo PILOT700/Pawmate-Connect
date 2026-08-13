@@ -1,177 +1,107 @@
-# Pawmate Connect - Deployment Guide
+# Pawmate Connect — deployment
 
-## 🚀 Local Development with Docker
+Three hosts, each doing one thing:
 
-### Prerequisites
-- Docker & Docker Compose installed
-- Node.js 20+ (for local development without Docker)
+| Piece | Runs on | Notes |
+| --- | --- | --- |
+| Frontend (`artifacts/pawmate`) | Vercel | Static Vite build |
+| API (`artifacts/api-server`) | Render | Express 5, one web service |
+| Database | Neon | Postgres, reached over the standard protocol |
 
-### Quick Start
+Both hosts build from GitHub `main`, so a push deploys.
 
-1. **Clone & Setup Environment**
-```bash
-cp .env.example .env
-# Edit .env with your values (especially COOKIE_SECRET and DB_PASSWORD)
-```
+## How the browser reaches the API
 
-2. **Build & Run Locally**
-```bash
-docker-compose up --build
-```
+The frontend never calls Render directly. [`vercel.json`](vercel.json) rewrites
+`/api/*` to the Render service, which keeps API calls same-origin — the
+generated client's fetch never sets `credentials`, and fetch drops cookies on
+cross-origin requests, so the session cookie would be lost otherwise. The same
+file sends every non-file path to `index.html` so client-side routes survive a
+refresh.
 
-The app will be available at:
-- Frontend: http://localhost:8080
-- API: http://localhost:3000/api
-- Database: localhost:5432
+Because of that rewrite there is **no `VITE_API_URL`**. The only build-time
+variables the frontend reads are the two Cloudinary ones below.
 
-3. **Stop Services**
-```bash
-docker-compose down
-```
+## Environment variables
 
----
+### Render (API)
 
-## 🌐 Deploy to Production (Railway.app)
+| Variable | Required | Notes |
+| --- | --- | --- |
+| `DATABASE_URL` | yes — throws on boot without it | Neon connection string, keep `?sslmode=require` |
+| `COOKIE_SECRET` | yes — throws on boot without it | `openssl rand -hex 32` |
+| `PORT` | yes — throws on boot without it | No default in the code |
+| `FRONTEND_ORIGIN` | in practice | CORS origin, and the base of the password-reset link. Falls back to `http://localhost:8080` for CORS and to an empty string in the reset link, which would send a broken link |
+| `NODE_ENV` | yes for production | Drives secure cookies, `sameSite=none`, and whether mail failures are logged loudly |
+| `RESEND_API_KEY` | only for email | Without it, password-reset mail is not sent |
+| `MAIL_FROM` | only for email | Verified sender address |
 
-### Step 1: Create Railway Account
-1. Go to https://railway.app
-2. Sign up with GitHub
-3. Create new project
+### Vercel (frontend)
 
-### Step 2: Add PostgreSQL
-1. In Railway dashboard: Click "+ New Service"
-2. Select "Database" → "PostgreSQL"
-3. Copy DATABASE_URL from variables
+| Variable | Required | Notes |
+| --- | --- | --- |
+| `VITE_CLOUDINARY_CLOUD_NAME` | for photo upload | Avatar and pet photos fail without it |
+| `VITE_CLOUDINARY_UPLOAD_PRESET` | for photo upload | Unsigned preset |
 
-### Step 3: Deploy API Server
-1. Click "+ New Service" → "GitHub Repo"
-2. Select your Pawmate Connect repo
-3. Set as root directory: `artifacts/api-server/`
-4. Add environment variables:
-   ```
-   NODE_ENV=production
-   COOKIE_SECRET=<generate-random-string>
-   FRONTEND_ORIGIN=https://your-domain.railway.app
-   DATABASE_URL=<from-postgres-service>
-   PORT=3000
-   ```
-5. Deploy!
+## Database changes
 
-### Step 4: Deploy Frontend
-1. Click "+ New Service" → "GitHub Repo"
-2. Select Pawmate Connect repo
-3. Set root directory: `artifacts/pawmate/`
-4. Add environment variables:
-   ```
-   VITE_API_URL=https://api-your-domain.railway.app/api
-   ```
-5. Set custom domain (if desired)
-6. Deploy!
-
-### Step 5: Update CORS
-After deployment, update API's `FRONTEND_ORIGIN` to match your frontend domain.
-
----
-
-## 📋 Environment Variables Reference
-
-### API Server
-```env
-NODE_ENV=production          # Environment
-DATABASE_URL=postgresql://...  # DB connection string
-COOKIE_SECRET=your-secret    # Session cookie encryption
-FRONTEND_ORIGIN=http://...   # CORS origin
-PORT=3000                    # Server port
-```
-
-### Frontend
-```env
-VITE_API_URL=http://localhost:3000/api  # API endpoint
-```
-
----
-
-## 🧪 Testing Deployment
-
-### Health Check
-```bash
-curl http://localhost:3000/api/health
-# Response: { "status": "ok" }
-```
-
-### Test Full Flow
-1. Sign up at http://localhost:8080
-2. Go to "+ Event" and create test event
-3. View in Community page
-4. Check API logs: `docker-compose logs api`
-
----
-
-## 🐛 Troubleshooting
-
-### Database Connection Error
-```bash
-# Check if postgres is running
-docker-compose ps
-
-# View postgres logs
-docker-compose logs postgres
-```
-
-### Port Already in Use
-```bash
-# Use different ports in docker-compose.yml
-# Or kill existing process
-lsof -i :3000  # Find what's using port 3000
-kill -9 <PID>
-```
-
-### Build Fails
-```bash
-# Clear Docker cache and rebuild
-docker-compose down
-docker system prune -a
-docker-compose up --build
-```
-
----
-
-## 📚 Docker Commands
+Schema lives in `lib/db/src/schema`. There are no migration files — the schema
+is pushed directly:
 
 ```bash
-# View logs
-docker-compose logs api
-docker-compose logs postgres
-docker-compose logs -f web    # Follow logs
-
-# Access database
-docker-compose exec postgres psql -U pawmate -d pawmate
-
-# Rebuild specific service
-docker-compose up --build api
-
-# Remove all containers & data
-docker-compose down -v
+pnpm --filter @workspace/db run push
 ```
 
----
+Run it with `DATABASE_URL` pointing at the target database, **before** deploying
+code that depends on a new table. Render does not run it for you.
 
-## ✅ Production Checklist
+## Local development
 
-- [ ] Set strong `COOKIE_SECRET` (generate with `openssl rand -hex 32`)
-- [ ] Set `FRONTEND_ORIGIN` to production domain
-- [ ] Use strong `DB_PASSWORD`
-- [ ] Enable HTTPS in Railway (automatic)
-- [ ] Set up monitoring/logging
-- [ ] Run database migrations (if any)
-- [ ] Test full auth flow
-- [ ] Set up backups for PostgreSQL
+The API needs a Postgres and a set of variables; without them it refuses to
+start rather than guessing. `docker-compose.yml` brings up a local Postgres if
+you want one.
 
----
+```bash
+pnpm install
+pnpm --filter @workspace/api-server run dev   # needs DATABASE_URL, COOKIE_SECRET, PORT
+pnpm --filter @workspace/pawmate run dev      # http://localhost:8080
+```
 
-## 🚀 Next Steps After Deployment
+The dev server proxies `/api` to `http://localhost:5050`. Point it elsewhere
+with `API_PROXY_TARGET` — for example at the deployed Render service if you only
+want to work on the frontend.
 
-1. **Image Upload** - Set up Cloudinary/S3 for image handling
-2. **Monitoring** - Add error tracking (Sentry)
-3. **Performance** - Set up caching & CDN
-4. **Scaling** - Configure auto-scaling in Railway
+Without a database and those variables the frontend still builds and serves, but
+every screen behind sign-in stays on its loading state and the proxy logs
+`ECONNREFUSED`.
+
+## Checks before shipping
+
+```bash
+pnpm run typecheck   # every package
+pnpm test            # frontend unit tests
+pnpm run build       # typecheck + build
+```
+
+## Verifying a deploy landed
+
+Asset hashes differ between local and Vercel builds because Vercel inlines
+`VITE_*` variables the local build does not have — comparing them proves
+nothing. Grep the deployed bundle for something the change introduced instead:
+
+```bash
+curl -s https://pawmate-frontend-seven.vercel.app/ | grep -o 'assets/index-[A-Za-z0-9_-]*\.js'
+```
+
+For the API:
+
+```bash
+curl -s https://pawmate-frontend-seven.vercel.app/api/healthz
+```
+
+## Known gaps
+
+- **No Terms or Privacy pages.** The signup form still links both to `#`.
+- **No error tracking.** Render's logs are the only signal.
+- **Tests cover the frontend only** — nothing exercises the API, which would
+  need a database the local environment does not have.
