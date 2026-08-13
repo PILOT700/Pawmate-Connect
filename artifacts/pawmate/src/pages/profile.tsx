@@ -39,6 +39,7 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { CompatibilityScore } from "@/components/compatibility-score";
+import { MatchCelebrationModal } from "@/components/match-celebration-modal";
 import type { CompatibilityInput } from "@/components/compatibility-score";
 import { StoryStrip } from "@/components/story-strip";
 import type { Story } from "@/components/story-viewer";
@@ -51,6 +52,7 @@ import {
   useMarkStoryViewed,
   useBlockUser,
   useReportUser,
+  useCreateLike,
   type ReportReason,
   getGetMyProfileQueryKey,
   getGetUserProfileQueryKey,
@@ -81,6 +83,13 @@ export default function Profile() {
 
   const blockUser = useBlockUser();
   const reportUser = useReportUser();
+  const createLike = useCreateLike();
+  // The profile endpoint carries no "you already liked this person" flag, and
+  // sent likes only arrive a page at a time — deriving it from those would go
+  // wrong for anyone with a long list. So this tracks the like made here, and
+  // liking twice is harmless: the server does nothing on a duplicate.
+  const [liked, setLiked] = useState(false);
+  const [matchOpen, setMatchOpen] = useState(false);
   const [blockOpen, setBlockOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   const [reportReason, setReportReason] = useState<ReportReason>("harassment");
@@ -134,6 +143,23 @@ export default function Profile() {
     // markViewedMutation is intentionally excluded — it is recreated each render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storiesData]);
+
+  const handleLike = async () => {
+    if (!id) return;
+    setLiked(true);
+
+    try {
+      const result = await createLike.mutateAsync({ data: { likedUserId: id } });
+      if (result.isMatch) setMatchOpen(true);
+    } catch (err) {
+      setLiked(false);
+      toast({
+        variant: "destructive",
+        title: "Couldn't like this profile",
+        description: apiErrorMessage(err, "Please try again."),
+      });
+    }
+  };
 
   const handleBlock = async () => {
     if (!id) return;
@@ -263,8 +289,14 @@ export default function Profile() {
                 </Link>
               ) : (
                 <>
-                  <Button size="lg" className="flex-1 md:flex-none rounded-full px-8 bg-accent text-accent-foreground hover:bg-accent/90 shadow-sm border border-accent-foreground/10 h-14" data-testid="btn-profile-like">
-                    <Heart className="w-5 h-5 mr-2 fill-current" /> Like
+                  <Button
+                    size="lg"
+                    onClick={handleLike}
+                    disabled={liked || createLike.isPending}
+                    className="flex-1 md:flex-none rounded-full px-8 bg-accent text-accent-foreground hover:bg-accent/90 shadow-sm border border-accent-foreground/10 h-14"
+                    data-testid="btn-profile-like"
+                  >
+                    <Heart className="w-5 h-5 mr-2 fill-current" /> {liked ? "Liked" : "Like"}
                   </Button>
                   <Link href="/messages" data-testid="btn-profile-message" className="flex-1 md:flex-none">
                     <Button size="lg" variant="outline" className="w-full rounded-full px-8 h-14 border-border">
@@ -400,6 +432,17 @@ export default function Profile() {
           </div>
         </motion.div>
       </div>
+
+      <MatchCelebrationModal
+        open={matchOpen}
+        profile={{
+          id: profile.id,
+          name: profile.firstName,
+          image: heroImage,
+          pet: { name: pet?.name ?? "their pet" },
+        }}
+        onClose={() => setMatchOpen(false)}
+      />
 
       <AlertDialog open={blockOpen} onOpenChange={setBlockOpen}>
         <AlertDialogContent>
