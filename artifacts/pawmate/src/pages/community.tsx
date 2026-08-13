@@ -505,9 +505,11 @@ export default function Community() {
                 <h3 className="font-serif text-base font-semibold text-foreground">Host an event</h3>
                 <p className="text-xs text-muted-foreground mt-1 leading-relaxed">Organize a meetup, walk, or gathering for the Pawmate community.</p>
               </div>
-              <Button className="w-full h-9 rounded-full text-sm bg-primary text-primary-foreground" data-testid="btn-host-event">
-                Suggest an event
-              </Button>
+              <Link href="/create-event" data-testid="btn-host-event">
+                <Button className="w-full h-9 rounded-full text-sm bg-primary text-primary-foreground">
+                  Suggest an event
+                </Button>
+              </Link>
             </div>
           </aside>
         </div>
