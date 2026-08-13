@@ -15,31 +15,28 @@ export function Footer() {
               Meaningful connections grounded in a shared love of animals. Find your person, and their pet.
             </p>
           </div>
+          {/* Only what there is a page for. Careers, Press, Safety and
+              Guidelines were links to nowhere. */}
           <div>
-            <h4 className="font-serif font-semibold text-foreground mb-4">Company</h4>
+            <h4 className="font-serif font-semibold text-foreground mb-4">Pawmate</h4>
             <ul className="space-y-3">
-              <li><a href="#" className="text-sm text-muted-foreground hover:text-foreground transition-colors">About Us</a></li>
-              <li><a href="#" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Careers</a></li>
-              <li><a href="#" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Press</a></li>
-            </ul>
-          </div>
-          <div>
-            <h4 className="font-serif font-semibold text-foreground mb-4">Support</h4>
-            <ul className="space-y-3">
-              <li><a href="#" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Help Center</a></li>
-              <li><a href="#" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Safety</a></li>
-              <li><a href="#" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Guidelines</a></li>
+              <li>
+                <Link href="/about" className="text-sm text-muted-foreground hover:text-foreground transition-colors" data-testid="footer-about">
+                  About Us
+                </Link>
+              </li>
+              <li>
+                <Link href="/help" className="text-sm text-muted-foreground hover:text-foreground transition-colors" data-testid="footer-help">
+                  Help Center
+                </Link>
+              </li>
             </ul>
           </div>
         </div>
-        <div className="mt-16 pt-8 border-t border-border flex flex-col md:flex-row justify-between items-center gap-4">
+        <div className="mt-16 pt-8 border-t border-border">
           <p className="text-sm text-muted-foreground">
             &copy; {new Date().getFullYear()} Pawmate. All rights reserved.
           </p>
-          <div className="flex gap-6">
-            <a href="#" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Privacy</a>
-            <a href="#" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Terms</a>
-          </div>
         </div>
       </div>
     </footer>

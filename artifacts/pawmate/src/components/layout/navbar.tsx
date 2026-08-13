@@ -12,12 +12,14 @@ import {
 import { useAuth } from "@/contexts/auth-context";
 
 
+// Every entry has to land somewhere real: "Safety" pointed at the how-it-works
+// section, the same place as the link beside it, and "About us" at testimonials.
 const publicNavLinks = [
   { label: "How it works", href: "/#how-it-works" },
   { label: "For pet lovers", href: "/#community" },
-  { label: "Safety", href: "/#how-it-works" },
   { label: "Community", href: "/community" },
-  { label: "About us", href: "/#testimonials" },
+  { label: "About us", href: "/about" },
+  { label: "Help", href: "/help" },
 ];
 
 export function Navbar() {

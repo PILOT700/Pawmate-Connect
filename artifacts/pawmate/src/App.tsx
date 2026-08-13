@@ -18,6 +18,8 @@ import LikedProfiles from "@/pages/liked-profiles";
 import Settings from "@/pages/settings";
 import Onboarding from "@/pages/onboarding";
 import Community from "@/pages/community";
+import About from "@/pages/about";
+import Help from "@/pages/help";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient({
@@ -38,6 +40,9 @@ function Router() {
         <Switch>
           <Route path="/" component={Home} />
           <Route path="/login" component={Auth} />
+          {/* Linked from the footer, which signed-out visitors also see. */}
+          <Route path="/about" component={About} />
+          <Route path="/help" component={Help} />
           <Route path="/discover">
             <ProtectedRoute component={Discover} />
           </Route>
