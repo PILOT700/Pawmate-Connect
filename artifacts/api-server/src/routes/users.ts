@@ -9,6 +9,7 @@ import {
   GetUserProfileResponse,
 } from "@workspace/api-zod";
 import { HttpError } from "../lib/http-error";
+import { geocodeCity } from "../lib/geocode";
 import { requireAuth } from "../middlewares/require-auth";
 
 const router: IRouter = Router();
@@ -20,9 +21,19 @@ router.get("/users/me", requireAuth, (req, res) => {
 router.patch("/users/me", requireAuth, async (req, res) => {
   const body = UpdateMyProfileBody.parse(req.body);
 
+  // The city drives the distance filter, so its point is refreshed whenever the
+  // name changes — and cleared when the city is removed, rather than left
+  // pointing at wherever they used to live.
+  const location: { cityLat?: number | null; cityLng?: number | null } = {};
+  if (body.city !== undefined && body.city !== req.user!.city) {
+    const point = body.city ? await geocodeCity(body.city) : null;
+    location.cityLat = point?.lat ?? null;
+    location.cityLng = point?.lng ?? null;
+  }
+
   const [user] = await db
     .update(usersTable)
-    .set({ ...body, updatedAt: new Date() })
+    .set({ ...body, ...location, updatedAt: new Date() })
     .where(eq(usersTable.id, req.user!.id))
     .returning();
 

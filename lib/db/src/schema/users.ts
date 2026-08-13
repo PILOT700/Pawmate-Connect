@@ -1,4 +1,4 @@
-import { pgTable, text, integer, boolean, timestamp, uuid } from "drizzle-orm/pg-core";
+import { pgTable, text, integer, boolean, doublePrecision, timestamp, uuid } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { lookingForEnum } from "./enums";
@@ -10,6 +10,11 @@ export const usersTable = pgTable("users", {
   firstName: text("first_name").notNull(),
   age: integer("age"),
   city: text("city"),
+  // The city's coordinates, not the member's — looked up from the name they
+  // typed, so everyone in one city sits on the same point. Good enough to sort
+  // "nearby" from "far", and it keeps us from holding anyone's real location.
+  cityLat: doublePrecision("city_lat"),
+  cityLng: doublePrecision("city_lng"),
   bio: text("bio"),
   avatarUrl: text("avatar_url"),
   lookingFor: lookingForEnum("looking_for").array().notNull().default([]),

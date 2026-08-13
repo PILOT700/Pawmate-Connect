@@ -406,6 +406,8 @@ export const listDiscoverProfilesQueryAgeMinMax = 120;
 export const listDiscoverProfilesQueryAgeMaxMin = 18;
 export const listDiscoverProfilesQueryAgeMaxMax = 120;
 
+export const listDiscoverProfilesQueryMaxDistanceMilesMax = 500;
+
 
 
 export const ListDiscoverProfilesQueryParams = zod.object({
@@ -414,7 +416,8 @@ export const ListDiscoverProfilesQueryParams = zod.object({
   "species": zod.enum(['dog', 'cat', 'rabbit', 'bird', 'fish', 'other']).optional(),
   "lookingFor": zod.enum(['friendship', 'relationship', 'playdates', 'casual', 'open']).optional(),
   "ageMin": zod.coerce.number().min(listDiscoverProfilesQueryAgeMinMin).max(listDiscoverProfilesQueryAgeMinMax).optional().describe('Lower bound, inclusive. Profiles with no age set are kept — a blank field is not a reason to hide someone.\n'),
-  "ageMax": zod.coerce.number().min(listDiscoverProfilesQueryAgeMaxMin).max(listDiscoverProfilesQueryAgeMaxMax).optional().describe('Upper bound, inclusive. Profiles with no age set are kept.')
+  "ageMax": zod.coerce.number().min(listDiscoverProfilesQueryAgeMaxMin).max(listDiscoverProfilesQueryAgeMaxMax).optional().describe('Upper bound, inclusive. Profiles with no age set are kept.'),
+  "maxDistanceMiles": zod.coerce.number().min(1).max(listDiscoverProfilesQueryMaxDistanceMilesMax).optional().describe('Radius from the viewer\'s city. Both sides are city centres, so everyone in one city measures as zero apart. Profiles with no city located are kept, as is a viewer who has none.\n')
 })
 
 export const ListDiscoverProfilesResponse = zod.object({

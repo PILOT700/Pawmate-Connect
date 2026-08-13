@@ -254,6 +254,7 @@ export default function Discover() {
 
   const [speciesFilter, setSpeciesFilter] = useState("all");
   const [intentFilter, setIntentFilter] = useState("all");
+  const [distanceFilter, setDistanceFilter] = useState("any");
 
   const { data: preferences } = useGetMyPreferences({
     query: { queryKey: getGetMyPreferencesQueryKey() },
@@ -262,6 +263,7 @@ export default function Discover() {
   // in — otherwise a late-arriving query would undo the choice.
   const speciesFilterTouched = useRef(false);
   const intentFilterTouched = useRef(false);
+  const distanceFilterTouched = useRef(false);
 
   // Open on what onboarding was told you wanted. Each filter holds one value,
   // so only an unambiguous preference can be honoured; anything broader keeps
@@ -273,6 +275,10 @@ export default function Discover() {
     }
     if (!intentFilterTouched.current && preferences.lookingForPrefs?.length === 1) {
       setIntentFilter(preferences.lookingForPrefs[0]!);
+    }
+    // Distance is a single number, so unlike the other two it always applies.
+    if (!distanceFilterTouched.current && preferences.maxDistanceMiles != null) {
+      setDistanceFilter(String(preferences.maxDistanceMiles));
     }
   }, [preferences]);
 
@@ -286,6 +292,11 @@ export default function Discover() {
     setIntentFilter(value);
   };
 
+  const changeDistanceFilter = (value: string) => {
+    distanceFilterTouched.current = true;
+    setDistanceFilter(value);
+  };
+
   // The age range has no control in the filter bar — it is set once during
   // onboarding and changed in Settings, so it applies straight from the
   // preference rather than being restated here.
@@ -295,6 +306,7 @@ export default function Discover() {
     ...(intentFilter !== "all" ? { lookingFor: intentFilter as LookingFor } : {}),
     ...(preferences?.ageRangeMin != null ? { ageMin: preferences.ageRangeMin } : {}),
     ...(preferences?.ageRangeMax != null ? { ageMax: preferences.ageRangeMax } : {}),
+    ...(distanceFilter !== "any" ? { maxDistanceMiles: Number(distanceFilter) } : {}),
   });
   const { data: myPets } = useListMyPets();
 
@@ -436,15 +448,19 @@ export default function Discover() {
               </SelectContent>
             </Select>
 
-            <Select defaultValue="25">
-              <SelectTrigger className="w-[140px] rounded-full bg-card" data-testid="filter-distance">
+            <Select value={distanceFilter} onValueChange={changeDistanceFilter}>
+              <SelectTrigger className="w-[150px] shrink-0 rounded-full bg-card" data-testid="filter-distance">
                 <SelectValue placeholder="Distance" />
               </SelectTrigger>
+              {/* Matches the distances onboarding offers, plus a way out of the
+                  filter entirely. */}
               <SelectContent>
+                <SelectItem value="any">Any distance</SelectItem>
                 <SelectItem value="5">Within 5 miles</SelectItem>
                 <SelectItem value="10">Within 10 miles</SelectItem>
                 <SelectItem value="25">Within 25 miles</SelectItem>
                 <SelectItem value="50">Within 50 miles</SelectItem>
+                <SelectItem value="100">Within 100 miles</SelectItem>
               </SelectContent>
             </Select>
 

@@ -54,6 +54,26 @@ router.get("/discover", requireAuth, async (req, res) => {
     filters.push(or(isNull(usersTable.age), lte(usersTable.age, query.ageMax))!);
   }
 
+  // Distance needs a point on both sides. A viewer whose city could not be
+  // located gets the unfiltered feed rather than an empty one, and candidates
+  // without a point stay visible for the same reason a missing age does.
+  const me = req.user!;
+  if (query.maxDistanceMiles != null && me.cityLat != null && me.cityLng != null) {
+    const miles = query.maxDistanceMiles;
+    filters.push(
+      or(
+        isNull(usersTable.cityLat),
+        isNull(usersTable.cityLng),
+        // Great-circle distance in miles, straight from the two points.
+        sql`3958.8 * acos(least(1, greatest(-1,
+          sin(radians(${me.cityLat})) * sin(radians(${usersTable.cityLat}))
+          + cos(radians(${me.cityLat})) * cos(radians(${usersTable.cityLat}))
+          * cos(radians(${usersTable.cityLng}) - radians(${me.cityLng}))
+        ))) <= ${miles}`,
+      )!,
+    );
+  }
+
   const where = and(...filters);
 
   const [candidates, [totalRow]] = await Promise.all([
