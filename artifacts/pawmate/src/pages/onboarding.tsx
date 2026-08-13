@@ -18,7 +18,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiErrorMessage } from "@/lib/api-error";
 import { rememberOnboardingPetSpecies } from "@/lib/onboarding-pet";
 
-const TOTAL_STEPS = 3;
+const TOTAL_STEPS = 4;
 
 const PET_OPTIONS = [
   { id: "dog", label: "Dog", emoji: "🐕", icon: Dog, color: "bg-amber-50 border-amber-200 text-amber-700", activeColor: "bg-amber-100 border-amber-500 text-amber-800" },
@@ -38,6 +38,50 @@ const LOOKING_FOR_OPTIONS = [
 ];
 
 const DISTANCES = [5, 10, 25, 50, 100];
+
+/** Shared by the two species questions: the pet you have, the pets you want. */
+function PetGrid({
+  selected,
+  onToggle,
+  testIdPrefix,
+}: {
+  selected: string[];
+  onToggle: (id: string) => void;
+  testIdPrefix: string;
+}) {
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+      {PET_OPTIONS.map((pet, i) => {
+        const isSelected = selected.includes(pet.id);
+        return (
+          <motion.button
+            key={pet.id}
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.05 * i }}
+            onClick={() => onToggle(pet.id)}
+            data-testid={`${testIdPrefix}-${pet.id}`}
+            className={`relative border-2 rounded-2xl p-4 flex flex-col items-center gap-2 transition-all duration-150 ${
+              isSelected ? pet.activeColor + " shadow-sm scale-[1.02]" : pet.color + " hover:opacity-80"
+            }`}
+          >
+            <span className="text-3xl">{pet.emoji}</span>
+            <span className="text-sm font-medium">{pet.label}</span>
+            {isSelected && (
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                className="absolute top-2 right-2 w-5 h-5 rounded-full bg-primary flex items-center justify-center"
+              >
+                <Check className="w-3 h-3 text-white" />
+              </motion.div>
+            )}
+          </motion.button>
+        );
+      })}
+    </div>
+  );
+}
 
 function ProgressDots({ current }: { current: number }) {
   return (
@@ -82,6 +126,8 @@ function OnboardingSteps({
   // "What's your pet?" is answered about the pets you own, so it restores from
   // the pet records themselves rather than from discovery preferences.
   const [pets, setPets] = useState<string[]>(myPetSpecies);
+  // Distinct from the above: owning a cat says nothing about who you'd date.
+  const [meetPets, setMeetPets] = useState<string[]>(preferences.petTypePrefs ?? []);
   const [lookingFor, setLookingFor] = useState<string[]>(preferences.lookingForPrefs ?? []);
   const [distance, setDistance] = useState(preferences.maxDistanceMiles ?? 25);
   const [ageRange, setAgeRange] = useState([
@@ -96,6 +142,7 @@ function OnboardingSteps({
     try {
       await savePreferences.mutateAsync({
         data: {
+          petTypePrefs: meetPets as Species[],
           lookingForPrefs: lookingFor as LookingFor[],
           maxDistanceMiles: distance,
           ageRangeMin: ageRange[0]!,
@@ -125,11 +172,14 @@ function OnboardingSteps({
 
   const togglePet = (id: string) =>
     setPets(prev => prev.includes(id) ? prev.filter(p => p !== id) : [...prev, id]);
+  const toggleMeetPet = (id: string) =>
+    setMeetPets(prev => prev.includes(id) ? prev.filter(p => p !== id) : [...prev, id]);
   const toggleLooking = (id: string) =>
     setLookingFor(prev => prev.includes(id) ? prev.filter(p => p !== id) : [...prev, id]);
 
   const canNext = [
     pets.length > 0,
+    meetPets.length > 0,
     lookingFor.length > 0,
     true,
   ][step];
@@ -176,41 +226,29 @@ function OnboardingSteps({
                     <h2 className="font-serif text-3xl font-semibold text-foreground">What's your pet?</h2>
                     <p className="text-muted-foreground text-sm mt-2">Select all that apply — choose as many as you like</p>
                   </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                    {PET_OPTIONS.map((pet, i) => {
-                      const selected = pets.includes(pet.id);
-                      return (
-                        <motion.button
-                          key={pet.id}
-                          initial={{ opacity: 0, y: 16 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: 0.05 * i }}
-                          onClick={() => togglePet(pet.id)}
-                          data-testid={`pet-option-${pet.id}`}
-                          className={`relative border-2 rounded-2xl p-4 flex flex-col items-center gap-2 transition-all duration-150 ${
-                            selected ? pet.activeColor + " shadow-sm scale-[1.02]" : pet.color + " hover:opacity-80"
-                          }`}
-                        >
-                          <span className="text-3xl">{pet.emoji}</span>
-                          <span className="text-sm font-medium">{pet.label}</span>
-                          {selected && (
-                            <motion.div
-                              initial={{ scale: 0 }}
-                              animate={{ scale: 1 }}
-                              className="absolute top-2 right-2 w-5 h-5 rounded-full bg-primary flex items-center justify-center"
-                            >
-                              <Check className="w-3 h-3 text-white" />
-                            </motion.div>
-                          )}
-                        </motion.button>
-                      );
-                    })}
-                  </div>
+                  <PetGrid selected={pets} onToggle={togglePet} testIdPrefix="pet-option" />
                 </div>
               )}
 
-              {/* ── Step 2: What are you looking for ── */}
+              {/* ── Step 2: Which pets you want to be shown ── */}
               {step === 1 && (
+                <div className="space-y-6">
+                  <div className="text-center">
+                    <motion.span
+                      initial={{ scale: 0.7, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      transition={{ delay: 0.1 }}
+                      className="text-5xl block mb-4"
+                    >💞</motion.span>
+                    <h2 className="font-serif text-3xl font-semibold text-foreground">Who do you want to meet?</h2>
+                    <p className="text-muted-foreground text-sm mt-2">We'll start your feed with these pet people</p>
+                  </div>
+                  <PetGrid selected={meetPets} onToggle={toggleMeetPet} testIdPrefix="meet-option" />
+                </div>
+              )}
+
+              {/* ── Step 3: What are you looking for ── */}
+              {step === 2 && (
                 <div className="space-y-6">
                   <div className="text-center">
                     <motion.span
@@ -279,8 +317,8 @@ function OnboardingSteps({
                 </div>
               )}
 
-              {/* ── Step 3: Discovery preferences ── */}
-              {step === 2 && (
+              {/* ── Step 4: Discovery preferences ── */}
+              {step === 3 && (
                 <div className="space-y-8">
                   <div className="text-center">
                     <motion.span
@@ -357,9 +395,15 @@ function OnboardingSteps({
                   <div className="bg-primary/5 border border-primary/20 rounded-2xl p-4 space-y-2">
                     <p className="text-xs font-semibold text-primary uppercase tracking-wide">Your setup</p>
                     <div className="flex flex-wrap gap-1.5">
+                      {/* Two species lists sit side by side here, so each is
+                          prefixed — otherwise "🐈 Cat" reads both ways. */}
                       {pets.map(p => {
                         const opt = PET_OPTIONS.find(o => o.id === p);
-                        return opt ? <span key={p} className="text-xs bg-white border border-border rounded-full px-2.5 py-1">{opt.emoji} {opt.label}</span> : null;
+                        return opt ? <span key={`mine-${p}`} className="text-xs bg-white border border-border rounded-full px-2.5 py-1">Yours: {opt.emoji} {opt.label}</span> : null;
+                      })}
+                      {meetPets.map(p => {
+                        const opt = PET_OPTIONS.find(o => o.id === p);
+                        return opt ? <span key={`meet-${p}`} className="text-xs bg-white border border-border rounded-full px-2.5 py-1">Meeting: {opt.emoji} {opt.label}</span> : null;
                       })}
                       {lookingFor.map(l => {
                         const opt = LOOKING_FOR_OPTIONS.find(o => o.id === l);

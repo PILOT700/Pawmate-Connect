@@ -3,12 +3,14 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Heart, MapPin, X, Bookmark, Sparkles, MessageCircle, RefreshCw, ChevronRight } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { MatchCelebrationModal } from "@/components/match-celebration-modal";
 import { calcCompatScore } from "@/components/compatibility-score";
 import {
   useListDiscoverProfiles,
   useListMyPets,
+  useGetMyPreferences,
+  getGetMyPreferencesQueryKey,
   useCreateLike,
   useCreatePass,
   type DiscoverProfile,
@@ -253,6 +255,27 @@ export default function Discover() {
   const [speciesFilter, setSpeciesFilter] = useState("all");
   const [intentFilter, setIntentFilter] = useState("both");
 
+  const { data: preferences } = useGetMyPreferences({
+    query: { queryKey: getGetMyPreferencesQueryKey() },
+  });
+  // Once the feed has been filtered by hand, the stored preference stops
+  // reaching in — otherwise a late-arriving query would undo the choice.
+  const speciesFilterTouched = useRef(false);
+
+  // Open on what onboarding was told you wanted to see. The filter holds one
+  // value, so only an unambiguous preference can be honoured; anything broader
+  // keeps the full feed, which is what "all" already means.
+  useEffect(() => {
+    if (speciesFilterTouched.current) return;
+    const preferred = preferences?.petTypePrefs;
+    if (preferred?.length === 1) setSpeciesFilter(preferred[0]!);
+  }, [preferences]);
+
+  const changeSpeciesFilter = (value: string) => {
+    speciesFilterTouched.current = true;
+    setSpeciesFilter(value);
+  };
+
   const { data, isLoading, isError, refetch } = useListDiscoverProfiles({
     pageSize: 50,
     ...(speciesFilter !== "all" ? { species: speciesFilter as Species } : {}),
@@ -381,14 +404,19 @@ export default function Discover() {
       <div className="sticky top-[64px] z-40 bg-background/90 backdrop-blur-md border-b border-border py-4">
         <div className="container mx-auto px-4 md:px-8">
           <div className="flex flex-row overflow-x-auto no-scrollbar pb-2 -mb-2 gap-4 items-center">
-            <Select value={speciesFilter} onValueChange={setSpeciesFilter}>
+            <Select value={speciesFilter} onValueChange={changeSpeciesFilter}>
               <SelectTrigger className="w-[140px] shrink-0 rounded-full bg-card" data-testid="filter-species">
                 <SelectValue placeholder="Species" />
               </SelectTrigger>
+              {/* Covers every species onboarding can ask for, so a preference
+                  carried in here always has an entry to show. */}
               <SelectContent>
                 <SelectItem value="all">All Pets</SelectItem>
                 <SelectItem value="dog">Dogs</SelectItem>
                 <SelectItem value="cat">Cats</SelectItem>
+                <SelectItem value="rabbit">Rabbits</SelectItem>
+                <SelectItem value="bird">Birds</SelectItem>
+                <SelectItem value="fish">Fish</SelectItem>
                 <SelectItem value="other">Other</SelectItem>
               </SelectContent>
             </Select>
