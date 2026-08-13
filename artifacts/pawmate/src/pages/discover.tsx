@@ -253,22 +253,27 @@ export default function Discover() {
   const { toast } = useToast();
 
   const [speciesFilter, setSpeciesFilter] = useState("all");
-  const [intentFilter, setIntentFilter] = useState("both");
+  const [intentFilter, setIntentFilter] = useState("all");
 
   const { data: preferences } = useGetMyPreferences({
     query: { queryKey: getGetMyPreferencesQueryKey() },
   });
-  // Once the feed has been filtered by hand, the stored preference stops
-  // reaching in — otherwise a late-arriving query would undo the choice.
+  // Once a filter has been set by hand, the stored preference stops reaching
+  // in — otherwise a late-arriving query would undo the choice.
   const speciesFilterTouched = useRef(false);
+  const intentFilterTouched = useRef(false);
 
-  // Open on what onboarding was told you wanted to see. The filter holds one
-  // value, so only an unambiguous preference can be honoured; anything broader
-  // keeps the full feed, which is what "all" already means.
+  // Open on what onboarding was told you wanted. Each filter holds one value,
+  // so only an unambiguous preference can be honoured; anything broader keeps
+  // the full feed, which is what "all" already means.
   useEffect(() => {
-    if (speciesFilterTouched.current) return;
-    const preferred = preferences?.petTypePrefs;
-    if (preferred?.length === 1) setSpeciesFilter(preferred[0]!);
+    if (!preferences) return;
+    if (!speciesFilterTouched.current && preferences.petTypePrefs?.length === 1) {
+      setSpeciesFilter(preferences.petTypePrefs[0]!);
+    }
+    if (!intentFilterTouched.current && preferences.lookingForPrefs?.length === 1) {
+      setIntentFilter(preferences.lookingForPrefs[0]!);
+    }
   }, [preferences]);
 
   const changeSpeciesFilter = (value: string) => {
@@ -276,10 +281,15 @@ export default function Discover() {
     setSpeciesFilter(value);
   };
 
+  const changeIntentFilter = (value: string) => {
+    intentFilterTouched.current = true;
+    setIntentFilter(value);
+  };
+
   const { data, isLoading, isError, refetch } = useListDiscoverProfiles({
     pageSize: 50,
     ...(speciesFilter !== "all" ? { species: speciesFilter as Species } : {}),
-    ...(intentFilter !== "both" ? { lookingFor: intentFilter as LookingFor } : {}),
+    ...(intentFilter !== "all" ? { lookingFor: intentFilter as LookingFor } : {}),
   });
   const { data: myPets } = useListMyPets();
 
@@ -433,14 +443,20 @@ export default function Discover() {
               </SelectContent>
             </Select>
 
-            <Select value={intentFilter} onValueChange={setIntentFilter}>
+            <Select value={intentFilter} onValueChange={changeIntentFilter}>
               <SelectTrigger className="w-[160px] rounded-full bg-card" data-testid="filter-intent">
                 <SelectValue placeholder="Looking for" />
               </SelectTrigger>
+              {/* Covers every intent onboarding offers. "Open to anything" is
+                  one of those, so the no-filter option is named for people
+                  rather than intents to keep the two apart. */}
               <SelectContent>
+                <SelectItem value="all">Everyone</SelectItem>
                 <SelectItem value="friendship">Friendship</SelectItem>
                 <SelectItem value="relationship">Relationship</SelectItem>
-                <SelectItem value="both">Open to both</SelectItem>
+                <SelectItem value="playdates">Pet playdates</SelectItem>
+                <SelectItem value="casual">Casual meetups</SelectItem>
+                <SelectItem value="open">Open to anything</SelectItem>
               </SelectContent>
             </Select>
 
