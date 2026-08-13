@@ -13,8 +13,10 @@ import {
   useUpdatePet,
   useGetMyProfile,
   useListMyPets,
+  useGetMyPreferences,
   getGetMyProfileQueryKey,
   getListMyPetsQueryKey,
+  getGetMyPreferencesQueryKey,
   type Species,
   type LookingFor,
   type User,
@@ -52,10 +54,12 @@ function ProfileWizard({
   me,
   existingPet,
   isEditing,
+  preferredSpecies,
 }: {
   me: User;
   existingPet?: Pet;
   isEditing: boolean;
+  preferredSpecies?: Species;
 }) {
   const [, setLocation] = useLocation();
   const { refreshSession } = useAuth();
@@ -69,7 +73,11 @@ function ProfileWizard({
   const [intent, setIntent] = useState(lookingForToIntent(me.lookingFor));
   const [bio, setBio] = useState(me.bio ?? "");
   const [petName, setPetName] = useState(existingPet?.name ?? "");
-  const [petSpecies, setPetSpecies] = useState<string>(existingPet?.species ?? "dog");
+  // Falls back to what onboarding was told, so answering "cat" there doesn't
+  // hand you a form that says dog.
+  const [petSpecies, setPetSpecies] = useState<string>(
+    existingPet?.species ?? preferredSpecies ?? "dog",
+  );
   const [petBreed, setPetBreed] = useState(existingPet?.breed ?? "");
   const [petAge, setPetAge] = useState(
     existingPet?.ageYears != null ? String(existingPet.ageYears) : "",
@@ -402,8 +410,11 @@ export default function CreateProfile() {
   const { data: myPets, isLoading: petsLoading } = useListMyPets({
     query: { queryKey: getListMyPetsQueryKey() },
   });
+  const { data: preferences, isLoading: prefsLoading } = useGetMyPreferences({
+    query: { queryKey: getGetMyPreferencesQueryKey() },
+  });
 
-  if (profileLoading || petsLoading || !me) {
+  if (profileLoading || petsLoading || prefsLoading || !me) {
     return (
       <div className="min-h-[calc(100vh-5rem)] bg-background flex items-center justify-center">
         <Loader className="w-6 h-6 animate-spin text-muted-foreground" />
@@ -415,6 +426,7 @@ export default function CreateProfile() {
     <ProfileWizard
       me={me}
       existingPet={myPets?.[0]}
+      preferredSpecies={preferences?.petTypePrefs?.[0]}
       // Someone who already finished onboarding is editing, not signing up.
       isEditing={Boolean(me.onboardingCompletedAt)}
     />
