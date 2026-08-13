@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { and, count, desc, eq, inArray, ne, notInArray, sql } from "drizzle-orm";
+import { and, count, desc, eq, gte, inArray, isNull, lte, ne, notInArray, or, sql } from "drizzle-orm";
 import { db, usersTable, petsTable, likesTable, passesTable, blocksTable } from "@workspace/db";
 import { ListDiscoverProfilesQueryParams, ListDiscoverProfilesResponse } from "@workspace/api-zod";
 import { parsePagination } from "../lib/pagination";
@@ -41,6 +41,17 @@ router.get("/discover", requireAuth, async (req, res) => {
     filters.push(
       sql`EXISTS (SELECT 1 FROM ${petsTable} WHERE ${petsTable.userId} = ${usersTable.id} AND ${petsTable.species} = ${query.species})`,
     );
+  }
+
+  // Age is optional on a profile, and someone who never filled it in should not
+  // disappear from every filtered feed — an unstated age is unknown, not
+  // disqualifying.
+  if (query.ageMin != null) {
+    filters.push(or(isNull(usersTable.age), gte(usersTable.age, query.ageMin))!);
+  }
+
+  if (query.ageMax != null) {
+    filters.push(or(isNull(usersTable.age), lte(usersTable.age, query.ageMax))!);
   }
 
   const where = and(...filters);

@@ -22,4 +22,17 @@ page?: PageParameter;
 pageSize?: PageSizeParameter;
 species?: Species;
 lookingFor?: LookingFor;
+/**
+ * Lower bound, inclusive. Profiles with no age set are kept — a blank field is not a reason to hide someone.
+
+ * @minimum 18
+ * @maximum 120
+ */
+ageMin?: number;
+/**
+ * Upper bound, inclusive. Profiles with no age set are kept.
+ * @minimum 18
+ * @maximum 120
+ */
+ageMax?: number;
 };

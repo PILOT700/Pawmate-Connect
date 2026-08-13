@@ -286,10 +286,15 @@ export default function Discover() {
     setIntentFilter(value);
   };
 
+  // The age range has no control in the filter bar — it is set once during
+  // onboarding and changed in Settings, so it applies straight from the
+  // preference rather than being restated here.
   const { data, isLoading, isError, refetch } = useListDiscoverProfiles({
     pageSize: 50,
     ...(speciesFilter !== "all" ? { species: speciesFilter as Species } : {}),
     ...(intentFilter !== "all" ? { lookingFor: intentFilter as LookingFor } : {}),
+    ...(preferences?.ageRangeMin != null ? { ageMin: preferences.ageRangeMin } : {}),
+    ...(preferences?.ageRangeMax != null ? { ageMax: preferences.ageRangeMax } : {}),
   });
   const { data: myPets } = useListMyPets();
 
@@ -459,6 +464,19 @@ export default function Discover() {
                 <SelectItem value="open">Open to anything</SelectItem>
               </SelectContent>
             </Select>
+
+            {/* The age range narrows the feed without a control of its own, so
+                it says so — an invisible filter reads as an empty app. */}
+            {(preferences?.ageRangeMin != null || preferences?.ageRangeMax != null) && (
+              <Link
+                href="/settings"
+                className="shrink-0 rounded-full border border-border bg-card px-4 h-9 flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap"
+                data-testid="filter-age-range"
+                title="Set during onboarding — change it in Settings"
+              >
+                Ages {preferences.ageRangeMin}–{preferences.ageRangeMax}
+              </Link>
+            )}
 
             {sparkState === "dismissed" && (
               <button

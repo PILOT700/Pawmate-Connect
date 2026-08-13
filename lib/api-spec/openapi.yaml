@@ -412,6 +412,22 @@ paths:
           in: query
           schema:
             $ref: "#/components/schemas/LookingFor"
+        - name: ageMin
+          in: query
+          description: >
+            Lower bound, inclusive. Profiles with no age set are kept — a blank
+            field is not a reason to hide someone.
+          schema:
+            type: integer
+            minimum: 18
+            maximum: 120
+        - name: ageMax
+          in: query
+          description: Upper bound, inclusive. Profiles with no age set are kept.
+          schema:
+            type: integer
+            minimum: 18
+            maximum: 120
       responses:
         "200":
           description: Candidate profiles
