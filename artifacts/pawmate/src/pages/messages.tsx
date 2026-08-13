@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, Send, Phone, Video, MoreVertical, Paperclip, Smile, ArrowLeft, PawPrint, MapPin, Calendar, Clock, Check, X, ChevronRight, TreePine, Coffee, Waves, Building2, Flower2, CalendarCheck } from "lucide-react";
+import { Search, Send, ArrowLeft, PawPrint, MapPin, Calendar, Clock, Check, X, ChevronRight, TreePine, Coffee, Waves, Building2, Flower2, CalendarCheck } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { motion, AnimatePresence } from "framer-motion";
@@ -880,7 +880,7 @@ export default function Messages() {
             <>
               {/* Header */}
               <div className="border-b border-border px-4 md:px-6 bg-card shrink-0">
-                <div className="h-16 flex items-center justify-between">
+                <div className="h-16 flex items-center">
                   <div className="flex items-center gap-3 md:gap-4">
                     <Button variant="ghost" size="icon" className="md:hidden -ml-2" onClick={() => setShowChat(false)}>
                       <ArrowLeft className="w-5 h-5" />
@@ -892,17 +892,6 @@ export default function Messages() {
                       <h3 className="font-medium text-foreground leading-tight">{activeMatch.otherUser.firstName}</h3>
                       {activeMatch.otherPet && <p className="text-xs text-muted-foreground">with {activeMatch.otherPet.name}</p>}
                     </div>
-                  </div>
-                  <div className="flex gap-1 md:gap-2">
-                    <Button variant="ghost" size="icon" className="rounded-full text-muted-foreground hover:text-foreground">
-                      <Phone className="w-5 h-5" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="rounded-full text-muted-foreground hover:text-foreground">
-                      <Video className="w-5 h-5" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="rounded-full text-muted-foreground hover:text-foreground hidden sm:flex">
-                      <MoreVertical className="w-5 h-5" />
-                    </Button>
                   </div>
                 </div>
 
@@ -1029,21 +1018,15 @@ export default function Messages() {
                       )}
 
                       <form className="flex gap-2 items-end" onSubmit={handleSendText}>
-                        <div className="bg-secondary/60 rounded-[1.5rem] flex-1 flex items-center px-2 min-h-[56px] border border-border/50 focus-within:border-primary/30 focus-within:bg-secondary transition-colors">
-                          <Button type="button" variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground shrink-0 rounded-full w-10 h-10">
-                            <Paperclip className="w-5 h-5" />
-                          </Button>
+                        <div className="bg-secondary/60 rounded-[1.5rem] flex-1 flex items-center px-4 min-h-[56px] border border-border/50 focus-within:border-primary/30 focus-within:bg-secondary transition-colors">
                           <input
                             type="text"
                             value={messageText}
                             onChange={(e) => setMessageText(e.target.value)}
                             placeholder="Type a message..."
-                            className="bg-transparent w-full focus:outline-none text-[15px] py-3 px-2"
+                            className="bg-transparent w-full focus:outline-none text-[15px] py-3"
                             data-testid="input-chat-message"
                           />
-                          <Button type="button" variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground shrink-0 rounded-full w-10 h-10 hidden sm:flex">
-                            <Smile className="w-5 h-5" />
-                          </Button>
                         </div>
                         <Button
                           type="submit"
