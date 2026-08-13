@@ -206,9 +206,11 @@ export default function Profile() {
     <div className="min-h-screen bg-background pb-24">
       {/* Hero Image */}
       <div className="relative h-[50vh] md:h-[60vh] w-full">
-        {/* Cropped above centre: a centred crop cuts portraits off at the
-            hairline, since heads sit in the top half of the frame. */}
-        <img src={heroImage} alt={profile.firstName} className="w-full h-full object-cover object-[center_25%]" />
+        {/* Cropped just above centre. The band is wide and short, so a portrait
+            photo overflows it by more than its own height — small shifts here
+            move the subject a long way, and anything near the top loses the
+            face behind the card below. */}
+        <img src={heroImage} alt={profile.firstName} className="w-full h-full object-cover object-[center_45%]" />
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
 
         <Link href="/discover" className="absolute top-6 left-6 z-10" data-testid="btn-back">
