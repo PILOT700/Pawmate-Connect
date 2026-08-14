@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
+import { useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,9 +9,20 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Camera, Check, Loader } from "lucide-react";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   useUpdateMyProfile,
   useCreateMyPet,
   useUpdatePet,
+  useDeletePet,
   useGetMyProfile,
   useListMyPets,
   getGetMyProfileQueryKey,
@@ -61,6 +73,7 @@ function ProfileWizard({
   const [, setLocation] = useLocation();
   const { refreshSession } = useAuth();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [step, setStep] = useState(1);
   const [selectedTags, setSelectedTags] = useState<string[]>(me.lifestyleTags ?? []);
 
@@ -84,12 +97,39 @@ function ProfileWizard({
   const [petPhotoFile, setPetPhotoFile] = useState<File | null>(null);
   const [petPhotoPreview, setPetPhotoPreview] = useState<string>(existingPet?.photoUrl ?? "");
   const [isUploading, setIsUploading] = useState(false);
+  const [removePetOpen, setRemovePetOpen] = useState(false);
 
   const updateProfile = useUpdateMyProfile();
   const createPet = useCreateMyPet();
   const updatePet = useUpdatePet();
+  const deletePet = useDeletePet();
   const isSaving =
     isUploading || updateProfile.isPending || createPet.isPending || updatePet.isPending;
+
+  const handleRemovePet = async () => {
+    if (!existingPet) return;
+    setRemovePetOpen(false);
+
+    try {
+      await deletePet.mutateAsync({ petId: existingPet.id });
+      // The form still holds the removed pet's details, and leaving them on
+      // screen invites saving it straight back. Clearing them makes the step
+      // read as what it now is: empty.
+      setPetName("");
+      setPetBreed("");
+      setPetAge("");
+      setPetPhotoFile(null);
+      setPetPhotoPreview("");
+      await queryClient.invalidateQueries({ queryKey: getListMyPetsQueryKey() });
+      toast({ title: "Pet removed", description: `${existingPet.name} is no longer on your profile.` });
+    } catch (err) {
+      toast({
+        variant: "destructive",
+        title: "Couldn't remove your pet",
+        description: apiErrorMessage(err, "Please try again."),
+      });
+    }
+  };
 
   const handlePhotoSelect = (
     e: React.ChangeEvent<HTMLInputElement>,
@@ -349,6 +389,22 @@ function ProfileWizard({
                     Next Step
                   </Button>
                 </div>
+
+                {/* Only once there is a pet on file. Clearing the fields above
+                    would not remove it — saving skips a blank pet rather than
+                    deleting one, so there has to be a way to say so outright. */}
+                {existingPet && (
+                  <div className="pt-6 border-t border-border">
+                    <button
+                      type="button"
+                      onClick={() => setRemovePetOpen(true)}
+                      className="text-sm text-muted-foreground hover:text-destructive transition-colors"
+                      data-testid="btn-remove-pet"
+                    >
+                      Remove {existingPet.name} from my profile
+                    </button>
+                  </div>
+                )}
               </motion.div>
             )}
 
@@ -400,6 +456,24 @@ function ProfileWizard({
           </AnimatePresence>
         </div>
       </div>
+
+      <AlertDialog open={removePetOpen} onOpenChange={setRemovePetOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove {existingPet?.name}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Their photo and details come off your profile for good. You can add a pet again
+              afterwards, but this one won't come back.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="btn-remove-pet-cancel">Keep them</AlertDialogCancel>
+            <AlertDialogAction onClick={handleRemovePet} data-testid="btn-remove-pet-confirm">
+              Remove
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
