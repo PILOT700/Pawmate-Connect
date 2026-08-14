@@ -4,7 +4,7 @@ import { Link, useLocation } from "wouter";
 import {
   Bell, Lock, Eye, Heart, MessageCircle, User, PawPrint,
   ChevronRight, Moon, Globe, Trash2, LogOut, Shield, MapPin,
-  Smartphone, Mail, ToggleLeft, Ban
+  Smartphone, Mail, ToggleLeft, Ban, Download
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -15,6 +15,7 @@ import {
   useDeleteMyAccount,
   useListBlockedUsers,
   useUnblockUser,
+  exportMyData,
   getListBlockedUsersQueryKey,
   type UserSettings,
 } from "@workspace/api-client-react";
@@ -127,6 +128,36 @@ export default function Settings() {
   });
   const unblock = useUnblockUser();
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+
+  // Built and saved in the browser rather than opened in a tab: the response
+  // needs the session cookie, and a plain link to it would also leave the
+  // file sitting in the address bar.
+  const handleExport = async () => {
+    setIsExporting(true);
+
+    try {
+      const data = await exportMyData();
+      const url = URL.createObjectURL(
+        new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }),
+      );
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `pawmate-my-data-${new Date().toISOString().slice(0, 10)}.json`;
+      link.click();
+      URL.revokeObjectURL(url);
+
+      toast({ title: "Downloaded", description: "Your data is in your downloads folder." });
+    } catch (err) {
+      toast({
+        variant: "destructive",
+        title: "Couldn't prepare your data",
+        description: apiErrorMessage(err, "Please try again."),
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   const handleLogout = async () => {
     await logout.mutateAsync();
@@ -417,6 +448,27 @@ export default function Settings() {
             ))}
           </Section>
         )}
+
+        {/* Your data — sits above the danger zone because downloading a copy
+            is the opposite of destructive, and often what someone actually
+            wants before they reach for delete. */}
+        <Section title="Your Data">
+          <button
+            type="button"
+            onClick={handleExport}
+            disabled={isExporting}
+            className="w-full text-left disabled:opacity-60"
+            data-testid="btn-settings-export"
+          >
+            <SettingRow
+              icon={<Download className="w-4 h-4 text-primary" />}
+              iconBg="bg-primary/10"
+              label={isExporting ? "Preparing your file…" : "Download my data"}
+              description="Everything Pawmate holds about you, as a JSON file"
+              testId="setting-export-data"
+            />
+          </button>
+        </Section>
 
         {/* Danger zone */}
         <Section title="Danger Zone">

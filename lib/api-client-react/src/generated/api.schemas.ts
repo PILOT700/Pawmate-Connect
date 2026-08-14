@@ -505,6 +505,8 @@ export type PageParameter = number;
 
 export type PageSizeParameter = number;
 
+export type ExportMyData200 = { [key: string]: unknown };
+
 export type ListDiscoverProfilesParams = {
 /**
  * @minimum 1

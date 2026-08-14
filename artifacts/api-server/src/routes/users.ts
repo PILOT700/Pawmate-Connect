@@ -1,6 +1,25 @@
 import { Router, type IRouter } from "express";
 import { and, eq, or } from "drizzle-orm";
-import { db, usersTable, blocksTable } from "@workspace/db";
+import {
+  db,
+  usersTable,
+  blocksTable,
+  petsTable,
+  userPreferencesTable,
+  userSettingsTable,
+  likesTable,
+  passesTable,
+  matchesTable,
+  messagesTable,
+  playdatesTable,
+  communityEventsTable,
+  eventRsvpsTable,
+  eventSavesTable,
+  eventCommentsTable,
+  storiesTable,
+  reportsTable,
+  notificationsTable,
+} from "@workspace/db";
 import {
   GetMyProfileResponse,
   UpdateMyProfileBody,
@@ -38,6 +57,80 @@ router.patch("/users/me", requireAuth, async (req, res) => {
     .returning();
 
   res.json(UpdateMyProfileResponse.parse(user));
+});
+
+router.get("/users/me/export", requireAuth, async (req, res) => {
+  const meId = req.user!.id;
+
+  const [
+    pets,
+    preferences,
+    settings,
+    likesSent,
+    passes,
+    matches,
+    messagesWritten,
+    playdatesProposed,
+    eventsCreated,
+    eventRsvps,
+    eventSaves,
+    eventComments,
+    stories,
+    blocks,
+    reports,
+    notifications,
+  ] = await Promise.all([
+    db.select().from(petsTable).where(eq(petsTable.userId, meId)),
+    db.select().from(userPreferencesTable).where(eq(userPreferencesTable.userId, meId)),
+    db.select().from(userSettingsTable).where(eq(userSettingsTable.userId, meId)),
+    db.select().from(likesTable).where(eq(likesTable.likerId, meId)),
+    db.select().from(passesTable).where(eq(passesTable.userId, meId)),
+    db
+      .select()
+      .from(matchesTable)
+      .where(or(eq(matchesTable.userOneId, meId), eq(matchesTable.userTwoId, meId))),
+    // Only what this member wrote. The other half of a conversation belongs to
+    // the person who wrote it, and handing it over here would export them too.
+    db.select().from(messagesTable).where(eq(messagesTable.senderId, meId)),
+    db.select().from(playdatesTable).where(eq(playdatesTable.proposedByUserId, meId)),
+    db.select().from(communityEventsTable).where(eq(communityEventsTable.organizerId, meId)),
+    db.select().from(eventRsvpsTable).where(eq(eventRsvpsTable.userId, meId)),
+    db.select().from(eventSavesTable).where(eq(eventSavesTable.userId, meId)),
+    db.select().from(eventCommentsTable).where(eq(eventCommentsTable.authorId, meId)),
+    db.select().from(storiesTable).where(eq(storiesTable.userId, meId)),
+    db.select().from(blocksTable).where(eq(blocksTable.blockerId, meId)),
+    db.select().from(reportsTable).where(eq(reportsTable.reporterId, meId)),
+    db.select().from(notificationsTable).where(eq(notificationsTable.userId, meId)),
+  ]);
+
+  // The password hash is not the member's data in any useful sense, and handing
+  // it out turns a download into an offline cracking target.
+  const { passwordHash: _omitted, ...account } = req.user!;
+
+  res
+    .setHeader("Content-Disposition", 'attachment; filename="pawmate-my-data.json"')
+    .json({
+      exportedAt: new Date().toISOString(),
+      account,
+      pets,
+      preferences: preferences[0] ?? null,
+      settings: settings[0] ?? null,
+      activity: {
+        likesSent,
+        passes,
+        matches,
+        messagesWritten,
+        playdatesProposed,
+        eventsCreated,
+        eventRsvps,
+        eventSaves,
+        eventComments,
+        stories,
+        blocks,
+        reports,
+        notifications,
+      },
+    });
 });
 
 router.delete("/users/me", requireAuth, async (req, res) => {

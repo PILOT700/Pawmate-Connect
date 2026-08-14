@@ -99,6 +99,10 @@ const SECTIONS: { title: string; items: { q: string; a: string }[] }[] = [
         a: "Settings holds both, and each toggle saves as you flip it — there's nothing to submit.",
       },
       {
+        q: "Can I get a copy of my data?",
+        a: "Yes — Settings has a download that hands you a JSON file with everything we hold about you: your account, pets, preferences, and what you've done here. It leaves out messages other people wrote to you, since those are their words rather than yours.",
+      },
+      {
         q: "How do I delete my account?",
         a: "At the bottom of Settings. You'll be asked to confirm, because it can't be undone.",
       },

@@ -35,6 +35,7 @@ import type {
   DiscoverProfileList,
   EventComment,
   EventCommentList,
+  ExportMyData200,
   HealthStatus,
   LikeResult,
   ListDiscoverProfilesParams,
@@ -1257,6 +1258,86 @@ export const useDeletePet = <TError = ErrorType<UnauthorizedResponse | NotFoundR
       > => {
       return useMutation(getDeletePetMutationOptions(options));
     }
+
+export const getExportMyDataUrl = () => {
+
+
+
+
+  return `/api/users/me/export`
+}
+
+/**
+ * Serves the GDPR right of access. Carries the account, its pets, preferences and settings, and the things this member did — likes, passes, matches, the messages they wrote, playdates they proposed, events, stories, blocks and reports.
+It deliberately leaves out other people's contributions, including messages written to them, since those are somebody else's data. Nor does it carry the password hash or any session or reset token.
+
+ * @summary Everything held about the logged-in user, as one document
+ */
+export const exportMyData = async ( options?: RequestInit): Promise<ExportMyData200> => {
+
+  return customFetch<ExportMyData200>(getExportMyDataUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getExportMyDataQueryKey = () => {
+    return [
+    `/api/users/me/export`
+    ] as const;
+    }
+
+
+export const getExportMyDataQueryOptions = <TData = Awaited<ReturnType<typeof exportMyData>>, TError = ErrorType<UnauthorizedResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof exportMyData>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getExportMyDataQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof exportMyData>>> = ({ signal }) => exportMyData({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof exportMyData>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ExportMyDataQueryResult = NonNullable<Awaited<ReturnType<typeof exportMyData>>>
+export type ExportMyDataQueryError = ErrorType<UnauthorizedResponse>
+
+
+/**
+ * @summary Everything held about the logged-in user, as one document
+ */
+
+export function useExportMyData<TData = Awaited<ReturnType<typeof exportMyData>>, TError = ErrorType<UnauthorizedResponse>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof exportMyData>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getExportMyDataQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
 
 export const getGetMyPreferencesUrl = () => {
 

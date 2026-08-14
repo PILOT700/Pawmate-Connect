@@ -291,6 +291,15 @@ export const DeletePetParams = zod.object({
 
 
 /**
+ * Serves the GDPR right of access. Carries the account, its pets, preferences and settings, and the things this member did — likes, passes, matches, the messages they wrote, playdates they proposed, events, stories, blocks and reports.
+It deliberately leaves out other people's contributions, including messages written to them, since those are somebody else's data. Nor does it carry the password hash or any session or reset token.
+
+ * @summary Everything held about the logged-in user, as one document
+ */
+export const ExportMyDataResponse = zod.record(zod.string(), zod.unknown())
+
+
+/**
  * @summary Get the logged-in user's discovery preferences
  */
 export const GetMyPreferencesResponse = zod.object({
