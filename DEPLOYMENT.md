@@ -79,9 +79,24 @@ every screen behind sign-in stays on its loading state and the proxy logs
 
 ```bash
 pnpm run typecheck   # every package
-pnpm test            # frontend unit tests
+pnpm test            # unit tests; the database-backed ones skip
 pnpm run build       # typecheck + build
 ```
+
+The API tests that talk to Postgres need one to talk to. Start a throwaway
+instance and point `TEST_DATABASE_URL` at it — the schema is pushed into it
+automatically, and without the variable those tests skip rather than fail:
+
+```bash
+docker run -d --name pawmate-test-db -e POSTGRES_PASSWORD=test -e POSTGRES_USER=test -e POSTGRES_DB=pawmate_test -p 55432:5432 postgres:16-alpine
+```
+
+```bash
+TEST_DATABASE_URL='postgresql://test:test@localhost:55432/pawmate_test' pnpm test
+```
+
+Never point it at a real database: the tests truncate every table between
+cases.
 
 ## Verifying a deploy landed
 

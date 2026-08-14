@@ -9,7 +9,7 @@ and community events.
 - `pnpm --filter @workspace/pawmate run dev` — frontend on port 8080, proxying `/api` to `http://localhost:5050` (override with `API_PROXY_TARGET`)
 - `pnpm --filter @workspace/api-server run dev` — API server; **requires `PORT`, `DATABASE_URL` and `COOKIE_SECRET`** and throws without them
 - `pnpm run typecheck` — full typecheck across all packages
-- `pnpm test` — unit tests (frontend only)
+- `pnpm test` — unit tests; API tests needing Postgres skip unless `TEST_DATABASE_URL` is set (see [DEPLOYMENT.md](DEPLOYMENT.md))
 - `pnpm run build` — typecheck + build all packages
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
 - `pnpm --filter @workspace/db run push` — push DB schema changes
@@ -62,7 +62,6 @@ any profile.
 ## Known gaps
 
 - No Terms or Privacy pages; the signup form links both to `#`.
-- No tests touching the API — they would need a database.
 - No error tracking; Render's logs are it.
 
 ## Pointers
