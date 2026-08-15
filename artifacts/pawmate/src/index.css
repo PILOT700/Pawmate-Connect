@@ -40,6 +40,13 @@
   --color-destructive-foreground: hsl(var(--destructive-foreground));
   --color-destructive-border: var(--destructive-border);
 
+  --color-forest: hsl(var(--forest));
+  --color-forest-foreground: hsl(var(--forest-foreground));
+  --color-forest-tint: hsl(var(--forest-tint));
+  --color-sand: hsl(var(--sand));
+  --color-warm: hsl(var(--warm));
+  --color-warm-foreground: hsl(var(--warm-foreground));
+
   --color-chart-1: hsl(var(--chart-1));
   --color-chart-2: hsl(var(--chart-2));
   --color-chart-3: hsl(var(--chart-3));
@@ -105,7 +112,7 @@
   --elevate-1: rgba(0,0,0, .03);
   --elevate-2: rgba(0,0,0, .08);
 
-  --background: 40 33% 93%; /* #F5EFE6 */
+  --background: 44 48% 94%; /* #F7F3E8 — cream */
   --foreground: 38 6% 34%; /* #5C5552 */
 
   --border: 38 10% 85%;
@@ -119,6 +126,16 @@
   --popover: 40 100% 98%;
   --popover-foreground: 38 6% 34%;
   --popover-border: 40 40% 90%;
+
+  /* Deep green used by the landing page. Kept separate from --primary so the
+     signed-in app keeps its lighter sage; carrying this through the whole
+     product would be a change of its own. */
+  --forest: 149 47% 17%;          /* #173F2A */
+  --forest-foreground: 0 0% 100%;
+  --forest-tint: 44 38% 89%;      /* #EDE7D7 — soft beige */
+  --sand: 44 38% 89%;             /* #EDE7D7 */
+  --warm: 20 61% 62%;             /* #D98A63 — warm accent */
+  --warm-foreground: 0 0% 100%;
 
   --primary: 106 10% 56%; /* Sage green */
   --primary-foreground: 0 0% 100%;

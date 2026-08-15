@@ -1,252 +1,318 @@
 import { motion } from "framer-motion";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Heart, Shield, Users, Quote, MapPin, PawPrint } from "lucide-react";
+import {
+  PawPrint,
+  ShieldCheck,
+  MessageCircle,
+  CalendarCheck,
+  Users,
+  Heart,
+  MapPin,
+  Quote,
+  ChevronLeft,
+  ChevronRight,
+  Apple,
+  Play,
+} from "lucide-react";
+import { heroImage, communityImage, matchImage, members, voices } from "@/lib/landing-images";
 
-const petCommunityData = [
-  { pet: "Biscuit", breed: "Golden Retriever", owner: "Clara", age: 31, city: "Portland", tags: ["Outdoor lover", "Dog park regular"], image: "/pet-card-1.png" },
-  { pet: "Fig", breed: "Orange Tabby", owner: "Marcus", age: 38, city: "Austin", tags: ["Homebody", "Work from home"], image: "/pet-card-2.png" },
-  { pet: "Scout", breed: "Border Collie", owner: "Nadia", age: 29, city: "Denver", tags: ["Morning person", "Trail runner"], image: "/pet-card-3.png" }
+/**
+ * PLACEHOLDER COPY — the wording below comes from the design and makes claims
+ * the product cannot yet back: nothing verifies members, there are no apps in
+ * either store, the quoted people do not exist, and the accounts number four
+ * rather than thousands. Photographs are swapped through
+ * `src/lib/landing-images.ts` without touching this file.
+ */
+
+const FEATURES = [
+  { icon: PawPrint, title: "Pet-First Matching", body: "We match you based on your pets and lifestyle." },
+  { icon: ShieldCheck, title: "Verified Members", body: "Real people, real pets. Safe and trustworthy." },
+  { icon: MessageCircle, title: "Easy Conversations", body: "Break the ice with pet-friendly prompts." },
+  { icon: CalendarCheck, title: "Meet & Connect", body: "Find friendship or love in your area." },
+  { icon: Users, title: "Supportive Community", body: "Join events and groups for pet lovers." },
 ];
+
+function Eyebrow({ icon: Icon, children }: { icon: typeof PawPrint; children: React.ReactNode }) {
+  return (
+    <div className="flex items-center gap-2.5 mb-4">
+      <span className="w-7 h-7 rounded-full bg-sand flex items-center justify-center shrink-0">
+        <Icon className="w-3.5 h-3.5 text-warm" />
+      </span>
+      <span className="text-sm font-medium text-warm">{children}</span>
+    </div>
+  );
+}
+
+/** A store badge. Not a link: there is no app to send anyone to. */
+function StoreBadge({ icon: Icon, small, large }: { icon: typeof Apple; small: string; large: string }) {
+  return (
+    <div className="h-12 rounded-lg bg-[#111] text-white flex items-center gap-2.5 px-4">
+      <Icon className="w-6 h-6 shrink-0" />
+      <span className="leading-tight text-left">
+        <span className="block text-[0.55rem] uppercase tracking-wide opacity-80">{small}</span>
+        <span className="block text-sm font-semibold -mt-0.5">{large}</span>
+      </span>
+    </div>
+  );
+}
 
 export default function Home() {
   return (
-    <div className="flex flex-col min-h-screen">
-      {/* Hero Section — full-width cinematic */}
-      <section className="relative w-full overflow-hidden" style={{ height: "calc(100vh - 4.5rem)" }}>
-        {/* Background image */}
-        <img
-          src="/hero-couples.png"
-          alt="Two couples walking toward each other in a sun-dappled park with their pets"
-          className="absolute inset-0 w-full h-full object-cover object-center"
-        />
+    <div className="flex flex-col">
 
-        {/* Layered gradient overlay: dark at edges, lighter in centre for text legibility */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-black/20" />
-        <div className="absolute inset-0 bg-gradient-to-r from-black/30 via-transparent to-black/30" />
-
-        {/* Centered text content */}
-        <div className="relative z-10 h-full flex flex-col items-center justify-center text-center px-4">
-          <motion.div
-            initial={{ opacity: 0, y: 28 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.9, ease: "easeOut" }}
-            className="max-w-3xl"
-          >
-            <h1 className="font-serif text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-semibold leading-[1.08] text-white mb-5 drop-shadow-sm">
-              Connections that start with paws
-            </h1>
-
-            {/* Decorative paw divider */}
-            <div className="flex items-center justify-center gap-4 mb-5">
-              <span className="block w-16 h-px bg-white/40" />
-              <PawPrint className="w-5 h-5 text-white/70" />
-              <span className="block w-16 h-px bg-white/40" />
-            </div>
-
-            <p className="text-base sm:text-lg md:text-xl text-white/85 mb-10 leading-relaxed font-light max-w-xl mx-auto">
-              For pet lovers seeking meaningful relationships, friendship, and shared moments.
-            </p>
-
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link href="/onboarding" data-testid="hero-cta-start">
-                <Button
-                  size="lg"
-                  className="w-full sm:w-auto rounded-full px-10 text-base h-13 bg-primary text-primary-foreground hover:bg-primary/90 shadow-xl shadow-black/20 font-medium"
-                >
-                  Join Pawmate
-                </Button>
-              </Link>
-              <Link href="/#how-it-works" data-testid="hero-cta-learn">
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="w-full sm:w-auto rounded-full px-10 text-base h-13 bg-white/10 border-white/50 text-white hover:bg-white/20 backdrop-blur-sm font-medium"
-                >
-                  Learn more
-                </Button>
-              </Link>
-            </div>
-          </motion.div>
-        </div>
-
-        {/* Subtle scroll-down indicator */}
-        <motion.div
-          className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-1"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1.2, duration: 0.6 }}
-        >
-          <motion.div
-            animate={{ y: [0, 6, 0] }}
-            transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
-            className="w-5 h-8 rounded-full border-2 border-white/40 flex items-start justify-center pt-1.5"
-          >
-            <span className="block w-1 h-1.5 rounded-full bg-white/60" />
-          </motion.div>
-        </motion.div>
-      </section>
-
-      {/* How it works */}
-      <section id="how-it-works" className="py-24 bg-card relative overflow-hidden">
-        <div className="container mx-auto px-4 md:px-8 relative z-10">
-          <div className="text-center max-w-2xl mx-auto mb-20">
-            <h2 className="font-serif text-3xl md:text-5xl font-semibold text-foreground mb-4">Meaningful by design</h2>
-            <p className="text-muted-foreground text-lg font-light">We built Pawmate differently. No swiping fatigue, just intentional connections.</p>
-          </div>
-          
-          <div className="relative">
-            {/* Connector Line (Desktop) */}
-            <div className="hidden md:block absolute top-12 left-[15%] right-[15%] h-px bg-border/60 z-0"></div>
-
-            <div className="grid md:grid-cols-3 gap-8 md:gap-12 relative z-10">
-              <div className="flex flex-col items-center text-center">
-                <div className="w-24 h-24 rounded-full bg-amber-50 flex items-center justify-center mb-6 shadow-sm border border-amber-100/50">
-                  <span className="font-serif text-4xl text-amber-700 italic">1</span>
-                </div>
-                <h3 className="text-xl font-medium text-foreground mb-3">Authentic Profiles</h3>
-                <p className="text-muted-foreground leading-relaxed font-light">Showcase your lifestyle and your pet's personality. We focus on who you are, not just what you look like.</p>
-              </div>
-              <div className="flex flex-col items-center text-center">
-                <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center mb-6 shadow-sm border border-primary/20">
-                  <span className="font-serif text-4xl text-primary italic">2</span>
-                </div>
-                <h3 className="text-xl font-medium text-foreground mb-3">Intentional Matching</h3>
-                <p className="text-muted-foreground leading-relaxed font-light">Connect over shared interests, pet compatibility, and lifestyle alignment. Quality over quantity.</p>
-              </div>
-              <div className="flex flex-col items-center text-center">
-                <div className="w-24 h-24 rounded-full bg-accent/10 flex items-center justify-center mb-6 shadow-sm border border-accent/20">
-                  <span className="font-serif text-4xl text-accent-foreground italic">3</span>
-                </div>
-                <h3 className="text-xl font-medium text-foreground mb-3">Safe Community</h3>
-                <p className="text-muted-foreground leading-relaxed font-light">A moderated space that values kindness and respect. Comfortable, secure, and genuine.</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Meet the community */}
-      <section id="community" className="py-24 bg-background">
+      {/* ══════════════════════════ Hero ══════════════════════════ */}
+      <section className="relative bg-background lg:min-h-[36rem]">
         <div className="container mx-auto px-4 md:px-8">
-          <div className="flex justify-between items-end mb-12">
-            <div>
-              <h2 className="font-serif text-3xl md:text-5xl font-semibold text-foreground mb-4">Meet the community</h2>
-              <p className="text-muted-foreground text-lg font-light">Genuine people and their best friends.</p>
-            </div>
-            <Link href="/discover" className="hidden md:flex items-center text-primary font-medium hover:text-primary/80 transition-colors">
-              View more <ArrowRight className="ml-2 w-4 h-4" />
-            </Link>
-          </div>
+          <div className="relative z-10 grid lg:grid-cols-2 items-center gap-8 pt-12 pb-8 lg:py-24">
+            <motion.div
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, ease: "easeOut" }}
+              className="max-w-xl"
+            >
+              <div className="inline-flex items-center gap-2 rounded-full bg-card/80 backdrop-blur-sm border border-card-border pl-1.5 pr-4 py-1.5 mb-8 shadow-xs">
+                <span className="w-6 h-6 rounded-full bg-sand flex items-center justify-center">
+                  <PawPrint className="w-3.5 h-3.5 text-forest" />
+                </span>
+                <span className="text-sm text-foreground/80">Connections that start with paws</span>
+              </div>
 
-          <div className="flex overflow-x-auto md:grid md:grid-cols-3 gap-6 pb-8 -mx-4 px-4 md:mx-0 md:px-0 snap-x">
-            {petCommunityData.map((item, idx) => (
-              <motion.div 
-                key={idx}
-                whileHover={{ y: -8, scale: 1.01 }}
-                transition={{ duration: 0.3 }}
-                className="min-w-[280px] md:min-w-0 bg-card rounded-3xl border border-border/40 overflow-hidden shadow-sm hover:shadow-xl hover:border-primary/20 snap-center flex flex-col"
-              >
-                <div className="h-[240px] md:h-[280px] relative overflow-hidden">
-                  <img src={item.image} alt={item.pet} className="w-full h-full object-cover" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
-                  <div className="absolute bottom-4 left-4 right-4 text-white">
-                    <h3 className="font-serif text-3xl font-medium leading-tight">{item.pet}</h3>
-                    <p className="text-white/90 text-sm">{item.breed}</p>
-                  </div>
-                </div>
-                <div className="p-6 flex-grow flex flex-col justify-between bg-[#FCFBF8]">
-                  <div className="mb-6">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="font-medium text-foreground">{item.owner}, {item.age}</span>
-                    </div>
-                    <div className="flex items-center text-muted-foreground text-sm gap-1">
-                      <MapPin className="w-3.5 h-3.5" />
-                      {item.city}
-                    </div>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {item.tags.map((tag, i) => (
-                      <span key={i} className="text-xs px-3 py-1 bg-secondary text-secondary-foreground rounded-full border border-border/50">
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-          
-          <div className="mt-4 md:hidden text-center">
-            <Link href="/discover" className="inline-flex items-center text-primary font-medium">
-              View more profiles <ArrowRight className="ml-2 w-4 h-4" />
-            </Link>
-          </div>
-        </div>
-      </section>
+              <h1 className="font-serif text-[2.75rem] leading-[1.06] sm:text-6xl lg:text-[4.1rem] font-semibold text-forest mb-6 text-balance">
+                Where pet lovers find their person
+              </h1>
 
-      {/* Trust / Testimonial */}
-      <section id="testimonials" className="py-24 bg-card relative overflow-hidden">
-        <Quote className="absolute top-12 left-12 w-48 h-48 text-primary/5 -rotate-12 pointer-events-none" />
-        <div className="container mx-auto px-4 md:px-8 relative z-10">
-          <div className="bg-[#FAF8F5] rounded-[3rem] p-8 md:p-16 flex flex-col md:flex-row items-center gap-16 border border-border/60 shadow-sm">
-            <div className="md:w-1/2 relative">
-              <h2 className="font-serif text-3xl md:text-5xl font-semibold text-foreground mb-8 leading-tight">
-                "We met at the dog park, but Pawmate made the introduction."
-              </h2>
-              <p className="text-xl md:text-2xl text-muted-foreground mb-10 italic font-serif leading-relaxed text-foreground/80">
-                "I was tired of generic dating apps. Pawmate felt different—calmer, more genuine. Seeing someone's relationship with their pet tells you so much about their character."
+              <p className="text-[1.05rem] text-foreground/70 leading-relaxed mb-9 max-w-sm">
+                PawMate is a community for pet lovers seeking meaningful relationships,
+                friendship, and shared moments.
               </p>
-              <div className="flex items-center gap-5">
-                <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-white shadow-md">
-                  <img src="/profile3.png" alt="Sarah" className="w-full h-full object-cover" />
+
+              <div className="flex flex-wrap gap-4">
+                <Link href="/login?tab=register" data-testid="hero-cta-start">
+                  <Button className="h-14 rounded-xl px-7 bg-forest text-forest-foreground hover:bg-forest/90 text-base font-medium shadow-sm">
+                    <PawPrint className="w-4 h-4 mr-2" /> Join PawMate
+                  </Button>
+                </Link>
+                <Link href="/#how-it-works" data-testid="hero-cta-learn">
+                  <Button
+                    variant="outline"
+                    className="h-14 rounded-xl px-7 bg-card border-card-border text-base font-medium text-forest hover:bg-card"
+                  >
+                    Learn more
+                  </Button>
+                </Link>
+              </div>
+            </motion.div>
+
+            <div className="hidden lg:block" aria-hidden="true" />
+          </div>
+        </div>
+
+        {/* Runs to the window's edge, not the container's, and dissolves into
+            the cream rather than ending on a line. */}
+        <div className="lg:absolute lg:inset-y-0 lg:right-0 lg:w-[58%]">
+          <div className="relative h-72 sm:h-[26rem] lg:h-full">
+            <img
+              src={heroImage.src}
+              alt={heroImage.alt}
+              className="w-full h-full object-cover object-center"
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-background via-background/55 to-transparent lg:via-background/25" />
+            <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-background to-transparent" />
+          </div>
+        </div>
+      </section>
+
+      {/* ═════════════════════ Feature strip ═════════════════════ */}
+      <section id="how-it-works" className="relative z-10 bg-sand/60">
+        <div className="container mx-auto px-4 md:px-8 py-12 lg:py-14">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-x-6 gap-y-10">
+            {FEATURES.map((f) => {
+              const Icon = f.icon;
+              return (
+                <div key={f.title} className="text-center flex flex-col items-center">
+                  <span className="w-14 h-14 rounded-full bg-card flex items-center justify-center mb-4 shadow-xs">
+                    <Icon className="w-6 h-6 text-forest" strokeWidth={1.6} />
+                  </span>
+                  <h3 className="font-semibold text-[0.95rem] text-forest mb-1.5">{f.title}</h3>
+                  <p className="text-[0.83rem] text-foreground/65 leading-snug max-w-[13rem]">{f.body}</p>
                 </div>
-                <div>
-                  <p className="font-medium text-foreground text-lg">Sarah & Bella</p>
-                  <p className="text-sm text-muted-foreground">Found their pack in Seattle</p>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════════ People who love pets ═══════════════════ */}
+      <section id="community" className="bg-background">
+        <div className="container mx-auto px-4 md:px-8 py-16 lg:py-20">
+          <div className="grid lg:grid-cols-[1fr_23rem] gap-10 lg:gap-12 items-start">
+
+            <div>
+              <Eyebrow icon={Heart}>Find your match</Eyebrow>
+              <h2 className="font-serif text-[2.1rem] lg:text-[2.65rem] leading-[1.12] font-semibold text-forest mb-9 text-balance max-w-md">
+                People who love pets, just like you do
+              </h2>
+
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                {members.map((m) => (
+                  <article
+                    key={m.name}
+                    className="bg-card border border-card-border rounded-2xl overflow-hidden shadow-xs"
+                  >
+                    <div className="aspect-[4/5] overflow-hidden bg-sand">
+                      <img src={m.src} alt={m.alt} className="w-full h-full object-cover" loading="lazy" />
+                    </div>
+                    <div className="p-3.5">
+                      <h3 className="font-semibold text-sm text-forest">{m.name}, {m.age}</h3>
+                      <p className="text-xs text-foreground/60 mt-0.5">{m.role}</p>
+                      <p className="flex items-center gap-1 text-xs text-foreground/60 mt-2">
+                        <MapPin className="w-3 h-3 text-warm shrink-0" /> {m.distance}
+                      </p>
+                    </div>
+                  </article>
+                ))}
+              </div>
+
+              <Link href="/discover" data-testid="link-browse-members">
+                <Button className="mt-8 h-12 rounded-xl px-6 bg-forest text-forest-foreground hover:bg-forest/90 font-medium">
+                  <PawPrint className="w-4 h-4 mr-2" /> Browse members
+                </Button>
+              </Link>
+            </div>
+
+            {/* Phone panel */}
+            <div className="bg-sand/70 rounded-[1.75rem] p-7 lg:p-8 flex flex-col items-center text-center">
+              <div className="w-[13rem] rounded-[2.25rem] bg-card border-[7px] border-[#1b1b1b] shadow-lg overflow-hidden mb-8">
+                <div className="pt-6 pb-7 px-5">
+                  <p className="font-serif text-[0.95rem] text-forest mb-4">PawMate</p>
+                  <div className="w-28 h-28 rounded-full overflow-hidden mx-auto mb-4 bg-sand">
+                    <img src={matchImage.src} alt={matchImage.alt} className="w-full h-full object-cover" loading="lazy" />
+                  </div>
+                  <p className="font-serif text-[1.3rem] font-semibold text-forest">It's a match!</p>
+                  <p className="text-[0.7rem] text-foreground/60 mt-1.5 leading-snug">
+                    You and Olivia<br />liked each other.
+                  </p>
+                  <Heart className="w-5 h-5 text-warm mx-auto mt-5" strokeWidth={1.5} />
+                  <span className="block w-20 h-1 rounded-full bg-foreground/15 mx-auto mt-6" />
                 </div>
+              </div>
+
+              <span className="w-9 h-9 rounded-full bg-card flex items-center justify-center mb-3 shadow-xs">
+                <PawPrint className="w-4 h-4 text-forest" />
+              </span>
+              <h3 className="font-serif text-[1.6rem] font-semibold text-forest mb-2.5">Better together</h3>
+              <p className="text-sm text-foreground/65 leading-relaxed mb-6 max-w-[15rem]">
+                Our app makes it easy to find people who share your love for pets.
+              </p>
+
+              <div className="flex flex-col gap-2.5 w-full max-w-[12rem]">
+                <StoreBadge icon={Apple} small="Download on the" large="App Store" />
+                <StoreBadge icon={Play} small="Get it on" large="Google Play" />
               </div>
             </div>
-            
-            <div className="md:w-1/2 w-full h-[400px] md:h-[500px] relative">
-              <div className="absolute top-0 right-0 w-[60%] h-[60%] rounded-3xl overflow-hidden shadow-xl border-4 border-white z-20">
-                <img src="/pet2.png" alt="Community pet" className="w-full h-full object-cover" />
+
+          </div>
+        </div>
+      </section>
+
+      {/* ══════════════════════ Real stories ══════════════════════ */}
+      <section className="bg-sand/40 border-y border-card-border">
+        <div className="grid lg:grid-cols-[27rem_1fr] items-stretch">
+          <div className="h-72 lg:h-auto lg:min-h-[27rem] bg-sand">
+            <img
+              src={communityImage.src}
+              alt={communityImage.alt}
+              className="w-full h-full object-cover"
+              loading="lazy"
+            />
+          </div>
+
+          <div className="px-4 md:px-8 lg:px-14 py-14 lg:py-16">
+            <div className="flex items-start justify-between gap-6 mb-9">
+              <div>
+                <Eyebrow icon={PawPrint}>Community</Eyebrow>
+                <h2 className="font-serif text-[2.1rem] lg:text-[2.5rem] leading-[1.12] font-semibold text-forest text-balance max-w-sm">
+                  Real stories from real pet lovers
+                </h2>
               </div>
-              <div className="absolute bottom-10 left-0 w-[55%] h-[55%] rounded-3xl overflow-hidden shadow-lg border-4 border-white z-30">
-                <img src="/profile1.png" alt="Community member" className="w-full h-full object-cover" />
+              {/* Present in the design; there is only one page of stories, so
+                  they are shown inert rather than wired to nothing. */}
+              <div className="hidden md:flex gap-2 shrink-0 pt-1" aria-hidden="true">
+                <span className="w-11 h-11 rounded-full bg-card border border-card-border flex items-center justify-center text-foreground/40">
+                  <ChevronLeft className="w-4 h-4" />
+                </span>
+                <span className="w-11 h-11 rounded-full bg-card border border-card-border flex items-center justify-center text-foreground/40">
+                  <ChevronRight className="w-4 h-4" />
+                </span>
               </div>
-              <div className="absolute bottom-0 right-[15%] w-[40%] h-[40%] rounded-3xl overflow-hidden shadow-md border-4 border-white z-10">
-                <img src="/profile2.png" alt="Community member" className="w-full h-full object-cover" />
+            </div>
+
+            <div className="grid sm:grid-cols-3 gap-4">
+              {voices.map((v) => (
+                <figure key={v.who} className="bg-card border border-card-border rounded-2xl p-5 flex flex-col">
+                  <Quote className="w-5 h-5 text-warm/70 fill-warm/30 mb-3" />
+                  <blockquote className="text-[0.85rem] text-foreground/80 leading-relaxed flex-1">
+                    {v.quote}
+                  </blockquote>
+                  <figcaption className="flex items-center gap-2 mt-5 text-xs text-foreground/60">
+                    <span className="w-7 h-7 rounded-full overflow-hidden bg-sand shrink-0">
+                      <img src={v.src} alt={v.alt} className="w-full h-full object-cover" loading="lazy" />
+                    </span>
+                    — {v.who}
+                  </figcaption>
+                </figure>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════════════ Closing band ═══════════════════════ */}
+      <section className="bg-background pt-14 pb-16 px-4 md:px-8">
+        <div className="container mx-auto">
+          <div className="relative overflow-hidden rounded-[1.75rem] bg-forest text-forest-foreground px-7 py-10 md:px-14 md:py-11">
+            <Heart
+              className="pointer-events-none absolute -left-8 top-1/2 -translate-y-1/2 w-44 h-44 text-forest-foreground/10"
+              strokeWidth={0.9}
+              aria-hidden="true"
+            />
+            <PawPrint
+              className="pointer-events-none absolute right-8 bottom-3 w-24 h-24 text-forest-foreground/10"
+              strokeWidth={0.9}
+              aria-hidden="true"
+            />
+
+            <div className="relative flex flex-col md:flex-row md:items-center justify-between gap-8">
+              <div className="md:pl-24">
+                <h2 className="font-serif text-[1.8rem] md:text-[2.1rem] font-semibold mb-2 text-balance">
+                  Ready to start your story?
+                </h2>
+                <p className="text-forest-foreground/70 leading-relaxed max-w-sm text-[0.95rem]">
+                  Join thousands of pet lovers and find friendship, love, and wagging tails.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap gap-3 shrink-0">
+                <Link href="/login?tab=register" data-testid="footer-cta-start">
+                  <Button className="h-12 rounded-xl px-6 bg-card text-forest hover:bg-card/90 font-medium">
+                    <PawPrint className="w-4 h-4 mr-2" /> Sign up for free
+                  </Button>
+                </Link>
+                <Link href="/about">
+                  <Button
+                    variant="outline"
+                    className="h-12 rounded-xl px-6 bg-transparent border-forest-foreground/35 text-forest-foreground hover:bg-forest-foreground/10 font-medium"
+                  >
+                    Learn more
+                  </Button>
+                </Link>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-32 relative overflow-hidden bg-gradient-to-b from-amber-50/50 to-primary/10">
-        <div className="container mx-auto px-4 max-w-3xl text-center relative z-10">
-          <div className="flex justify-center -space-x-4 mb-8">
-            <div className="w-16 h-16 rounded-full overflow-hidden border-4 border-white shadow-sm z-30">
-              <img src="/profile1.png" alt="Avatar" className="w-full h-full object-cover" />
-            </div>
-            <div className="w-16 h-16 rounded-full overflow-hidden border-4 border-white shadow-sm z-20">
-              <img src="/pet1.png" alt="Avatar" className="w-full h-full object-cover" />
-            </div>
-            <div className="w-16 h-16 rounded-full overflow-hidden border-4 border-white shadow-sm z-10">
-              <img src="/profile2.png" alt="Avatar" className="w-full h-full object-cover" />
-            </div>
-          </div>
-          
-          <h2 className="font-serif text-4xl md:text-6xl font-semibold text-foreground mb-6">Ready to find your pack?</h2>
-          <p className="text-xl text-muted-foreground mb-12 font-light max-w-xl mx-auto">Create your profile today and start connecting with people who share your love for animals.</p>
-          <Link href="/create-profile" data-testid="footer-cta-start">
-            <Button size="lg" className="rounded-full px-12 text-lg bg-primary text-primary-foreground hover:bg-primary/90 h-16 shadow-xl shadow-primary/20">
-              Get Started for Free
-            </Button>
-          </Link>
-        </div>
-      </section>
     </div>
   );
 }

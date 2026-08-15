@@ -29,6 +29,9 @@ const Community = lazy(() => import("@/pages/community"));
 const ResetPassword = lazy(() => import("@/pages/reset-password"));
 const About = lazy(() => import("@/pages/about"));
 const Help = lazy(() => import("@/pages/help"));
+const Terms = lazy(() => import("@/pages/document-pending").then((m) => ({ default: m.Terms })));
+const Privacy = lazy(() => import("@/pages/document-pending").then((m) => ({ default: m.Privacy })));
+const Guidelines = lazy(() => import("@/pages/document-pending").then((m) => ({ default: m.Guidelines })));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -62,6 +65,10 @@ function Router() {
           {/* Linked from the footer, which signed-out visitors also see. */}
           <Route path="/about" component={About} />
           <Route path="/help" component={Help} />
+          {/* Linked from the footer; real text still to come. */}
+          <Route path="/terms" component={Terms} />
+          <Route path="/privacy" component={Privacy} />
+          <Route path="/guidelines" component={Guidelines} />
           <Route path="/discover">
             <ProtectedRoute component={Discover} />
           </Route>

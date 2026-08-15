@@ -74,12 +74,12 @@ export function Navbar() {
                 ))}
                 <div className="flex items-center gap-3 ml-2">
                   <Link href="/login" data-testid="link-login">
-                    <Button variant="outline" className="font-medium rounded-full px-5 h-9 border-border text-foreground">
+                    <Button variant="outline" className="font-medium rounded-xl px-5 h-10 border-border text-foreground">
                       Log in
                     </Button>
                   </Link>
                   <Link href="/login?tab=register" data-testid="link-get-started">
-                    <Button className="rounded-full px-5 h-9 font-medium bg-primary text-primary-foreground hover:bg-primary/90">
+                    <Button className="rounded-xl px-5 h-10 font-medium bg-forest text-forest-foreground hover:bg-forest/90">
                       Sign up
                     </Button>
                   </Link>
