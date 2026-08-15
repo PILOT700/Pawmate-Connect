@@ -18,16 +18,16 @@ import {
 import { heroImage, communityImage, matchImage, members, voices } from "@/lib/landing-images";
 
 /**
- * PLACEHOLDER COPY — the wording below comes from the design and makes claims
- * the product cannot yet back: nothing verifies members, there are no apps in
- * either store, the quoted people do not exist, and the accounts number four
- * rather than thousands. Photographs are swapped through
- * `src/lib/landing-images.ts` without touching this file.
+ * PLACEHOLDER COPY — some wording below comes from the design and still makes
+ * claims the product cannot back: there are no apps in either store, the quoted
+ * people do not exist, and the accounts number four rather than thousands.
+ * Photographs are swapped through `src/lib/landing-images.ts` without touching
+ * this file.
  */
 
 const FEATURES = [
   { icon: PawPrint, title: "Pet-First Matching", body: "We match you based on your pets and lifestyle." },
-  { icon: ShieldCheck, title: "Verified Members", body: "Real people, real pets. Safe and trustworthy." },
+  { icon: ShieldCheck, title: "Block and Report", body: "Anyone can be blocked or reported, from their profile." },
   { icon: MessageCircle, title: "Easy Conversations", body: "Break the ice with pet-friendly prompts." },
   { icon: CalendarCheck, title: "Meet & Connect", body: "Find friendship or love in your area." },
   { icon: Users, title: "Supportive Community", body: "Join events and groups for pet lovers." },
