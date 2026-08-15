@@ -217,7 +217,7 @@ export default function Home() {
       </section>
 
       {/* ══════════════════════ Real stories ══════════════════════ */}
-      <section className="bg-sand/40 border-y border-card-border">
+      <section id="stories" className="bg-sand/40 border-y border-card-border">
         <div className="grid lg:grid-cols-[27rem_1fr] items-stretch">
           <div className="h-72 lg:h-auto lg:min-h-[27rem] bg-sand">
             <img

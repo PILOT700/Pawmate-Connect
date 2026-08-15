@@ -76,3 +76,12 @@ export function Guidelines() {
     />
   );
 }
+
+export function Blog() {
+  return (
+    <DocumentPending
+      title="Blog"
+      blurb="Notes on pets, the people who love them, and what we're building here."
+    />
+  );
+}

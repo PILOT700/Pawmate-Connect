@@ -12,14 +12,14 @@ import {
 import { useAuth } from "@/contexts/auth-context";
 
 
-// Every entry has to land somewhere real: "Safety" pointed at the how-it-works
-// section, the same place as the link beside it, and "About us" at testimonials.
+// The five entries the design asks for. Every one lands somewhere real:
+// "Blog" has no posts yet and says so rather than pointing at nothing.
 const publicNavLinks = [
   { label: "How it works", href: "/#how-it-works" },
-  { label: "For pet lovers", href: "/#community" },
-  { label: "Community", href: "/community" },
+  { label: "Find pets", href: "/discover" },
+  { label: "Success stories", href: "/#stories" },
+  { label: "Blog", href: "/blog" },
   { label: "About us", href: "/about" },
-  { label: "Help", href: "/help" },
 ];
 
 export function Navbar() {

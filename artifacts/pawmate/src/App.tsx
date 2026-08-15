@@ -32,6 +32,7 @@ const Help = lazy(() => import("@/pages/help"));
 const Terms = lazy(() => import("@/pages/document-pending").then((m) => ({ default: m.Terms })));
 const Privacy = lazy(() => import("@/pages/document-pending").then((m) => ({ default: m.Privacy })));
 const Guidelines = lazy(() => import("@/pages/document-pending").then((m) => ({ default: m.Guidelines })));
+const Blog = lazy(() => import("@/pages/document-pending").then((m) => ({ default: m.Blog })));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -69,6 +70,7 @@ function Router() {
           <Route path="/terms" component={Terms} />
           <Route path="/privacy" component={Privacy} />
           <Route path="/guidelines" component={Guidelines} />
+          <Route path="/blog" component={Blog} />
           <Route path="/discover">
             <ProtectedRoute component={Discover} />
           </Route>
