@@ -8,11 +8,13 @@
  *  no code changes, no rebuild of anything but the app itself. Names are fixed
  *  precisely so a 4K photograph can replace a placeholder by overwriting it.
  *
- *    public/landing/hero.png          wide, 2400×1600 or larger
- *    public/landing/member-1..4.png   square, 800×800 or larger
- *    public/landing/community.png     portrait, 1200×1600 or larger
- *    public/landing/match.png         portrait, 600×800 or larger
- *    public/landing/voice-1..3.png    square, 200×200 is enough
+ *  Change a path below and the page follows. The files in place now:
+ *
+ *    PawMate_hero_summer.jpg      wants 2400×1600 or larger
+ *    PawMate_profile_1..4.jpg     wants 800×800 or larger
+ *    PawMate_community_summer.jpg wants 1200×1600 or larger
+ *    match.png                    wants 600×800 or larger
+ *    voice-1..3.png               200×200 is enough
  *
  *  Any format the browser reads works — .jpg and .webp too. If the extension
  *  changes, this file is the single place to say so.
@@ -29,12 +31,12 @@ export interface LandingImage {
 const DIR = "/landing";
 
 export const heroImage: LandingImage = {
-  src: `${DIR}/hero.png`,
+  src: `${DIR}/PawMate_hero_summer.jpg`,
   alt: "Two couples walking a sunlit promenade with a golden retriever and a cat",
 };
 
 export const communityImage: LandingImage = {
-  src: `${DIR}/community.png`,
+  src: `${DIR}/PawMate_community_summer.jpg`,
   alt: "A woman sitting outdoors on a blanket with her dog and cat",
 };
 
@@ -52,10 +54,10 @@ export interface LandingMember extends LandingImage {
 
 /** Illustrative members. These are not accounts that exist. */
 export const members: LandingMember[] = [
-  { name: "Olivia", age: 48, role: "Teacher", distance: "2 km away", src: `${DIR}/member-1.png`, alt: "Olivia with her golden retriever" },
-  { name: "David", age: 52, role: "Architect", distance: "5 km away", src: `${DIR}/member-2.png`, alt: "David holding his cat" },
-  { name: "Sophie", age: 50, role: "Marketing Manager", distance: "3 km away", src: `${DIR}/member-3.png`, alt: "Sophie with her spaniel" },
-  { name: "James", age: 54, role: "Entrepreneur", distance: "4 km away", src: `${DIR}/member-4.png`, alt: "James with his dachshund" },
+  { name: "Olivia", age: 48, role: "Teacher", distance: "2 km away", src: `${DIR}/PawMate_profile_1.jpg`, alt: "Olivia with her golden retriever" },
+  { name: "David", age: 52, role: "Architect", distance: "5 km away", src: `${DIR}/PawMate_profile_2.jpg`, alt: "David holding his cat" },
+  { name: "Sophie", age: 50, role: "Marketing Manager", distance: "3 km away", src: `${DIR}/PawMate_profile_3.jpg`, alt: "Sophie with her spaniel" },
+  { name: "James", age: 54, role: "Entrepreneur", distance: "4 km away", src: `${DIR}/PawMate_profile_4.jpg`, alt: "James with his dachshund" },
 ];
 
 export interface LandingVoice extends LandingImage {
