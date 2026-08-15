@@ -183,10 +183,10 @@ export default function Auth() {
                   <Input
                     id="register-password"
                     type={showPassword ? "text" : "password"}
-                    placeholder="At least 6 characters"
+                    placeholder="At least 10 characters"
                     className="h-11 bg-background rounded-xl pr-11"
                     required
-                    minLength={6}
+                    minLength={10}
                     value={registerPassword}
                     onChange={(e) => setRegisterPassword(e.target.value)}
                     data-testid="input-register-password"

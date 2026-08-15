@@ -76,7 +76,7 @@ export const MessageKind = {
 
 export interface RegisterRequest {
   email: string;
-  /** @minLength 6 */
+  /** @minLength 10 */
   password: string;
   /** @minLength 1 */
   firstName: string;
@@ -94,7 +94,7 @@ export interface PasswordResetRequest {
 export interface PasswordResetConfirm {
   /** @minLength 1 */
   token: string;
-  /** @minLength 6 */
+  /** @minLength 10 */
   password: string;
 }
 

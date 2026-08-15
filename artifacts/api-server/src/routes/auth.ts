@@ -18,6 +18,7 @@ import {
   ConfirmPasswordResetBody,
 } from "@workspace/api-zod";
 import { hashPassword, verifyPassword } from "../lib/password";
+import { checkPassword } from "../lib/password-strength";
 import { createSession, deleteSession, setSessionCookie, clearSessionCookie, SESSION_COOKIE_NAME } from "../lib/session";
 import { HttpError } from "../lib/http-error";
 import { sendMail } from "../lib/mailer";
@@ -50,6 +51,11 @@ router.post("/auth/register", registerLimiter, async (req, res) => {
 
   if (existing.length > 0) {
     throw HttpError.conflict("An account with this email already exists");
+  }
+
+  const problem = await checkPassword(body.password, { email: body.email });
+  if (problem) {
+    throw HttpError.badRequest(problem.message);
   }
 
   const passwordHash = await hashPassword(body.password);
@@ -158,6 +164,11 @@ router.post("/auth/password-reset/confirm", passwordResetConfirmLimiter, async (
 
   if (!row) {
     throw HttpError.unauthorized("This reset link has expired or has already been used");
+  }
+
+  const problem = await checkPassword(body.password);
+  if (problem) {
+    throw HttpError.badRequest(problem.message);
   }
 
   const passwordHash = await hashPassword(body.password);

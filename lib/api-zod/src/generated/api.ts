@@ -20,7 +20,7 @@ export const HealthCheckResponse = zod.object({
 /**
  * @summary Create an account and start a session
  */
-export const registerUserBodyPasswordMin = 6;
+export const registerUserBodyPasswordMin = 10;
 
 
 
@@ -74,7 +74,7 @@ export const RequestPasswordResetBody = zod.object({
  * @summary Set a new password using a reset token
  */
 
-export const confirmPasswordResetBodyPasswordMin = 6;
+export const confirmPasswordResetBodyPasswordMin = 10;
 
 
 

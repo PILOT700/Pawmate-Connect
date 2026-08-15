@@ -142,7 +142,7 @@ function ConfirmForm({ token }: { token: string }) {
       <div className="space-y-2">
         <h1 className="font-serif text-2xl font-semibold text-foreground">Choose a new password</h1>
         <p className="text-sm text-muted-foreground leading-relaxed">
-          At least six characters. Signing in anywhere else will need the new one.
+          At least ten characters, and not one that has turned up in a data breach. Signing in anywhere else will need the new one.
         </p>
       </div>
 
@@ -154,7 +154,7 @@ function ConfirmForm({ token }: { token: string }) {
             type={show ? "text" : "password"}
             className="h-11 bg-background rounded-xl pr-11"
             required
-            minLength={6}
+            minLength={10}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             data-testid="input-new-password"
@@ -191,7 +191,7 @@ function ConfirmForm({ token }: { token: string }) {
 
       <Button
         type="submit"
-        disabled={confirmReset.isPending || mismatch || password.length < 6}
+        disabled={confirmReset.isPending || mismatch || password.length < 10}
         className="w-full h-11 rounded-xl bg-primary text-primary-foreground text-sm font-medium"
         data-testid="btn-reset-confirm"
       >

@@ -1210,7 +1210,7 @@ components:
           format: email
         password:
           type: string
-          minLength: 6
+          minLength: 10
         firstName:
           type: string
           minLength: 1
@@ -1242,7 +1242,7 @@ components:
           minLength: 1
         password:
           type: string
-          minLength: 6
+          minLength: 10
       required: [token, password]
 
     # ------------------------------------------------------------ users --
