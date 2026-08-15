@@ -1,0 +1,77 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# A second push to the same branch cancels the run still going, so the answer
+# that arrives is always about the newest commit.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    # The API tests run against this rather than against mocks, so the same
+    # queries execute here as in production.
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: pawmate_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      TEST_DATABASE_URL: postgresql://test:test@localhost:5432/pawmate_test
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.18.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      # --frozen-lockfile so a lockfile that drifted from package.json fails
+      # here rather than resolving to something nobody has run.
+      - run: pnpm install --frozen-lockfile
+
+      # Typechecking first so a type error is reported as one, rather than as a
+      # build failure minutes later. The root build script runs it again; that
+      # repetition only costs anything on runs where everything passes.
+      - name: Typecheck every package
+        run: pnpm run typecheck
+
+      - name: Tests
+        run: pnpm test
+
+      - name: Build
+        run: pnpm run build
+
+      # Codegen output is committed, so a spec edited without regenerating
+      # would leave the client describing an API that no longer exists.
+      - name: Check generated client matches the spec
+        run: |
+          pnpm --filter @workspace/api-spec run codegen
+          if ! git diff --quiet -- lib/api-zod/src/generated lib/api-client-react/src/generated; then
+            echo "::error::The OpenAPI spec and the generated client disagree. Run codegen and commit the result."
+            git diff --stat -- lib/api-zod/src/generated lib/api-client-react/src/generated
+            exit 1
+          fi
