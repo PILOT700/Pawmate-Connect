@@ -21,6 +21,13 @@ import { hashPassword, verifyPassword } from "../lib/password";
 import { createSession, deleteSession, setSessionCookie, clearSessionCookie, SESSION_COOKIE_NAME } from "../lib/session";
 import { HttpError } from "../lib/http-error";
 import { sendMail } from "../lib/mailer";
+import {
+  loginIpLimiter,
+  loginAccountLimiter,
+  registerLimiter,
+  passwordResetRequestLimiter,
+  passwordResetConfirmLimiter,
+} from "../lib/rate-limit";
 import { logger } from "../lib/logger";
 import { requireAuth } from "../middlewares/require-auth";
 
@@ -32,7 +39,7 @@ function hashToken(token: string): string {
   return crypto.createHash("sha256").update(token).digest("hex");
 }
 
-router.post("/auth/register", async (req, res) => {
+router.post("/auth/register", registerLimiter, async (req, res) => {
   const body = RegisterUserBody.parse(req.body);
 
   const existing = await db
@@ -68,7 +75,7 @@ router.post("/auth/register", async (req, res) => {
   res.status(201).json(LoginUserResponse.parse(user));
 });
 
-router.post("/auth/login", async (req, res) => {
+router.post("/auth/login", loginIpLimiter, loginAccountLimiter, async (req, res) => {
   const body = LoginUserBody.parse(req.body);
 
   const [user] = await db.select().from(usersTable).where(eq(usersTable.email, body.email)).limit(1);
@@ -94,7 +101,7 @@ router.post("/auth/logout", async (req, res) => {
   res.status(204).end();
 });
 
-router.post("/auth/password-reset/request", async (req, res) => {
+router.post("/auth/password-reset/request", passwordResetRequestLimiter, async (req, res) => {
   const body = RequestPasswordResetBody.parse(req.body);
 
   const [user] = await db
@@ -134,7 +141,7 @@ router.post("/auth/password-reset/request", async (req, res) => {
   res.status(204).end();
 });
 
-router.post("/auth/password-reset/confirm", async (req, res) => {
+router.post("/auth/password-reset/confirm", passwordResetConfirmLimiter, async (req, res) => {
   const body = ConfirmPasswordResetBody.parse(req.body);
 
   const [row] = await db

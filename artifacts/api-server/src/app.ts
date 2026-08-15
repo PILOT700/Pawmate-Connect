@@ -16,6 +16,12 @@ if (!cookieSecret) {
 
 const app: Express = express();
 
+// Render terminates TLS and forwards, so without this every request arrives
+// from the proxy's address and the rate limiters would treat all visitors as
+// one. Exactly one hop is trusted: trusting the whole chain would let a caller
+// invent an X-Forwarded-For and hand themselves a fresh quota per request.
+app.set("trust proxy", 1);
+
 app.use(
   pinoHttp({
     logger,
