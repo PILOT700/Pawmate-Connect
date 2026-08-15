@@ -80,3 +80,14 @@ export const passwordResetConfirmLimiter = make({
   limit: 10,
   message: "Too many attempts. Please request a fresh link.",
 });
+
+/**
+ * The crash reporter is open to anyone, so it needs a ceiling — but a page
+ * caught in a render loop can genuinely fire several before it settles, and
+ * losing those would hide the very thing being reported.
+ */
+export const clientErrorLimiter = make({
+  windowMs: 5 * MINUTE,
+  limit: 30,
+  message: "Too many reports.",
+});

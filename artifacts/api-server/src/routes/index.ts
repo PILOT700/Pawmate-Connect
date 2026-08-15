@@ -1,5 +1,6 @@
 import { Router, type IRouter } from "express";
 import healthRouter from "./health";
+import clientErrorsRouter from "./client-errors";
 import authRouter from "./auth";
 import usersRouter from "./users";
 import petsRouter from "./pets";
@@ -21,6 +22,7 @@ import reportsRouter from "./reports";
 const router: IRouter = Router();
 
 router.use(healthRouter);
+router.use(clientErrorsRouter);
 router.use(authRouter);
 // Registered before usersRouter so /users/me/* isn't shadowed by /users/:userId.
 router.use(petsRouter);

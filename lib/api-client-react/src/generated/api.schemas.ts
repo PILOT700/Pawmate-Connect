@@ -87,6 +87,28 @@ export interface LoginRequest {
   password: string;
 }
 
+export type ClientErrorReportKind = typeof ClientErrorReportKind[keyof typeof ClientErrorReportKind];
+
+
+export const ClientErrorReportKind = {
+  render: 'render',
+  unhandled_rejection: 'unhandled_rejection',
+  uncaught: 'uncaught',
+} as const;
+
+export interface ClientErrorReport {
+  /** @maxLength 500 */
+  message: string;
+  /** @maxLength 4000 */
+  stack?: string;
+  /**
+     * The route being viewed, without any query string.
+     * @maxLength 200
+     */
+  path?: string;
+  kind: ClientErrorReportKind;
+}
+
 export interface PasswordResetRequest {
   email: string;
 }

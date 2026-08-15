@@ -22,6 +22,7 @@ import type {
 import type {
   BlockUserRequest,
   BlockedUser,
+  ClientErrorReport,
   CommunityEvent,
   CommunityEventList,
   ConflictResponse,
@@ -596,6 +597,80 @@ export function useGetCurrentSession<TData = Awaited<ReturnType<typeof getCurren
 
 
 
+
+export const getReportClientErrorUrl = () => {
+
+
+
+
+  return `/api/client-errors`
+}
+
+/**
+ * Browser crashes are otherwise invisible: the person sees a blank page and nobody is told. This puts them in the server log alongside everything else.
+Open to signed-out visitors, since the sign-in screen can crash too. Answers 204 whatever happens — a failure to report a failure is not worth showing anyone.
+
+ * @summary Record a crash that happened in someone's browser
+ */
+export const reportClientError = async (clientErrorReport: ClientErrorReport, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getReportClientErrorUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      clientErrorReport,)
+  }
+);}
+
+
+
+
+export const getReportClientErrorMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reportClientError>>, TError,{data: BodyType<ClientErrorReport>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof reportClientError>>, TError,{data: BodyType<ClientErrorReport>}, TContext> => {
+
+const mutationKey = ['reportClientError'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof reportClientError>>, {data: BodyType<ClientErrorReport>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  reportClientError(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReportClientErrorMutationResult = NonNullable<Awaited<ReturnType<typeof reportClientError>>>
+    export type ReportClientErrorMutationBody = BodyType<ClientErrorReport>
+    export type ReportClientErrorMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Record a crash that happened in someone's browser
+ */
+export const useReportClientError = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reportClientError>>, TError,{data: BodyType<ClientErrorReport>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof reportClientError>>,
+        TError,
+        {data: BodyType<ClientErrorReport>},
+        TContext
+      > => {
+      return useMutation(getReportClientErrorMutationOptions(options));
+    }
 
 export const getGetMyProfileUrl = () => {
 

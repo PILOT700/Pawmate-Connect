@@ -168,6 +168,30 @@ paths:
         "401":
           $ref: "#/components/responses/Unauthorized"
 
+  /client-errors:
+    post:
+      operationId: reportClientError
+      tags: [health]
+      summary: Record a crash that happened in someone's browser
+      description: >
+        Browser crashes are otherwise invisible: the person sees a blank page
+        and nobody is told. This puts them in the server log alongside
+        everything else.
+
+        Open to signed-out visitors, since the sign-in screen can crash too.
+        Answers 204 whatever happens — a failure to report a failure is not
+        worth showing anyone.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ClientErrorReport"
+      responses:
+        "204":
+          description: Noted
+
   # --------------------------------------------------------------- users --
   /users/me:
     get:
@@ -1225,6 +1249,24 @@ components:
         password:
           type: string
       required: [email, password]
+
+    ClientErrorReport:
+      type: object
+      properties:
+        message:
+          type: string
+          maxLength: 500
+        stack:
+          type: string
+          maxLength: 4000
+        path:
+          description: The route being viewed, without any query string.
+          type: string
+          maxLength: 200
+        kind:
+          type: string
+          enum: [render, unhandled_rejection, uncaught]
+      required: [message, kind]
 
     PasswordResetRequest:
       type: object

@@ -108,6 +108,28 @@ export const GetCurrentSessionResponse = zod.object({
 
 
 /**
+ * Browser crashes are otherwise invisible: the person sees a blank page and nobody is told. This puts them in the server log alongside everything else.
+Open to signed-out visitors, since the sign-in screen can crash too. Answers 204 whatever happens — a failure to report a failure is not worth showing anyone.
+
+ * @summary Record a crash that happened in someone's browser
+ */
+export const reportClientErrorBodyMessageMax = 500;
+
+export const reportClientErrorBodyStackMax = 4000;
+
+export const reportClientErrorBodyPathMax = 200;
+
+
+
+export const ReportClientErrorBody = zod.object({
+  "message": zod.string().max(reportClientErrorBodyMessageMax),
+  "stack": zod.string().max(reportClientErrorBodyStackMax).optional(),
+  "path": zod.string().max(reportClientErrorBodyPathMax).optional().describe('The route being viewed, without any query string.'),
+  "kind": zod.enum(['render', 'unhandled_rejection', 'uncaught'])
+})
+
+
+/**
  * @summary Get the logged-in user's own profile
  */
 export const GetMyProfileResponse = zod.object({
