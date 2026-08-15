@@ -44,6 +44,25 @@ export default defineConfig({
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
+    rollupOptions: {
+      output: {
+        /**
+         * React only, and deliberately nothing else.
+         *
+         * Grouping the rest by library was measured and made things worse:
+         * forcing every Radix or motion module into one shared chunk drags in
+         * code that route splitting had already pushed out to the pages that
+         * use it, and the first load grew by about 100 kB. React is different
+         * — every page needs it, so it is in the first load either way, and
+         * pulling it out means a deploy leaves those 180 kB in the cache
+         * instead of re-sending them.
+         */
+        manualChunks(id) {
+          if (/[\\/]node_modules[\\/](react|react-dom|scheduler)[\\/]/.test(id)) return "react";
+          return undefined;
+        },
+      },
+    },
   },
   server: {
     port,
