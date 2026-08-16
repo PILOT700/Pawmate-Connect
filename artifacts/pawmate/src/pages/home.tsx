@@ -114,7 +114,12 @@ export default function Home() {
           <div className="relative h-72 sm:h-[26rem] lg:h-full">
             <img
               src={heroImage.src}
+              srcSet={heroImage.srcSet}
+              sizes={heroImage.sizes}
               alt={heroImage.alt}
+              // The one picture above the fold: fetched eagerly and early, so it
+              // is not queued behind everything else the page asks for.
+              fetchPriority="high"
               className="w-full h-full object-cover object-center"
             />
             <div className="absolute inset-0 bg-gradient-to-r from-background via-background/55 to-transparent lg:via-background/25" />

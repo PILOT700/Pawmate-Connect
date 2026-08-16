@@ -10,7 +10,7 @@
  *
  *  Change a path below and the page follows. The files in place now:
  *
- *    PawMate_hero_summer.jpg      wants 2400×1600 or larger
+ *    hero-1200/2000/3200.jpg      cut from an 8K original with `sips -Z`
  *    PawMate_profile_1..4.jpg     wants 800×800 or larger
  *    PawMate_community_summer.jpg wants 1200×1600 or larger
  *    match.png                    wants 600×800 or larger
@@ -26,12 +26,28 @@
 export interface LandingImage {
   src: string;
   alt: string;
+  /**
+   * Optional wider versions of the same photograph. The browser picks one from
+   * its own screen and connection, so a phone is not made to download a
+   * picture built for a 5K display.
+   */
+  srcSet?: string;
+  /** How wide the picture is drawn, so the browser can choose before layout. */
+  sizes?: string;
 }
 
 const DIR = "/landing";
 
 export const heroImage: LandingImage = {
-  src: `${DIR}/PawMate_hero_summer.jpg`,
+  // The 1200 is the fallback for anything that ignores srcSet.
+  src: `${DIR}/hero-1200.jpg`,
+  srcSet: [
+    `${DIR}/hero-1200.jpg 1200w`,
+    `${DIR}/hero-2000.jpg 2000w`,
+    `${DIR}/hero-3200.jpg 3200w`,
+  ].join(", "),
+  // Beside the text on a wide screen, full width once the two stack.
+  sizes: "(min-width: 1024px) 58vw, 100vw",
   alt: "Two couples walking a sunlit promenade with a golden retriever and a cat",
 };
 
