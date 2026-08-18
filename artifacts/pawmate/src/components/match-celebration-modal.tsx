@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useLocation } from "wouter";
 import { Heart, MessageCircle, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useT } from "@/lib/i18n";
 
 interface Profile {
   id: string;
@@ -96,6 +97,7 @@ function Confetti({ active }: { active: boolean }) {
 }
 
 export function MatchCelebrationModal({ open, profile, onClose }: MatchCelebrationModalProps) {
+  const t = useT();
   const [, navigate] = useLocation();
   const [confettiKey, setConfettiKey] = useState(0);
 
@@ -191,7 +193,7 @@ export function MatchCelebrationModal({ open, profile, onClose }: MatchCelebrati
                 transition={{ delay: 0.45 }}
                 className="text-center"
               >
-                <p className="text-xs font-semibold text-primary uppercase tracking-widest mb-1">It's a match!</p>
+                <p className="text-xs font-semibold text-primary uppercase tracking-widest mb-1">{t("home.itsAMatch")}</p>
                 <h2 className="font-serif text-2xl font-semibold text-foreground">
                   You & {profile.name} liked each other
                 </h2>

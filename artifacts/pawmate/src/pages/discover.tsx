@@ -20,14 +20,15 @@ import {
 import { useAuth } from "@/contexts/auth-context";
 import { useToast } from "@/hooks/use-toast";
 import { apiErrorMessage } from "@/lib/api-error";
+import { useT, type TranslationKey } from "@/lib/i18n";
 
 const FALLBACK_IMAGE = "/profile1.png";
 const FALLBACK_PET_IMAGE = "/pet1.png";
 
-const ICE_BREAKERS = [
-  "If your pet could plan your perfect first date, what would it look like?",
-  "What's one thing your pet would want a date to know about you?",
-  "Coffee walk or brunch — what would your pet pick?",
+const ICE_BREAKERS: TranslationKey[] = [
+  "discover.prompt1",
+  "discover.prompt2",
+  "discover.prompt3",
 ];
 
 type SparkState = "visible" | "liked" | "dismissed";
@@ -46,20 +47,14 @@ interface SparkView {
   compatScore: number;
 }
 
-function lookingForLabel(values: LookingFor[]): string {
-  if (values.length === 0) return "Open to connecting";
-  const labels: Record<LookingFor, string> = {
-    friendship: "Friendship",
-    relationship: "Relationship",
-    playdates: "Pet playdates",
-    casual: "Casual meetups",
-    open: "Open to anything",
-  };
-  return values.map((v) => labels[v]).join(" & ");
+function lookingForLabel(values: LookingFor[], t: (k: TranslationKey) => string): string {
+  if (values.length === 0) return t("discover.openToConnecting");
+  return values.map((v) => t(`intent.${v}`)).join(" & ");
 }
 
 function DailySparkCard({
   spark,
+  t,
   state,
   onLike,
   onDismiss,
@@ -68,6 +63,7 @@ function DailySparkCard({
   state: SparkState;
   onLike: () => void;
   onDismiss: () => void;
+  t: (k: TranslationKey, v?: Record<string, string | number>) => string;
 }) {
   return (
     <AnimatePresence>
@@ -89,8 +85,8 @@ function DailySparkCard({
             >
               <Sparkles className="w-4 h-4 text-amber-500" />
             </motion.div>
-            <span className="text-xs font-semibold text-amber-700 uppercase tracking-widest">Daily Spark</span>
-            <span className="text-xs text-muted-foreground/60 ml-1">· Refreshes daily</span>
+            <span className="text-xs font-semibold text-amber-700 uppercase tracking-widest">{t("discover.dailySpark")}</span>
+            <span className="text-xs text-muted-foreground/60 ml-1">{t("discover.refreshesDaily")}</span>
             <button
               onClick={onDismiss}
               className="ml-auto text-muted-foreground/50 hover:text-muted-foreground transition-colors p-1"
@@ -144,7 +140,7 @@ function DailySparkCard({
                   {/* Compat badge */}
                   <div className="absolute top-4 right-4 bg-emerald-500 text-white rounded-full px-2.5 py-1 text-[11px] font-bold shadow-md flex items-center gap-1">
                     <Heart className="w-3 h-3 fill-white" />
-                    {spark.compatScore}% match
+                    {t("discover.match", { percent: spark.compatScore })}
                   </div>
                 </div>
               </Link>
@@ -171,7 +167,7 @@ function DailySparkCard({
                 {/* Ice-breaker prompt */}
                 <div className="bg-amber-50 border border-amber-200/70 rounded-2xl p-4">
                   <p className="text-[10px] font-semibold text-amber-600 uppercase tracking-widest mb-1.5 flex items-center gap-1">
-                    <Sparkles className="w-3 h-3" /> Ice-breaker
+                    <Sparkles className="w-3 h-3" /> {t("discover.iceBreaker")}
                   </p>
                   <p className="text-sm font-medium text-foreground leading-snug">
                     "{spark.prompt}"
@@ -198,12 +194,12 @@ function DailySparkCard({
                       className="w-full h-11 rounded-full bg-accent text-accent-foreground hover:bg-accent/90 border border-accent-foreground/10 shadow-sm font-medium text-sm"
                       data-testid="btn-spark-like"
                     >
-                      <Heart className="w-4 h-4 mr-2 fill-current" /> Like {spark.name}
+                      <Heart className="w-4 h-4 mr-2 fill-current" /> {t("discover.likeName", { name: spark.name })}
                     </Button>
                   </motion.div>
                   <Link href="/messages" className="flex-1" data-testid="btn-spark-message">
                     <Button variant="outline" className="w-full h-11 rounded-full border-border text-sm font-medium">
-                      <MessageCircle className="w-4 h-4 mr-2" /> Send a message
+                      <MessageCircle className="w-4 h-4 mr-2" /> {t("discover.sendMessage")}
                     </Button>
                   </Link>
                   <Link href={`/profile/${spark.id}`} data-testid="link-spark-full-profile">
@@ -251,6 +247,7 @@ function DailySparkCard({
 export default function Discover() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const t = useT();
 
   const [speciesFilter, setSpeciesFilter] = useState("all");
   const [intentFilter, setIntentFilter] = useState("all");
@@ -334,8 +331,8 @@ export default function Discover() {
     } catch (err) {
       toast({
         variant: "destructive",
-        title: "Couldn't skip that profile",
-        description: apiErrorMessage(err, "Please try again."),
+        title: t("discover.couldNotSkip"),
+        description: apiErrorMessage(err, t("common.tryAgain")),
       });
     }
   };
@@ -360,8 +357,8 @@ export default function Discover() {
       });
       toast({
         variant: "destructive",
-        title: "Couldn't like that profile",
-        description: apiErrorMessage(err, "Please try again."),
+        title: t("discover.couldNotLike"),
+        description: apiErrorMessage(err, t("common.tryAgain")),
       });
     }
   };
@@ -385,7 +382,7 @@ export default function Discover() {
         image: sparkCandidate.avatarUrl || FALLBACK_IMAGE,
         bio: sparkCandidate.bio ?? null,
         lifestyle: sparkCandidate.lifestyleTags,
-        lookingForLabel: lookingForLabel(sparkCandidate.lookingFor),
+        lookingForLabel: lookingForLabel(sparkCandidate.lookingFor, t),
         pet: sparkCandidate.pets[0]
           ? {
               name: sparkCandidate.pets[0].name,
@@ -433,51 +430,51 @@ export default function Discover() {
           <div className="flex flex-row overflow-x-auto no-scrollbar pb-2 -mb-2 gap-4 items-center">
             <Select value={speciesFilter} onValueChange={changeSpeciesFilter}>
               <SelectTrigger className="w-[140px] shrink-0 rounded-full bg-card" data-testid="filter-species">
-                <SelectValue placeholder="Species" />
+                <SelectValue placeholder={t("discover.filterSpecies")} />
               </SelectTrigger>
               {/* Covers every species onboarding can ask for, so a preference
                   carried in here always has an entry to show. */}
               <SelectContent>
-                <SelectItem value="all">All Pets</SelectItem>
-                <SelectItem value="dog">Dogs</SelectItem>
-                <SelectItem value="cat">Cats</SelectItem>
-                <SelectItem value="rabbit">Rabbits</SelectItem>
-                <SelectItem value="bird">Birds</SelectItem>
-                <SelectItem value="fish">Fish</SelectItem>
-                <SelectItem value="other">Other</SelectItem>
+                <SelectItem value="all">{t("discover.allPets")}</SelectItem>
+                <SelectItem value="dog">{t("discover.dogs")}</SelectItem>
+                <SelectItem value="cat">{t("discover.cats")}</SelectItem>
+                <SelectItem value="rabbit">{t("discover.rabbits")}</SelectItem>
+                <SelectItem value="bird">{t("discover.birds")}</SelectItem>
+                <SelectItem value="fish">{t("discover.fishes")}</SelectItem>
+                <SelectItem value="other">{t("discover.otherPets")}</SelectItem>
               </SelectContent>
             </Select>
 
             <Select value={distanceFilter} onValueChange={changeDistanceFilter}>
               <SelectTrigger className="w-[150px] shrink-0 rounded-full bg-card" data-testid="filter-distance">
-                <SelectValue placeholder="Distance" />
+                <SelectValue placeholder={t("discover.filterDistance")} />
               </SelectTrigger>
               {/* Matches the distances onboarding offers, plus a way out of the
                   filter entirely. */}
               <SelectContent>
-                <SelectItem value="any">Any distance</SelectItem>
-                <SelectItem value="10">Within 10 km</SelectItem>
-                <SelectItem value="25">Within 25 km</SelectItem>
-                <SelectItem value="50">Within 50 km</SelectItem>
-                <SelectItem value="100">Within 100 km</SelectItem>
-                <SelectItem value="200">Within 200 km</SelectItem>
+                <SelectItem value="any">{t("discover.anyDistance")}</SelectItem>
+                <SelectItem value="10">{t("discover.within", { km: 10 })}</SelectItem>
+                <SelectItem value="25">{t("discover.within", { km: 25 })}</SelectItem>
+                <SelectItem value="50">{t("discover.within", { km: 50 })}</SelectItem>
+                <SelectItem value="100">{t("discover.within", { km: 100 })}</SelectItem>
+                <SelectItem value="200">{t("discover.within", { km: 200 })}</SelectItem>
               </SelectContent>
             </Select>
 
             <Select value={intentFilter} onValueChange={changeIntentFilter}>
               <SelectTrigger className="w-[160px] rounded-full bg-card" data-testid="filter-intent">
-                <SelectValue placeholder="Looking for" />
+                <SelectValue placeholder={t("discover.filterIntent")} />
               </SelectTrigger>
               {/* Covers every intent onboarding offers. "Open to anything" is
                   one of those, so the no-filter option is named for people
                   rather than intents to keep the two apart. */}
               <SelectContent>
-                <SelectItem value="all">Everyone</SelectItem>
-                <SelectItem value="friendship">Friendship</SelectItem>
-                <SelectItem value="relationship">Relationship</SelectItem>
-                <SelectItem value="playdates">Pet playdates</SelectItem>
-                <SelectItem value="casual">Casual meetups</SelectItem>
-                <SelectItem value="open">Open to anything</SelectItem>
+                <SelectItem value="all">{t("discover.everyone")}</SelectItem>
+                <SelectItem value="friendship">{t("intent.friendship")}</SelectItem>
+                <SelectItem value="relationship">{t("intent.relationship")}</SelectItem>
+                <SelectItem value="playdates">{t("intent.playdates")}</SelectItem>
+                <SelectItem value="casual">{t("intent.casual")}</SelectItem>
+                <SelectItem value="open">{t("intent.open")}</SelectItem>
               </SelectContent>
             </Select>
 
@@ -488,9 +485,9 @@ export default function Discover() {
                 href="/settings"
                 className="shrink-0 rounded-full border border-border bg-card px-4 h-9 flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap"
                 data-testid="filter-age-range"
-                title="Set during onboarding — change it in Settings"
+                title={t("discover.agesHint")}
               >
-                Ages {preferences.ageRangeMin}–{preferences.ageRangeMax}
+                {t("discover.ages", { min: preferences.ageRangeMin ?? "", max: preferences.ageRangeMax ?? "" })}
               </Link>
             )}
 
@@ -500,7 +497,7 @@ export default function Discover() {
                 className="ml-auto flex items-center gap-1.5 text-xs text-amber-600 hover:text-amber-700 font-medium whitespace-nowrap transition-colors"
                 data-testid="btn-spark-restore"
               >
-                <RefreshCw className="w-3 h-3" /> Show Daily Spark
+                <RefreshCw className="w-3 h-3" /> {t("discover.showSpark")}
               </button>
             )}
           </div>
@@ -523,7 +520,7 @@ export default function Discover() {
           </div>
         ) : isError ? (
           <div className="text-center py-24">
-            <p className="text-muted-foreground mb-4">Couldn't load profiles right now.</p>
+            <p className="text-muted-foreground mb-4">{t("discover.couldNotLoad")}</p>
             <Button variant="outline" className="rounded-full" onClick={() => refetch()} data-testid="btn-retry-discover">
               Try again
             </Button>
@@ -533,6 +530,7 @@ export default function Discover() {
             {/* Daily Spark */}
             {sparkView && sparkState !== "dismissed" && (
               <DailySparkCard
+                t={t}
                 spark={sparkView}
                 state={sparkState}
                 onLike={handleSparkLike}
@@ -544,7 +542,7 @@ export default function Discover() {
             {sparkView && sparkState === "visible" && gridProfiles.length > 0 && (
               <div className="flex items-center gap-4 mb-8">
                 <div className="flex-1 h-px bg-border" />
-                <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Discover more</span>
+                <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">{t("discover.discoverMore")}</span>
                 <div className="flex-1 h-px bg-border" />
               </div>
             )}
@@ -555,8 +553,8 @@ export default function Discover() {
                 <div className="w-20 h-20 bg-secondary rounded-full flex items-center justify-center mx-auto mb-4">
                   <Heart className="w-8 h-8 text-muted-foreground" />
                 </div>
-                <h2 className="font-serif text-2xl text-foreground mb-2">You're all caught up!</h2>
-                <p className="text-muted-foreground">Check back later for more potential matches.</p>
+                <h2 className="font-serif text-2xl text-foreground mb-2">{t("discover.allCaughtUp")}</h2>
+                <p className="text-muted-foreground">{t("discover.checkBack")}</p>
                 <Button
                   className="mt-6 rounded-full"
                   onClick={() => { setLikedIds(new Set()); refetch(); }}

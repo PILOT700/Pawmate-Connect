@@ -17,24 +17,25 @@ import { useAuth } from "@/contexts/auth-context";
 import { useToast } from "@/hooks/use-toast";
 import { apiErrorMessage } from "@/lib/api-error";
 import { rememberOnboardingPetSpecies } from "@/lib/onboarding-pet";
+import { useT, type TranslationKey } from "@/lib/i18n";
 
 const TOTAL_STEPS = 4;
 
 const PET_OPTIONS = [
-  { id: "dog", label: "Dog", emoji: "🐕", icon: Dog, color: "bg-amber-50 border-amber-200 text-amber-700", activeColor: "bg-amber-100 border-amber-500 text-amber-800" },
-  { id: "cat", label: "Cat", emoji: "🐈", icon: Cat, color: "bg-rose-50 border-rose-200 text-rose-700", activeColor: "bg-rose-100 border-rose-500 text-rose-800" },
-  { id: "rabbit", label: "Rabbit", emoji: "🐇", icon: Rabbit, color: "bg-violet-50 border-violet-200 text-violet-700", activeColor: "bg-violet-100 border-violet-500 text-violet-800" },
-  { id: "bird", label: "Bird", emoji: "🐦", icon: Bird, color: "bg-sky-50 border-sky-200 text-sky-700", activeColor: "bg-sky-100 border-sky-500 text-sky-800" },
-  { id: "fish", label: "Fish", emoji: "🐠", icon: Fish, color: "bg-teal-50 border-teal-200 text-teal-700", activeColor: "bg-teal-100 border-teal-500 text-teal-800" },
-  { id: "other", label: "Other", emoji: "🐾", icon: PawPrint, color: "bg-secondary border-border text-foreground", activeColor: "bg-primary/10 border-primary text-primary" },
+  { id: "dog", labelKey: "species.dog" as const, emoji: "🐕", icon: Dog, color: "bg-amber-50 border-amber-200 text-amber-700", activeColor: "bg-amber-100 border-amber-500 text-amber-800" },
+  { id: "cat", labelKey: "species.cat" as const, emoji: "🐈", icon: Cat, color: "bg-rose-50 border-rose-200 text-rose-700", activeColor: "bg-rose-100 border-rose-500 text-rose-800" },
+  { id: "rabbit", labelKey: "species.rabbit" as const, emoji: "🐇", icon: Rabbit, color: "bg-violet-50 border-violet-200 text-violet-700", activeColor: "bg-violet-100 border-violet-500 text-violet-800" },
+  { id: "bird", labelKey: "species.bird" as const, emoji: "🐦", icon: Bird, color: "bg-sky-50 border-sky-200 text-sky-700", activeColor: "bg-sky-100 border-sky-500 text-sky-800" },
+  { id: "fish", labelKey: "species.fish" as const, emoji: "🐠", icon: Fish, color: "bg-teal-50 border-teal-200 text-teal-700", activeColor: "bg-teal-100 border-teal-500 text-teal-800" },
+  { id: "other", labelKey: "species.other" as const, emoji: "🐾", icon: PawPrint, color: "bg-secondary border-border text-foreground", activeColor: "bg-primary/10 border-primary text-primary" },
 ];
 
 const LOOKING_FOR_OPTIONS = [
-  { id: "relationship", label: "Meaningful relationship", description: "Looking for love with a fellow pet lover", icon: Heart, color: "rose" },
-  { id: "friendship", label: "Friendship", description: "Companionship and shared experiences", icon: Users, color: "primary" },
-  { id: "playdates", label: "Pet playdates", description: "Fun outings for our furry friends", icon: PawPrint, color: "amber" },
-  { id: "casual", label: "Casual meetups", description: "Coffee, walks, and good conversation", icon: Coffee, color: "teal" },
-  { id: "open", label: "Open to anything", description: "Let's see where things go", icon: Sparkles, color: "violet" },
+  { id: "relationship", labelKey: "intent.relationship" as const, bodyKey: "intent.relationshipBody" as const, icon: Heart, color: "rose" },
+  { id: "friendship", labelKey: "intent.friendship" as const, bodyKey: "intent.friendshipBody" as const, icon: Users, color: "primary" },
+  { id: "playdates", labelKey: "intent.playdates" as const, bodyKey: "intent.playdatesBody" as const, icon: PawPrint, color: "amber" },
+  { id: "casual", labelKey: "intent.casual" as const, bodyKey: "intent.casualBody" as const, icon: Coffee, color: "teal" },
+  { id: "open", labelKey: "intent.open" as const, bodyKey: "intent.openBody" as const, icon: Sparkles, color: "violet" },
 ];
 
 const DISTANCES = [10, 25, 50, 100, 200];
@@ -44,10 +45,12 @@ function PetGrid({
   selected,
   onToggle,
   testIdPrefix,
+  t,
 }: {
   selected: string[];
   onToggle: (id: string) => void;
   testIdPrefix: string;
+  t: (k: TranslationKey) => string;
 }) {
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -66,7 +69,7 @@ function PetGrid({
             }`}
           >
             <span className="text-3xl">{pet.emoji}</span>
-            <span className="text-sm font-medium">{pet.label}</span>
+            <span className="text-sm font-medium">{t(pet.labelKey)}</span>
             {isSelected && (
               <motion.div
                 initial={{ scale: 0 }}
@@ -120,6 +123,7 @@ function OnboardingSteps({
   const [, navigate] = useLocation();
   const { refreshSession } = useAuth();
   const { toast } = useToast();
+  const t = useT();
   const [step, setStep] = useState(0);
   const [dir, setDir] = useState(1);
 
@@ -159,8 +163,8 @@ function OnboardingSteps({
     } catch (err) {
       toast({
         variant: "destructive",
-        title: "Couldn't save your preferences",
-        description: apiErrorMessage(err, "Please try again."),
+        title: t("onboarding.couldNotSave"),
+        description: apiErrorMessage(err, t("common.tryAgain")),
       });
     }
   };
@@ -223,10 +227,10 @@ function OnboardingSteps({
                       transition={{ delay: 0.1 }}
                       className="text-5xl block mb-4"
                     >🐾</motion.span>
-                    <h2 className="font-serif text-3xl font-semibold text-foreground">What's your pet?</h2>
-                    <p className="text-muted-foreground text-sm mt-2">Select all that apply — choose as many as you like</p>
+                    <h2 className="font-serif text-3xl font-semibold text-foreground">{t("onboarding.yourPet")}</h2>
+                    <p className="text-muted-foreground text-sm mt-2">{t("onboarding.yourPetHint")}</p>
                   </div>
-                  <PetGrid selected={pets} onToggle={togglePet} testIdPrefix="pet-option" />
+                  <PetGrid selected={pets} onToggle={togglePet} testIdPrefix="pet-option" t={t} />
                 </div>
               )}
 
@@ -240,10 +244,10 @@ function OnboardingSteps({
                       transition={{ delay: 0.1 }}
                       className="text-5xl block mb-4"
                     >💞</motion.span>
-                    <h2 className="font-serif text-3xl font-semibold text-foreground">Who do you want to meet?</h2>
-                    <p className="text-muted-foreground text-sm mt-2">We'll start your feed with these pet people</p>
+                    <h2 className="font-serif text-3xl font-semibold text-foreground">{t("onboarding.whoToMeet")}</h2>
+                    <p className="text-muted-foreground text-sm mt-2">{t("onboarding.whoToMeetHint")}</p>
                   </div>
-                  <PetGrid selected={meetPets} onToggle={toggleMeetPet} testIdPrefix="meet-option" />
+                  <PetGrid selected={meetPets} onToggle={toggleMeetPet} testIdPrefix="meet-option" t={t} />
                 </div>
               )}
 
@@ -257,8 +261,8 @@ function OnboardingSteps({
                       transition={{ delay: 0.1 }}
                       className="text-5xl block mb-4"
                     >💫</motion.span>
-                    <h2 className="font-serif text-3xl font-semibold text-foreground">What are you looking for?</h2>
-                    <p className="text-muted-foreground text-sm mt-2">You can select more than one</p>
+                    <h2 className="font-serif text-3xl font-semibold text-foreground">{t("onboarding.lookingFor")}</h2>
+                    <p className="text-muted-foreground text-sm mt-2">{t("onboarding.lookingForHint")}</p>
                   </div>
                   <div className="space-y-3">
                     {LOOKING_FOR_OPTIONS.map((opt, i) => {
@@ -298,8 +302,8 @@ function OnboardingSteps({
                             <Icon className="w-5 h-5" />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-foreground">{opt.label}</p>
-                            <p className="text-xs text-muted-foreground mt-0.5">{opt.description}</p>
+                            <p className="text-sm font-medium text-foreground">{t(opt.labelKey)}</p>
+                            <p className="text-xs text-muted-foreground mt-0.5">{t(opt.bodyKey)}</p>
                           </div>
                           {selected && (
                             <motion.div
@@ -327,15 +331,15 @@ function OnboardingSteps({
                       transition={{ delay: 0.1 }}
                       className="text-5xl block mb-4"
                     >🗺️</motion.span>
-                    <h2 className="font-serif text-3xl font-semibold text-foreground">Set your preferences</h2>
-                    <p className="text-muted-foreground text-sm mt-2">Help us find the best matches for you</p>
+                    <h2 className="font-serif text-3xl font-semibold text-foreground">{t("onboarding.preferences")}</h2>
+                    <p className="text-muted-foreground text-sm mt-2">{t("onboarding.preferencesHint")}</p>
                   </div>
 
                   {/* Distance */}
                   <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
                     <div className="flex items-center gap-2">
                       <MapPin className="w-4 h-4 text-primary" />
-                      <p className="text-sm font-semibold text-foreground">Maximum distance</p>
+                      <p className="text-sm font-semibold text-foreground">{t("onboarding.maxDistance")}</p>
                       <span className="ml-auto text-sm font-semibold text-primary">{distance} km</span>
                     </div>
                     <div className="flex gap-2 flex-wrap">
@@ -358,14 +362,14 @@ function OnboardingSteps({
                   <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
                     <div className="flex items-center gap-2">
                       <Users className="w-4 h-4 text-primary" />
-                      <p className="text-sm font-semibold text-foreground">Age range</p>
+                      <p className="text-sm font-semibold text-foreground">{t("onboarding.ageRange")}</p>
                       <span className="ml-auto text-sm font-semibold text-primary">{ageRange[0]}–{ageRange[1]}</span>
                     </div>
                     <div className="space-y-4">
                       <div className="space-y-1">
                         <div className="flex justify-between text-xs text-muted-foreground">
-                          <span>From</span>
-                          <span>{ageRange[0]} yrs</span>
+                          <span>{t("onboarding.from")}</span>
+                          <span>{ageRange[0]} {t("onboarding.years")}</span>
                         </div>
                         <input
                           type="range"
@@ -377,8 +381,8 @@ function OnboardingSteps({
                       </div>
                       <div className="space-y-1">
                         <div className="flex justify-between text-xs text-muted-foreground">
-                          <span>To</span>
-                          <span>{ageRange[1]} yrs</span>
+                          <span>{t("onboarding.to")}</span>
+                          <span>{ageRange[1]} {t("onboarding.years")}</span>
                         </div>
                         <input
                           type="range"
@@ -393,24 +397,24 @@ function OnboardingSteps({
 
                   {/* Summary of selections */}
                   <div className="bg-primary/5 border border-primary/20 rounded-2xl p-4 space-y-2">
-                    <p className="text-xs font-semibold text-primary uppercase tracking-wide">Your setup</p>
+                    <p className="text-xs font-semibold text-primary uppercase tracking-wide">{t("onboarding.yourSetup")}</p>
                     <div className="flex flex-wrap gap-1.5">
                       {/* Two species lists sit side by side here, so each is
                           prefixed — otherwise "🐈 Cat" reads both ways. */}
                       {pets.map(p => {
                         const opt = PET_OPTIONS.find(o => o.id === p);
-                        return opt ? <span key={`mine-${p}`} className="text-xs bg-white border border-border rounded-full px-2.5 py-1">Yours: {opt.emoji} {opt.label}</span> : null;
+                        return opt ? <span key={`mine-${p}`} className="text-xs bg-white border border-border rounded-full px-2.5 py-1">{t("onboarding.yours")}: {opt.emoji} {t(opt.labelKey)}</span> : null;
                       })}
                       {meetPets.map(p => {
                         const opt = PET_OPTIONS.find(o => o.id === p);
-                        return opt ? <span key={`meet-${p}`} className="text-xs bg-white border border-border rounded-full px-2.5 py-1">Meeting: {opt.emoji} {opt.label}</span> : null;
+                        return opt ? <span key={`meet-${p}`} className="text-xs bg-white border border-border rounded-full px-2.5 py-1">{t("onboarding.meeting")}: {opt.emoji} {t(opt.labelKey)}</span> : null;
                       })}
                       {lookingFor.map(l => {
                         const opt = LOOKING_FOR_OPTIONS.find(o => o.id === l);
-                        return opt ? <span key={l} className="text-xs bg-white border border-border rounded-full px-2.5 py-1">{opt.label}</span> : null;
+                        return opt ? <span key={l} className="text-xs bg-white border border-border rounded-full px-2.5 py-1">{t(opt.labelKey)}</span> : null;
                       })}
                       <span className="text-xs bg-white border border-border rounded-full px-2.5 py-1">
-                        📍 {distance} km · {ageRange[0]}–{ageRange[1]} yrs
+                        📍 {distance} km · {ageRange[0]}–{ageRange[1]} {t("onboarding.years")}
                       </span>
                     </div>
                   </div>
@@ -430,7 +434,7 @@ function OnboardingSteps({
               className="flex-1 h-12 rounded-full"
               data-testid="btn-back"
             >
-              Back
+              {t("onboarding.back")}
             </Button>
           )}
           {step < TOTAL_STEPS - 1 ? (
@@ -440,7 +444,7 @@ function OnboardingSteps({
               className="flex-1 h-12 rounded-full bg-primary text-primary-foreground shadow-sm"
               data-testid="btn-next"
             >
-              Continue <ChevronRight className="w-4 h-4 ml-1" />
+              {t("onboarding.continue")} <ChevronRight className="w-4 h-4 ml-1" />
             </Button>
           ) : (
             <Button
@@ -450,14 +454,14 @@ function OnboardingSteps({
               data-testid="btn-finish"
             >
               <Sparkles className="w-4 h-4 mr-2" />
-              {savePreferences.isPending ? "Saving…" : "Find my matches"}
+              {savePreferences.isPending ? t("onboarding.saving") : t("onboarding.finish")}
             </Button>
           )}
         </div>
 
         {step === 0 && (
           <p className="text-center text-xs text-muted-foreground/60 mt-4">
-            Takes less than a minute
+            {t("onboarding.underAMinute")}
           </p>
         )}
       </div>

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, ChevronLeft, ChevronRight, PawPrint } from "lucide-react";
+import { useT } from "@/lib/i18n";
 
 export interface Story {
   id: string;
@@ -21,6 +22,7 @@ interface StoryViewerProps {
 const DURATION = 4500; // ms per story
 
 export function StoryViewer({ stories, startIndex, name, avatar, open, onClose }: StoryViewerProps) {
+  const t = useT();
   const [idx, setIdx] = useState(startIndex);
   const [progress, setProgress] = useState(0);
   const [paused, setPaused] = useState(false);
@@ -192,13 +194,13 @@ export function StoryViewer({ stories, startIndex, name, avatar, open, onClose }
             className="absolute left-0 top-0 h-full w-1/3 z-20 focus:outline-none"
             onClick={goPrev}
             data-testid="btn-story-prev"
-            aria-label="Previous story"
+            aria-label={t("story.previous")}
           />
           <button
             className="absolute right-0 top-0 h-full w-1/3 z-20 focus:outline-none"
             onClick={goNext}
             data-testid="btn-story-next"
-            aria-label="Next story"
+            aria-label={t("story.next")}
           />
 
           {/* Visible nav arrows (desktop) */}

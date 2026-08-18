@@ -9,6 +9,7 @@ import {
   type LookingFor,
   type Species,
 } from "@workspace/api-client-react";
+import { useT } from "@/lib/i18n";
 
 export interface CompatibilityInput {
   theirPetSpecies?: Species;
@@ -69,10 +70,10 @@ export function calcCompatScore(opts: {
 }
 
 function label(score: number) {
-  if (score >= 90) return { text: "Paw-fect match!", color: "text-emerald-600", bg: "bg-emerald-50 border-emerald-200" };
-  if (score >= 78) return { text: "Great companions", color: "text-primary", bg: "bg-primary/10 border-primary/25" };
-  if (score >= 65) return { text: "Worth exploring", color: "text-amber-700", bg: "bg-amber-50 border-amber-200" };
-  return { text: "Different worlds", color: "text-muted-foreground", bg: "bg-secondary border-border" };
+  if (score >= 90) return { key: "compat.perfect" as const, color: "text-emerald-600", bg: "bg-emerald-50 border-emerald-200" };
+  if (score >= 78) return { key: "compat.great" as const, color: "text-primary", bg: "bg-primary/10 border-primary/25" };
+  if (score >= 65) return { key: "compat.worth" as const, color: "text-amber-700", bg: "bg-amber-50 border-amber-200" };
+  return { key: "compat.different" as const, color: "text-muted-foreground", bg: "bg-secondary border-border" };
 }
 
 function Arc({ score, size = 120 }: { score: number; size?: number }) {
@@ -141,6 +142,7 @@ function Bar({ value, color }: { value: number; color: string }) {
 }
 
 export function CompatibilityScore({ input }: { input: CompatibilityInput }) {
+  const t = useT();
   const { data: me } = useGetMyProfile({ query: { queryKey: getGetMyProfileQueryKey() } });
   const { data: myPets } = useListMyPets({ query: { queryKey: getListMyPetsQueryKey() } });
 
@@ -172,7 +174,7 @@ export function CompatibilityScore({ input }: { input: CompatibilityInput }) {
       {/* Arc + label */}
       <div className="flex flex-col items-center mb-6">
         <Arc score={total} size={130} />
-        <span className={`mt-2 text-sm font-semibold ${badge.color}`}>{badge.text}</span>
+        <span className={`mt-2 text-sm font-semibold ${badge.color}`}>{t(badge.key)}</span>
       </div>
 
       {/* Breakdown bars */}
