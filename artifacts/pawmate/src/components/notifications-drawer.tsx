@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useListNotifications, useMarkNotificationRead, useMarkAllNotificationsRead } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
+import { formatTime } from "@/lib/format";
 import { apiErrorMessage } from "@/lib/api-error";
 
 type NotifType = "match" | "message" | "view" | "playdate" | "comment" | "like";
@@ -172,11 +173,7 @@ export function NotificationsDrawer({ open, onClose }: Props) {
                   {notifications.map((n, idx) => {
                     const notifType = mapNotificationType(n.type);
                     const href = getNotificationHref(n.type, n.relatedEntityId ?? undefined);
-                    const displayTime = new Date(n.createdAt as any).toLocaleTimeString('en-US', {
-                      hour: 'numeric',
-                      minute: '2-digit',
-                      hour12: true
-                    });
+                    const displayTime = formatTime(n.createdAt as any);
 
                     return (
                       <motion.div

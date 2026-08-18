@@ -58,18 +58,18 @@ router.get("/discover", requireAuth, async (req, res) => {
   // located gets the unfiltered feed rather than an empty one, and candidates
   // without a point stay visible for the same reason a missing age does.
   const me = req.user!;
-  if (query.maxDistanceMiles != null && me.cityLat != null && me.cityLng != null) {
-    const miles = query.maxDistanceMiles;
+  if (query.maxDistanceKm != null && me.cityLat != null && me.cityLng != null) {
+    const km = query.maxDistanceKm;
     filters.push(
       or(
         isNull(usersTable.cityLat),
         isNull(usersTable.cityLng),
-        // Great-circle distance in miles, straight from the two points.
-        sql`3958.8 * acos(least(1, greatest(-1,
+        // Great-circle distance in kilometres, straight from the two points.
+        sql`6371 * acos(least(1, greatest(-1,
           sin(radians(${me.cityLat})) * sin(radians(${usersTable.cityLat}))
           + cos(radians(${me.cityLat})) * cos(radians(${usersTable.cityLat}))
           * cos(radians(${usersTable.cityLng}) - radians(${me.cityLng}))
-        ))) <= ${miles}`,
+        ))) <= ${km}`,
       )!,
     );
   }

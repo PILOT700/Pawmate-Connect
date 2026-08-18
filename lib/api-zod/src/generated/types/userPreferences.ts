@@ -10,7 +10,7 @@ import type { Species } from './species';
 
 export interface UserPreferences {
   userId: string;
-  maxDistanceMiles: number;
+  maxDistanceKm: number;
   ageRangeMin: number;
   ageRangeMax: number;
   petTypePrefs: Species[];

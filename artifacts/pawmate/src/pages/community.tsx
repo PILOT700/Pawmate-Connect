@@ -6,6 +6,7 @@ import {
   ChevronDown, ChevronUp, Search, PawPrint, TreePine, Coffee,
   Heart, Star, Sparkles, Send, Filter, Loader
 } from "lucide-react";
+import { formatTime, formatDayMonth, formatWeekdayDate } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -192,10 +193,10 @@ function EventCard({ event, onRefetch }: { event: CommunityEvent; onRefetch: () 
         {/* Meta chips */}
         <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
           <span className="flex items-center gap-1.5 bg-secondary rounded-full px-3 py-1.5">
-            <Calendar className="w-3.5 h-3.5" /> {new Date(event.startAt as any).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+            <Calendar className="w-3.5 h-3.5" /> {formatWeekdayDate(event.startAt as any)}
           </span>
           <span className="flex items-center gap-1.5 bg-secondary rounded-full px-3 py-1.5">
-            <Filter className="w-3.5 h-3.5" /> {new Date(event.startAt as any).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })} – {new Date(event.endAt as any).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
+            <Filter className="w-3.5 h-3.5" /> {formatTime(event.startAt as any)} – {formatTime(event.endAt as any)}
           </span>
           <span className="flex items-center gap-1.5 bg-secondary rounded-full px-3 py-1.5">
             <MapPin className="w-3.5 h-3.5" /> {event.location}
@@ -294,7 +295,7 @@ function EventCard({ event, onRefetch }: { event: CommunityEvent; onRefetch: () 
                           <p className="text-sm text-foreground leading-relaxed">{c.text}</p>
                         </div>
                         <div className="flex items-center gap-3 mt-1 px-1">
-                          <span className="text-[10px] text-muted-foreground">{new Date(c.createdAt as any).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}</span>
+                          <span className="text-[10px] text-muted-foreground">{formatTime(c.createdAt as any)}</span>
                           <button
                             onClick={() => handleLikeComment(c.id, c.liked)}
                             className={`text-[10px] transition-colors font-medium flex items-center gap-0.5 ${c.liked ? "text-rose-500" : "text-muted-foreground hover:text-rose-500"}`}
@@ -468,7 +469,7 @@ export default function Community() {
                       <div className={`w-2 h-2 rounded-full flex-shrink-0 ${CATEGORY_STYLE[e.category].badge.includes("primary") ? "bg-primary" : e.category === "adoption" ? "bg-rose-500" : e.category === "cafe" ? "bg-amber-500" : e.category === "training" ? "bg-violet-500" : "bg-emerald-500"}`} />
                       <div className="min-w-0">
                         <p className="text-sm font-medium text-foreground truncate">{e.title}</p>
-                        <p className="text-xs text-muted-foreground">{new Date(e.startAt as any).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} · {new Date(e.startAt as any).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}</p>
+                        <p className="text-xs text-muted-foreground">{formatDayMonth(e.startAt as any)} · {formatTime(e.startAt as any)}</p>
                       </div>
                     </div>
                   ))}
@@ -488,7 +489,7 @@ export default function Community() {
                       <Bookmark className="w-3.5 h-3.5 text-primary fill-primary flex-shrink-0 mt-0.5" />
                       <div className="min-w-0">
                         <p className="text-sm font-medium text-foreground truncate">{e.title}</p>
-                        <p className="text-xs text-muted-foreground">{new Date(e.startAt as any).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</p>
+                        <p className="text-xs text-muted-foreground">{formatDayMonth(e.startAt as any)}</p>
                       </div>
                     </div>
                   ))}

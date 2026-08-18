@@ -8,7 +8,7 @@ export const userPreferencesTable = pgTable("user_preferences", {
   userId: uuid("user_id")
     .primaryKey()
     .references(() => usersTable.id, { onDelete: "cascade" }),
-  maxDistanceMiles: integer("max_distance_miles").notNull().default(25),
+  maxDistanceKm: integer("max_distance_km").notNull().default(50),
   ageRangeMin: integer("age_range_min").notNull().default(25),
   ageRangeMax: integer("age_range_max").notNull().default(55),
   petTypePrefs: speciesEnum("pet_type_prefs").array().notNull().default([]),

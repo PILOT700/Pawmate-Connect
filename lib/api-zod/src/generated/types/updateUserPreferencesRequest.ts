@@ -10,7 +10,7 @@ import type { Species } from './species';
 
 export interface UpdateUserPreferencesRequest {
   /** @minimum 1 */
-  maxDistanceMiles?: number;
+  maxDistanceKm?: number;
   /** @minimum 18 */
   ageRangeMin?: number;
   /** @minimum 18 */

@@ -477,16 +477,16 @@ paths:
             type: integer
             minimum: 18
             maximum: 120
-        - name: maxDistanceMiles
+        - name: maxDistanceKm
           in: query
           description: >
-            Radius from the viewer's city. Both sides are city centres, so
-            everyone in one city measures as zero apart. Profiles with no city
-            located are kept, as is a viewer who has none.
+            Radius in kilometres from the viewer's city. Both sides are city
+            centres, so everyone in one city measures as zero apart. Profiles
+            with no city located are kept, as is a viewer who has none.
           schema:
             type: integer
             minimum: 1
-            maximum: 500
+            maximum: 800
       responses:
         "200":
           description: Candidate profiles
@@ -1462,7 +1462,7 @@ components:
         userId:
           type: string
           format: uuid
-        maxDistanceMiles:
+        maxDistanceKm:
           type: integer
         ageRangeMin:
           type: integer
@@ -1478,7 +1478,7 @@ components:
             $ref: "#/components/schemas/LookingFor"
       required:
         - userId
-        - maxDistanceMiles
+        - maxDistanceKm
         - ageRangeMin
         - ageRangeMax
         - petTypePrefs
@@ -1487,7 +1487,7 @@ components:
     UpdateUserPreferencesRequest:
       type: object
       properties:
-        maxDistanceMiles:
+        maxDistanceKm:
           type: integer
           minimum: 1
         ageRangeMin:

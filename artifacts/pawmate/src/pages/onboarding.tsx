@@ -37,7 +37,7 @@ const LOOKING_FOR_OPTIONS = [
   { id: "open", label: "Open to anything", description: "Let's see where things go", icon: Sparkles, color: "violet" },
 ];
 
-const DISTANCES = [5, 10, 25, 50, 100];
+const DISTANCES = [10, 25, 50, 100, 200];
 
 /** Shared by the two species questions: the pet you have, the pets you want. */
 function PetGrid({
@@ -129,7 +129,7 @@ function OnboardingSteps({
   // Distinct from the above: owning a cat says nothing about who you'd date.
   const [meetPets, setMeetPets] = useState<string[]>(preferences.petTypePrefs ?? []);
   const [lookingFor, setLookingFor] = useState<string[]>(preferences.lookingForPrefs ?? []);
-  const [distance, setDistance] = useState(preferences.maxDistanceMiles ?? 25);
+  const [distance, setDistance] = useState(preferences.maxDistanceKm ?? 50);
   const [ageRange, setAgeRange] = useState([
     preferences.ageRangeMin ?? 25,
     preferences.ageRangeMax ?? 55,
@@ -144,7 +144,7 @@ function OnboardingSteps({
         data: {
           petTypePrefs: meetPets as Species[],
           lookingForPrefs: lookingFor as LookingFor[],
-          maxDistanceMiles: distance,
+          maxDistanceKm: distance,
           ageRangeMin: ageRange[0]!,
           ageRangeMax: ageRange[1]!,
         },
@@ -336,7 +336,7 @@ function OnboardingSteps({
                     <div className="flex items-center gap-2">
                       <MapPin className="w-4 h-4 text-primary" />
                       <p className="text-sm font-semibold text-foreground">Maximum distance</p>
-                      <span className="ml-auto text-sm font-semibold text-primary">{distance} mi</span>
+                      <span className="ml-auto text-sm font-semibold text-primary">{distance} km</span>
                     </div>
                     <div className="flex gap-2 flex-wrap">
                       {DISTANCES.map(d => (
@@ -349,7 +349,7 @@ function OnboardingSteps({
                               ? "border-primary bg-primary/10 text-primary"
                               : "border-border bg-background text-muted-foreground hover:border-primary/40"
                           }`}
-                        >{d} mi</button>
+                        >{d} km</button>
                       ))}
                     </div>
                   </div>
@@ -410,7 +410,7 @@ function OnboardingSteps({
                         return opt ? <span key={l} className="text-xs bg-white border border-border rounded-full px-2.5 py-1">{opt.label}</span> : null;
                       })}
                       <span className="text-xs bg-white border border-border rounded-full px-2.5 py-1">
-                        📍 {distance} mi · {ageRange[0]}–{ageRange[1]} yrs
+                        📍 {distance} km · {ageRange[0]}–{ageRange[1]} yrs
                       </span>
                     </div>
                   </div>

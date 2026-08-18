@@ -36,10 +36,10 @@ ageMin?: number;
  */
 ageMax?: number;
 /**
- * Radius from the viewer's city. Both sides are city centres, so everyone in one city measures as zero apart. Profiles with no city located are kept, as is a viewer who has none.
+ * Radius in kilometres from the viewer's city. Both sides are city centres, so everyone in one city measures as zero apart. Profiles with no city located are kept, as is a viewer who has none.
 
  * @minimum 1
- * @maximum 500
+ * @maximum 800
  */
-maxDistanceMiles?: number;
+maxDistanceKm?: number;
 };

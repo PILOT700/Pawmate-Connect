@@ -277,8 +277,8 @@ export default function Discover() {
       setIntentFilter(preferences.lookingForPrefs[0]!);
     }
     // Distance is a single number, so unlike the other two it always applies.
-    if (!distanceFilterTouched.current && preferences.maxDistanceMiles != null) {
-      setDistanceFilter(String(preferences.maxDistanceMiles));
+    if (!distanceFilterTouched.current && preferences.maxDistanceKm != null) {
+      setDistanceFilter(String(preferences.maxDistanceKm));
     }
   }, [preferences]);
 
@@ -306,7 +306,7 @@ export default function Discover() {
     ...(intentFilter !== "all" ? { lookingFor: intentFilter as LookingFor } : {}),
     ...(preferences?.ageRangeMin != null ? { ageMin: preferences.ageRangeMin } : {}),
     ...(preferences?.ageRangeMax != null ? { ageMax: preferences.ageRangeMax } : {}),
-    ...(distanceFilter !== "any" ? { maxDistanceMiles: Number(distanceFilter) } : {}),
+    ...(distanceFilter !== "any" ? { maxDistanceKm: Number(distanceFilter) } : {}),
   });
   const { data: myPets } = useListMyPets();
 
@@ -456,11 +456,11 @@ export default function Discover() {
                   filter entirely. */}
               <SelectContent>
                 <SelectItem value="any">Any distance</SelectItem>
-                <SelectItem value="5">Within 5 miles</SelectItem>
-                <SelectItem value="10">Within 10 miles</SelectItem>
-                <SelectItem value="25">Within 25 miles</SelectItem>
-                <SelectItem value="50">Within 50 miles</SelectItem>
-                <SelectItem value="100">Within 100 miles</SelectItem>
+                <SelectItem value="10">Within 10 km</SelectItem>
+                <SelectItem value="25">Within 25 km</SelectItem>
+                <SelectItem value="50">Within 50 km</SelectItem>
+                <SelectItem value="100">Within 100 km</SelectItem>
+                <SelectItem value="200">Within 200 km</SelectItem>
               </SelectContent>
             </Select>
 
