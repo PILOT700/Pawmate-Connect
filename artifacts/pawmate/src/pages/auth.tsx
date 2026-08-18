@@ -9,6 +9,7 @@ import { motion } from "framer-motion";
 import { useLoginUser, useRegisterUser } from "@workspace/api-client-react";
 import { useAuth } from "@/contexts/auth-context";
 import { apiErrorMessage } from "@/lib/api-error";
+import { useT } from "@/lib/i18n";
 
 export default function Auth() {
   const [, setLocation] = useLocation();
@@ -26,6 +27,7 @@ export default function Auth() {
   const [registerPassword, setRegisterPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
 
+  const t = useT();
   const login = useLoginUser();
   const register = useRegisterUser();
   const isSubmitting = login.isPending || register.isPending;
@@ -41,7 +43,7 @@ export default function Auth() {
       await refreshSession();
       setLocation(user.onboardingCompletedAt ? "/discover" : "/onboarding");
     } catch (err) {
-      setError(apiErrorMessage(err, "Could not sign in"));
+      setError(apiErrorMessage(err, t("auth.couldNotSignIn")));
     }
   };
 
@@ -56,7 +58,7 @@ export default function Auth() {
       await refreshSession();
       setLocation("/onboarding");
     } catch (err) {
-      setError(apiErrorMessage(err, "Could not create account"));
+      setError(apiErrorMessage(err, t("auth.couldNotCreate")));
     }
   };
 
@@ -72,8 +74,8 @@ export default function Auth() {
           <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
             <PawPrint className="w-6 h-6 text-primary" />
           </div>
-          <h1 className="font-serif text-3xl font-semibold text-foreground">Welcome to Pawmate</h1>
-          <p className="text-muted-foreground mt-2 text-sm">Find connections that start with paws.</p>
+          <h1 className="font-serif text-3xl font-semibold text-foreground">{t("auth.welcome")}</h1>
+          <p className="text-muted-foreground mt-2 text-sm">{t("auth.subtitle")}</p>
         </div>
 
         {error && (
@@ -88,14 +90,14 @@ export default function Auth() {
 
         <Tabs value={tab} onValueChange={(value) => { setTab(value); setError(null); }} className="w-full">
           <TabsList className="grid w-full grid-cols-2 mb-8 h-11 bg-secondary rounded-full p-1">
-            <TabsTrigger value="signin" className="rounded-full text-sm" data-testid="tab-signin">Sign In</TabsTrigger>
-            <TabsTrigger value="register" className="rounded-full text-sm" data-testid="tab-register">Create Account</TabsTrigger>
+            <TabsTrigger value="signin" className="rounded-full text-sm" data-testid="tab-signin">{t("auth.signIn")}</TabsTrigger>
+            <TabsTrigger value="register" className="rounded-full text-sm" data-testid="tab-register">{t("auth.createAccount")}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="signin">
             <form onSubmit={handleSignin} className="space-y-4">
               <div className="space-y-1.5">
-                <Label htmlFor="signin-email" className="text-sm font-medium">Email</Label>
+                <Label htmlFor="signin-email" className="text-sm font-medium">{t("auth.email")}</Label>
                 <Input
                   id="signin-email"
                   type="email"
@@ -109,13 +111,13 @@ export default function Auth() {
               </div>
               <div className="space-y-1.5">
                 <div className="flex justify-between items-center">
-                  <Label htmlFor="signin-password" className="text-sm font-medium">Password</Label>
+                  <Label htmlFor="signin-password" className="text-sm font-medium">{t("auth.password")}</Label>
                   <Link
                     href="/reset-password"
                     className="text-xs text-primary hover:underline"
                     data-testid="link-forgot-password"
                   >
-                    Forgot password?
+                    {t("auth.forgotPassword")}
                   </Link>
                 </div>
                 <div className="relative">
@@ -145,7 +147,7 @@ export default function Auth() {
                 className="w-full h-11 rounded-xl bg-primary text-primary-foreground text-sm font-medium mt-2"
                 data-testid="btn-signin-submit"
               >
-                {login.isPending ? "Signing in…" : "Sign In"}
+                {login.isPending ? t("auth.signingIn") : t("auth.signIn")}
               </Button>
             </form>
           </TabsContent>
@@ -153,7 +155,7 @@ export default function Auth() {
           <TabsContent value="register">
             <form onSubmit={handleRegister} className="space-y-4">
               <div className="space-y-1.5">
-                <Label htmlFor="register-name" className="text-sm font-medium">First Name</Label>
+                <Label htmlFor="register-name" className="text-sm font-medium">{t("auth.firstName")}</Label>
                 <Input
                   id="register-name"
                   placeholder="Sarah"
@@ -165,7 +167,7 @@ export default function Auth() {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="register-email" className="text-sm font-medium">Email</Label>
+                <Label htmlFor="register-email" className="text-sm font-medium">{t("auth.email")}</Label>
                 <Input
                   id="register-email"
                   type="email"
@@ -178,12 +180,12 @@ export default function Auth() {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="register-password" className="text-sm font-medium">Password</Label>
+                <Label htmlFor="register-password" className="text-sm font-medium">{t("auth.password")}</Label>
                 <div className="relative">
                   <Input
                     id="register-password"
                     type={showPassword ? "text" : "password"}
-                    placeholder="At least 10 characters"
+                    placeholder={t("auth.passwordHint")}
                     className="h-11 bg-background rounded-xl pr-11"
                     required
                     minLength={10}

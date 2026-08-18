@@ -18,6 +18,11 @@ interface State {
  *
  * Still a class component: catching a render error is the one thing hooks
  * cannot do.
+ *
+ * Deliberately untranslated. It is mounted outside the language provider so
+ * that a crash inside that provider is still caught — which means it has no
+ * translations to reach for. The screen that appears when everything else has
+ * failed should not depend on anything else working.
  */
 export class ErrorBoundary extends Component<Props, State> {
   override state: State = { crashed: false };

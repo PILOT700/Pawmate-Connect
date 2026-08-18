@@ -1,37 +1,38 @@
 import { Link } from "wouter";
 import { PawPrint, Instagram, Facebook, Twitter, Mail } from "lucide-react";
+import { useT } from "@/lib/i18n";
 
 /**
  * Terms, Privacy and the Guidelines are linked because the design asks for
  * them. They lead to short pages saying the document is being prepared rather
  * than to "#": a link that goes nowhere is worse than one that says so.
  */
-const COLUMNS: { heading: string; links: { label: string; href: string }[] }[] = [
+const COLUMNS = [
   {
-    heading: "Discover",
+    heading: "footer.discover",
     links: [
-      { label: "How it works", href: "/#how-it-works" },
-      { label: "For pet lovers", href: "/#community" },
-      { label: "Browse members", href: "/discover" },
+      { key: "nav.howItWorks", href: "/#how-it-works" },
+      { key: "footer.forPetLovers", href: "/#community" },
+      { key: "footer.browseMembers", href: "/discover" },
     ],
   },
   {
-    heading: "Community",
+    heading: "footer.community",
     links: [
-      { label: "Events", href: "/community" },
-      { label: "Help Center", href: "/help" },
-      { label: "Community Guidelines", href: "/guidelines" },
+      { key: "footer.events", href: "/community" },
+      { key: "footer.helpCenter", href: "/help" },
+      { key: "footer.guidelines", href: "/guidelines" },
     ],
   },
   {
-    heading: "Company",
+    heading: "footer.company",
     links: [
-      { label: "About us", href: "/about" },
-      { label: "Terms of Service", href: "/terms" },
-      { label: "Privacy Policy", href: "/privacy" },
+      { key: "footer.aboutUs", href: "/about" },
+      { key: "footer.terms", href: "/terms" },
+      { key: "footer.privacy", href: "/privacy" },
     ],
   },
-];
+] as const;
 
 const SOCIALS = [
   { icon: Instagram, label: "Instagram" },
@@ -40,6 +41,8 @@ const SOCIALS = [
 ];
 
 export function Footer() {
+  const t = useT();
+
   return (
     <footer className="bg-card border-t border-card-border mt-auto">
       <div className="container mx-auto px-4 md:px-8 py-14">
@@ -51,23 +54,22 @@ export function Footer() {
               <span className="font-serif text-2xl font-semibold text-forest">PawMate</span>
             </Link>
             <p className="text-sm text-foreground/65 leading-relaxed max-w-xs">
-              Meaningful connections grounded in a shared love of animals. Find your person,
-              and their pet.
+              {t("footer.tagline")}
             </p>
           </div>
 
           {COLUMNS.map((col) => (
-            <nav key={col.heading} aria-label={col.heading}>
-              <h4 className="font-serif text-base font-semibold text-forest mb-4">{col.heading}</h4>
+            <nav key={col.heading} aria-label={t(col.heading)}>
+              <h4 className="font-serif text-base font-semibold text-forest mb-4">{t(col.heading)}</h4>
               <ul className="space-y-3">
                 {col.links.map((l) => (
-                  <li key={l.label}>
+                  <li key={l.key}>
                     <Link
                       href={l.href}
                       className="text-sm text-foreground/65 hover:text-forest transition-colors"
-                      data-testid={`footer-${l.label.toLowerCase().replace(/\s+/g, "-")}`}
+                      data-testid={`footer-${l.key.split(".")[1]}`}
                     >
-                      {l.label}
+                      {t(l.key)}
                     </Link>
                   </li>
                 ))}
@@ -76,19 +78,19 @@ export function Footer() {
           ))}
 
           <div>
-            <h4 className="font-serif text-base font-semibold text-forest mb-4">Newsletter</h4>
+            <h4 className="font-serif text-base font-semibold text-forest mb-4">{t("footer.newsletter")}</h4>
             <p className="text-sm text-foreground/65 leading-relaxed mb-4">
-              Occasional notes about new features and local events.
+              {t("footer.newsletterBody")}
             </p>
             {/* Not wired to anything yet — there is no list to subscribe to, so
                 it says so rather than pretending to accept an address. */}
             <div className="flex gap-2">
               <div className="flex-1 h-11 rounded-xl bg-background border border-card-border flex items-center px-3.5 gap-2 text-sm text-foreground/40">
                 <Mail className="w-4 h-4 shrink-0" />
-                you@example.com
+                {t("footer.emailPlaceholder")}
               </div>
             </div>
-            <p className="text-xs text-foreground/45 mt-2">Sign-ups open once we launch.</p>
+            <p className="text-xs text-foreground/45 mt-2">{t("footer.newsletterClosed")}</p>
 
             <div className="flex gap-2.5 mt-6">
               {SOCIALS.map(({ icon: Icon, label }) => (
@@ -107,14 +109,14 @@ export function Footer() {
 
         <div className="mt-12 pt-7 border-t border-card-border flex flex-col sm:flex-row justify-between items-center gap-3">
           <p className="text-sm text-foreground/55">
-            &copy; {new Date().getFullYear()} PawMate. All rights reserved.
+            {t("footer.rights", { year: new Date().getFullYear() })}
           </p>
           <div className="flex gap-6">
             <Link href="/terms" className="text-sm text-foreground/55 hover:text-forest transition-colors">
-              Terms of Service
+              {t("footer.terms")}
             </Link>
             <Link href="/privacy" className="text-sm text-foreground/55 hover:text-forest transition-colors">
-              Privacy Policy
+              {t("footer.privacy")}
             </Link>
           </div>
         </div>

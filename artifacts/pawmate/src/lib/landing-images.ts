@@ -65,15 +65,15 @@ export interface LandingMember extends LandingImage {
   name: string;
   age: number;
   role: string;
-  distance: string;
+  distanceKm: number;
 }
 
 /** Illustrative members. These are not accounts that exist. */
 export const members: LandingMember[] = [
-  { name: "Olivia", age: 48, role: "Teacher", distance: "2 km away", src: `${DIR}/PawMate_profile_1.jpg`, alt: "Olivia with her golden retriever" },
-  { name: "David", age: 52, role: "Architect", distance: "5 km away", src: `${DIR}/PawMate_profile_2.jpg`, alt: "David holding his cat" },
-  { name: "Sophie", age: 50, role: "Marketing Manager", distance: "3 km away", src: `${DIR}/PawMate_profile_3.jpg`, alt: "Sophie with her spaniel" },
-  { name: "James", age: 54, role: "Entrepreneur", distance: "4 km away", src: `${DIR}/PawMate_profile_4.jpg`, alt: "James with his dachshund" },
+  { name: "Olivia", age: 48, role: "Teacher", distanceKm: 2, src: `${DIR}/PawMate_profile_1.jpg`, alt: "Olivia with her golden retriever" },
+  { name: "David", age: 52, role: "Architect", distanceKm: 5, src: `${DIR}/PawMate_profile_2.jpg`, alt: "David holding his cat" },
+  { name: "Sophie", age: 50, role: "Marketing Manager", distanceKm: 3, src: `${DIR}/PawMate_profile_3.jpg`, alt: "Sophie with her spaniel" },
+  { name: "James", age: 54, role: "Entrepreneur", distanceKm: 4, src: `${DIR}/PawMate_profile_4.jpg`, alt: "James with his dachshund" },
 ];
 
 export interface LandingVoice extends LandingImage {

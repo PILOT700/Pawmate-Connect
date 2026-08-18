@@ -16,6 +16,7 @@ import {
   Play,
 } from "lucide-react";
 import { heroImage, communityImage, matchImage, members, voices } from "@/lib/landing-images";
+import { useT } from "@/lib/i18n";
 
 /**
  * PLACEHOLDER COPY — some wording below comes from the design and still makes
@@ -26,12 +27,12 @@ import { heroImage, communityImage, matchImage, members, voices } from "@/lib/la
  */
 
 const FEATURES = [
-  { icon: PawPrint, title: "Pet-First Matching", body: "We match you based on your pets and lifestyle." },
-  { icon: ShieldCheck, title: "Block and Report", body: "Anyone can be blocked or reported, from their profile." },
-  { icon: MessageCircle, title: "Easy Conversations", body: "Break the ice with pet-friendly prompts." },
-  { icon: CalendarCheck, title: "Meet & Connect", body: "Find friendship or love in your area." },
-  { icon: Users, title: "Supportive Community", body: "Join events and groups for pet lovers." },
-];
+  { icon: PawPrint, key: "Matching" },
+  { icon: ShieldCheck, key: "Safety" },
+  { icon: MessageCircle, key: "Talk" },
+  { icon: CalendarCheck, key: "Meet" },
+  { icon: Users, key: "Community" },
+] as const;
 
 function Eyebrow({ icon: Icon, children }: { icon: typeof PawPrint; children: React.ReactNode }) {
   return (
@@ -58,6 +59,8 @@ function StoreBadge({ icon: Icon, small, large }: { icon: typeof Apple; small: s
 }
 
 export default function Home() {
+  const t = useT();
+
   return (
     <div className="flex flex-col">
 
@@ -75,22 +78,21 @@ export default function Home() {
                 <span className="w-6 h-6 rounded-full bg-sand flex items-center justify-center">
                   <PawPrint className="w-3.5 h-3.5 text-forest" />
                 </span>
-                <span className="text-sm text-foreground/80">Connections that start with paws</span>
+                <span className="text-sm text-foreground/80">{t("home.badge")}</span>
               </div>
 
               <h1 className="font-serif text-[2.75rem] leading-[1.06] sm:text-6xl lg:text-[4.1rem] font-semibold text-forest mb-6 text-balance">
-                Where pet lovers find their person
+                {t("home.heroTitle")}
               </h1>
 
               <p className="text-[1.05rem] text-foreground/70 leading-relaxed mb-9 max-w-sm">
-                PawMate is a community for pet lovers seeking meaningful relationships,
-                friendship, and shared moments.
+                {t("home.heroBody")}
               </p>
 
               <div className="flex flex-wrap gap-4">
                 <Link href="/login?tab=register" data-testid="hero-cta-start">
                   <Button className="h-14 rounded-xl px-7 bg-forest text-forest-foreground hover:bg-forest/90 text-base font-medium shadow-sm">
-                    <PawPrint className="w-4 h-4 mr-2" /> Join PawMate
+                    <PawPrint className="w-4 h-4 mr-2" /> {t("home.join")}
                   </Button>
                 </Link>
                 <Link href="/#how-it-works" data-testid="hero-cta-learn">
@@ -98,7 +100,7 @@ export default function Home() {
                     variant="outline"
                     className="h-14 rounded-xl px-7 bg-card border-card-border text-base font-medium text-forest hover:bg-card"
                   >
-                    Learn more
+                    {t("home.learnMore")}
                   </Button>
                 </Link>
               </div>
@@ -135,12 +137,12 @@ export default function Home() {
             {FEATURES.map((f) => {
               const Icon = f.icon;
               return (
-                <div key={f.title} className="text-center flex flex-col items-center">
+                <div key={f.key} className="text-center flex flex-col items-center">
                   <span className="w-14 h-14 rounded-full bg-card flex items-center justify-center mb-4 shadow-xs">
                     <Icon className="w-6 h-6 text-forest" strokeWidth={1.6} />
                   </span>
-                  <h3 className="font-semibold text-[0.95rem] text-forest mb-1.5">{f.title}</h3>
-                  <p className="text-[0.83rem] text-foreground/65 leading-snug max-w-[13rem]">{f.body}</p>
+                  <h3 className="font-semibold text-[0.95rem] text-forest mb-1.5">{t(`home.feature${f.key}Title`)}</h3>
+                  <p className="text-[0.83rem] text-foreground/65 leading-snug max-w-[13rem]">{t(`home.feature${f.key}Body`)}</p>
                 </div>
               );
             })}
@@ -154,9 +156,9 @@ export default function Home() {
           <div className="grid lg:grid-cols-[1fr_23rem] gap-10 lg:gap-12 items-start">
 
             <div>
-              <Eyebrow icon={Heart}>Find your match</Eyebrow>
+              <Eyebrow icon={Heart}>{t("home.findYourMatch")}</Eyebrow>
               <h2 className="font-serif text-[2.1rem] lg:text-[2.65rem] leading-[1.12] font-semibold text-forest mb-9 text-balance max-w-md">
-                People who love pets, just like you do
+                {t("home.membersTitle")}
               </h2>
 
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -172,7 +174,7 @@ export default function Home() {
                       <h3 className="font-semibold text-sm text-forest">{m.name}, {m.age}</h3>
                       <p className="text-xs text-foreground/60 mt-0.5">{m.role}</p>
                       <p className="flex items-center gap-1 text-xs text-foreground/60 mt-2">
-                        <MapPin className="w-3 h-3 text-warm shrink-0" /> {m.distance}
+                        <MapPin className="w-3 h-3 text-warm shrink-0" /> {t("home.awayFrom", { distance: m.distanceKm })}
                       </p>
                     </div>
                   </article>
@@ -181,7 +183,7 @@ export default function Home() {
 
               <Link href="/discover" data-testid="link-browse-members">
                 <Button className="mt-8 h-12 rounded-xl px-6 bg-forest text-forest-foreground hover:bg-forest/90 font-medium">
-                  <PawPrint className="w-4 h-4 mr-2" /> Browse members
+                  <PawPrint className="w-4 h-4 mr-2" /> {t("home.browseMembers")}
                 </Button>
               </Link>
             </div>
@@ -194,9 +196,9 @@ export default function Home() {
                   <div className="w-28 h-28 rounded-full overflow-hidden mx-auto mb-4 bg-sand">
                     <img src={matchImage.src} alt={matchImage.alt} className="w-full h-full object-cover" loading="lazy" />
                   </div>
-                  <p className="font-serif text-[1.3rem] font-semibold text-forest">It's a match!</p>
+                  <p className="font-serif text-[1.3rem] font-semibold text-forest">{t("home.itsAMatch")}</p>
                   <p className="text-[0.7rem] text-foreground/60 mt-1.5 leading-snug">
-                    You and Olivia<br />liked each other.
+                    {t("home.matchSubtitle")}
                   </p>
                   <Heart className="w-5 h-5 text-warm mx-auto mt-5" strokeWidth={1.5} />
                   <span className="block w-20 h-1 rounded-full bg-foreground/15 mx-auto mt-6" />
@@ -206,14 +208,14 @@ export default function Home() {
               <span className="w-9 h-9 rounded-full bg-card flex items-center justify-center mb-3 shadow-xs">
                 <PawPrint className="w-4 h-4 text-forest" />
               </span>
-              <h3 className="font-serif text-[1.6rem] font-semibold text-forest mb-2.5">Better together</h3>
+              <h3 className="font-serif text-[1.6rem] font-semibold text-forest mb-2.5">{t("home.betterTogether")}</h3>
               <p className="text-sm text-foreground/65 leading-relaxed mb-6 max-w-[15rem]">
-                Our app makes it easy to find people who share your love for pets.
+                {t("home.betterTogetherBody")}
               </p>
 
               <div className="flex flex-col gap-2.5 w-full max-w-[12rem]">
-                <StoreBadge icon={Apple} small="Download on the" large="App Store" />
-                <StoreBadge icon={Play} small="Get it on" large="Google Play" />
+                <StoreBadge icon={Apple} small={t("home.downloadOn")} large={t("home.appStore")} />
+                <StoreBadge icon={Play} small={t("home.getItOn")} large={t("home.googlePlay")} />
               </div>
             </div>
 
@@ -236,9 +238,9 @@ export default function Home() {
           <div className="px-4 md:px-8 lg:px-14 py-14 lg:py-16">
             <div className="flex items-start justify-between gap-6 mb-9">
               <div>
-                <Eyebrow icon={PawPrint}>Community</Eyebrow>
+                <Eyebrow icon={PawPrint}>{t("home.communityEyebrow")}</Eyebrow>
                 <h2 className="font-serif text-[2.1rem] lg:text-[2.5rem] leading-[1.12] font-semibold text-forest text-balance max-w-sm">
-                  Real stories from real pet lovers
+                  {t("home.storiesTitle")}
                 </h2>
               </div>
               {/* Present in the design; there is only one page of stories, so
@@ -291,17 +293,17 @@ export default function Home() {
             <div className="relative flex flex-col md:flex-row md:items-center justify-between gap-8">
               <div className="md:pl-24">
                 <h2 className="font-serif text-[1.8rem] md:text-[2.1rem] font-semibold mb-2 text-balance">
-                  Ready to start your story?
+                  {t("home.ctaTitle")}
                 </h2>
                 <p className="text-forest-foreground/70 leading-relaxed max-w-sm text-[0.95rem]">
-                  Join thousands of pet lovers and find friendship, love, and wagging tails.
+                  {t("home.ctaBody")}
                 </p>
               </div>
 
               <div className="flex flex-wrap gap-3 shrink-0">
                 <Link href="/login?tab=register" data-testid="footer-cta-start">
                   <Button className="h-12 rounded-xl px-6 bg-card text-forest hover:bg-card/90 font-medium">
-                    <PawPrint className="w-4 h-4 mr-2" /> Sign up for free
+                    <PawPrint className="w-4 h-4 mr-2" /> {t("home.ctaSignUp")}
                   </Button>
                 </Link>
                 <Link href="/about">
@@ -309,7 +311,7 @@ export default function Home() {
                     variant="outline"
                     className="h-12 rounded-xl px-6 bg-transparent border-forest-foreground/35 text-forest-foreground hover:bg-forest-foreground/10 font-medium"
                   >
-                    Learn more
+                    {t("home.learnMore")}
                   </Button>
                 </Link>
               </div>

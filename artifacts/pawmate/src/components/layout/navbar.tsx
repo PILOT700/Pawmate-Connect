@@ -10,17 +10,57 @@ import {
   getListNotificationsQueryKey,
 } from "@workspace/api-client-react";
 import { useAuth } from "@/contexts/auth-context";
+import { useI18n, LANGUAGES } from "@/lib/i18n";
 
 
 // The five entries the design asks for. Every one lands somewhere real:
 // "Blog" has no posts yet and says so rather than pointing at nothing.
 const publicNavLinks = [
-  { label: "How it works", href: "/#how-it-works" },
-  { label: "Find pets", href: "/discover" },
-  { label: "Success stories", href: "/#stories" },
-  { label: "Blog", href: "/blog" },
-  { label: "About us", href: "/about" },
-];
+  { key: "nav.howItWorks", href: "/#how-it-works" },
+  { key: "nav.findPets", href: "/discover" },
+  { key: "nav.successStories", href: "/#stories" },
+  { key: "nav.blog", href: "/blog" },
+  { key: "nav.aboutUs", href: "/about" },
+] as const;
+
+/**
+ * Two languages, so a pair of buttons beats a dropdown: the choice and the
+ * current state are both visible without opening anything.
+ */
+function LanguageToggle({
+  language,
+  setLanguage,
+  className = "",
+}: {
+  language: string;
+  setLanguage: (next: "en" | "ru") => void;
+  className?: string;
+}) {
+  return (
+    <div
+      className={`flex items-center rounded-xl border border-border overflow-hidden ${className}`}
+      role="group"
+      aria-label="Language"
+    >
+      {LANGUAGES.map((l) => (
+        <button
+          key={l.code}
+          type="button"
+          onClick={() => setLanguage(l.code)}
+          aria-pressed={language === l.code}
+          className={`px-2.5 h-9 text-xs font-medium transition-colors ${
+            language === l.code
+              ? "bg-secondary text-foreground"
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+          data-testid={`btn-lang-${l.code}`}
+        >
+          {l.code.toUpperCase()}
+        </button>
+      ))}
+    </div>
+  );
+}
 
 export function Navbar() {
   const [location, setLocation] = useLocation();
@@ -28,6 +68,7 @@ export function Navbar() {
   const [notifOpen, setNotifOpen] = useState(false);
 
   const { user, refreshSession } = useAuth();
+  const { t, language, setLanguage } = useI18n();
   const logout = useLogoutUser();
 
   const isLoggedIn = Boolean(user);
@@ -59,28 +100,29 @@ export function Navbar() {
           </Link>
 
           {/* Desktop Nav */}
-          <div className="hidden md:flex items-center gap-7">
+          <div className="hidden lg:flex items-center gap-5">
             {!isLoggedIn ? (
               <>
                 {publicNavLinks.map((link) => (
                   <a
-                    key={link.label}
+                    key={link.key}
                     href={link.href}
                     className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-                    data-testid={`link-${link.label.toLowerCase().replace(/\s+/g, "-")}`}
+                    data-testid={`link-${link.key.split(".")[1]}`}
                   >
-                    {link.label}
+                    {t(link.key)}
                   </a>
                 ))}
                 <div className="flex items-center gap-3 ml-2">
+                  <LanguageToggle language={language} setLanguage={setLanguage} />
                   <Link href="/login" data-testid="link-login">
                     <Button variant="outline" className="font-medium rounded-xl px-5 h-10 border-border text-foreground">
-                      Log in
+                      {t("nav.logIn")}
                     </Button>
                   </Link>
                   <Link href="/login?tab=register" data-testid="link-get-started">
                     <Button className="rounded-xl px-5 h-10 font-medium bg-forest text-forest-foreground hover:bg-forest/90">
-                      Sign up
+                      {t("nav.signUp")}
                     </Button>
                   </Link>
                 </div>
@@ -165,7 +207,7 @@ export function Navbar() {
           <Button
             variant="ghost"
             size="icon"
-            className="md:hidden z-50"
+            className="lg:hidden z-50"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             data-testid="btn-mobile-menu"
           >
@@ -191,18 +233,18 @@ export function Navbar() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -16 }}
               transition={{ duration: 0.2, ease: "easeOut" }}
-              className="absolute top-[4.5rem] left-0 right-0 bg-background border-b border-border shadow-xl p-6 flex flex-col gap-5 md:hidden z-40"
+              className="absolute top-[4.5rem] left-0 right-0 bg-background border-b border-border shadow-xl p-6 flex flex-col gap-5 lg:hidden z-40"
             >
               {!isLoggedIn ? (
                 <>
                   {publicNavLinks.map((link) => (
                     <a
-                      key={link.label}
+                      key={link.key}
                       href={link.href}
                       className="text-base font-medium text-foreground py-1.5 border-b border-border/40"
                       onClick={() => setMobileMenuOpen(false)}
                     >
-                      {link.label}
+                      {t(link.key)}
                     </a>
                   ))}
                   <div className="flex flex-col gap-3 pt-2">

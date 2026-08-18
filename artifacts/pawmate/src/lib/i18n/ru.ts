@@ -1,0 +1,158 @@
+import type { Dictionary } from "./dictionary";
+
+/**
+ * Russian. Typed against the English dictionary, so a key added there and
+ * forgotten here stops the build rather than surfacing as an English word in
+ * the middle of a Russian screen.
+ *
+ * Product names stay in Latin: PawMate is the brand, and transliterating it
+ * would read as a different company.
+ */
+export const ru: Dictionary = {
+  nav: {
+    howItWorks: "Как это работает",
+    findPets: "Найти питомцев",
+    successStories: "Истории",
+    blog: "Блог",
+    aboutUs: "О нас",
+    logIn: "Войти",
+    signUp: "Регистрация",
+    discover: "Лента",
+    liked: "Понравились",
+    community: "Сообщество",
+    createEvent: "+ Событие",
+    createStory: "+ История",
+    messages: "Сообщения",
+    myProfile: "Мой профиль",
+    settings: "Настройки",
+    logOut: "Выйти",
+    language: "Язык",
+  },
+
+  home: {
+    badge: "Знакомства, которые начинаются с лап",
+    heroTitle: "Где люди находят своего человека",
+    heroBody:
+      "PawMate — сообщество для тех, кто любит животных и ищет близкие отношения, дружбу и общие впечатления.",
+    join: "Присоединиться",
+    learnMore: "Подробнее",
+
+    featureMatchingTitle: "Подбор по питомцу",
+    featureMatchingBody: "Учитываем и ваших животных, и образ жизни.",
+    featureSafetyTitle: "Блокировка и жалобы",
+    featureSafetyBody: "Любого можно заблокировать или пожаловаться — прямо из профиля.",
+    featureTalkTitle: "Лёгкое начало",
+    featureTalkBody: "Первую фразу подскажем — о питомцах говорить проще.",
+    featureMeetTitle: "Встречи рядом",
+    featureMeetBody: "Дружба или любовь — среди тех, кто поблизости.",
+    featureCommunityTitle: "Живое сообщество",
+    featureCommunityBody: "Встречи и прогулки для тех, у кого есть питомцы.",
+
+    findYourMatch: "Найдите своего",
+    membersTitle: "Люди, которые любят животных так же, как вы",
+    browseMembers: "Смотреть анкеты",
+    betterTogether: "Вместе лучше",
+    betterTogetherBody: "С приложением проще найти тех, кто разделяет вашу любовь к животным.",
+    itsAMatch: "Взаимно!",
+    matchSubtitle: "Вы и Оливия понравились друг другу.",
+    downloadOn: "Загрузите в",
+    appStore: "App Store",
+    getItOn: "Доступно в",
+    googlePlay: "Google Play",
+
+    communityEyebrow: "Сообщество",
+    storiesTitle: "Истории тех, кто уже нашёл своих",
+
+    ctaTitle: "Готовы начать свою историю?",
+    ctaBody:
+      "Присоединяйтесь к тысячам любителей животных — здесь находят дружбу, любовь и виляющие хвосты.",
+    ctaSignUp: "Зарегистрироваться бесплатно",
+
+    awayFrom: "в {{distance}} км от вас",
+  },
+
+  footer: {
+    tagline:
+      "Настоящие знакомства на общей любви к животным. Найдите своего человека — и его питомца.",
+    discover: "Знакомства",
+    community: "Сообщество",
+    company: "О проекте",
+    newsletter: "Рассылка",
+    newsletterBody: "Изредка пишем о новых возможностях и встречах поблизости.",
+    newsletterClosed: "Подписка откроется к запуску.",
+    emailPlaceholder: "вы@пример.рф",
+    forPetLovers: "Тем, кто любит животных",
+    browseMembers: "Смотреть анкеты",
+    events: "События",
+    helpCenter: "Помощь",
+    guidelines: "Правила сообщества",
+    aboutUs: "О нас",
+    terms: "Условия использования",
+    privacy: "Политика конфиденциальности",
+    rights: "© {{year}} PawMate. Все права защищены.",
+  },
+
+  auth: {
+    welcome: "Добро пожаловать в Pawmate",
+    subtitle: "Знакомства, которые начинаются с лап.",
+    signIn: "Войти",
+    createAccount: "Создать аккаунт",
+    email: "Электронная почта",
+    password: "Пароль",
+    firstName: "Имя",
+    forgotPassword: "Забыли пароль?",
+    signingIn: "Входим…",
+    creating: "Создаём…",
+    couldNotSignIn: "Не удалось войти",
+    couldNotCreate: "Не удалось создать аккаунт",
+    passwordHint: "Не менее 10 символов",
+    consent: "Создавая аккаунт, вы принимаете {{terms}} и {{privacy}}.",
+    termsWord: "условия использования",
+    privacyWord: "политику конфиденциальности",
+  },
+
+  reset: {
+    forgotTitle: "Забыли пароль?",
+    forgotBody: "Укажите адрес, на который регистрировались, и мы пришлём ссылку для смены пароля.",
+    sendLink: "Прислать ссылку",
+    sending: "Отправляем…",
+    backToSignIn: "Вернуться ко входу",
+    checkEmail: "Проверьте почту",
+    checkEmailBody:
+      "Если на {{email}} есть аккаунт в Pawmate, ссылка для смены пароля уже в пути. Она действует час.",
+    couldNotSend: "Не удалось отправить ссылку",
+    chooseNew: "Придумайте новый пароль",
+    chooseNewBody:
+      "Не менее десяти символов, и такой, который не встречался в утечках. На других устройствах придётся войти заново.",
+    newPassword: "Новый пароль",
+    repeatIt: "Повторите",
+    mismatch: "Пароли не совпадают.",
+    setPassword: "Сохранить пароль",
+    saving: "Сохраняем…",
+    changed: "Пароль изменён",
+    changedBody: "Вы вышли на всех остальных устройствах. Войдите с новым паролем.",
+    couldNotChange: "Не удалось изменить пароль",
+    askAgain: "Запросите новую ссылку и попробуйте снова.",
+  },
+
+  pending: {
+    visitHelp: "Перейти в раздел помощи",
+    backToStart: "На главную",
+    notWritten:
+      "Он ещё не написан. Мы предпочитаем сказать это прямо, а не показывать текст, который выглядит официальным, но им не является. Опубликуем настоящий, когда будет готов.",
+    termsTitle: "Условия использования",
+    termsBlurb: "Условия описывают, чего вы вправе ждать от PawMate и чего мы ждём от вас.",
+    privacyTitle: "Политика конфиденциальности",
+    privacyBlurb:
+      "Политика объясняет, какие данные мы храним, где они находятся и что вы можете попросить с ними сделать.",
+    guidelinesTitle: "Правила сообщества",
+    guidelinesBlurb:
+      "Правила описывают, как здесь принято обращаться друг с другом и что бывает, когда это нарушают.",
+    blogTitle: "Блог",
+    blogBlurb: "Заметки о животных, их людях и о том, что мы здесь строим.",
+  },
+
+  common: {
+    tryAgain: "Попробуйте ещё раз.",
+  },
+};

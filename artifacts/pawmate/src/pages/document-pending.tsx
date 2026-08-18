@@ -2,6 +2,7 @@ import { Link } from "wouter";
 import { motion } from "framer-motion";
 import { FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useT, type TranslationKey } from "@/lib/i18n";
 
 /**
  * Stands in for a document that has not been written yet.
@@ -12,7 +13,9 @@ import { Button } from "@/components/ui/button";
  * exists, saying so plainly beats a link into nothing — and beats inventing
  * legal wording that would look authoritative while carrying no weight.
  */
-export function DocumentPending({ title, blurb }: { title: string; blurb: string }) {
+export function DocumentPending({ titleKey, blurbKey }: { titleKey: TranslationKey; blurbKey: TranslationKey }) {
+  const t = useT();
+
   return (
     <div className="min-h-[calc(100vh-4.5rem)] bg-background flex items-center justify-center px-4 py-20">
       <motion.div
@@ -25,23 +28,22 @@ export function DocumentPending({ title, blurb }: { title: string; blurb: string
           <FileText className="w-6 h-6 text-forest" strokeWidth={1.6} />
         </span>
 
-        <h1 className="font-serif text-3xl md:text-4xl font-semibold text-forest mb-4">{title}</h1>
+        <h1 className="font-serif text-3xl md:text-4xl font-semibold text-forest mb-4">{t(titleKey)}</h1>
 
-        <p className="text-foreground/70 leading-relaxed mb-3">{blurb}</p>
+        <p className="text-foreground/70 leading-relaxed mb-3">{t(blurbKey)}</p>
         <p className="text-foreground/70 leading-relaxed mb-9">
-          It isn't written yet. Rather than show you a page of text that looks official and
-          isn't, we'd rather say so — and publish the real thing when it's ready.
+          {t("pending.notWritten")}
         </p>
 
         <div className="flex flex-wrap gap-3 justify-center">
           <Link href="/help">
             <Button className="h-12 rounded-xl px-6 bg-forest text-forest-foreground hover:bg-forest/90 font-medium">
-              Visit the Help Center
+              {t("pending.visitHelp")}
             </Button>
           </Link>
           <Link href="/">
             <Button variant="outline" className="h-12 rounded-xl px-6 border-card-border bg-card text-forest">
-              Back to the start
+              {t("pending.backToStart")}
             </Button>
           </Link>
         </div>
@@ -51,37 +53,17 @@ export function DocumentPending({ title, blurb }: { title: string; blurb: string
 }
 
 export function Terms() {
-  return (
-    <DocumentPending
-      title="Terms of Service"
-      blurb="The terms set out what you can expect from PawMate and what we expect of you."
-    />
-  );
+  return <DocumentPending titleKey="pending.termsTitle" blurbKey="pending.termsBlurb" />;
 }
 
 export function Privacy() {
-  return (
-    <DocumentPending
-      title="Privacy Policy"
-      blurb="The privacy policy explains what we hold about you, where it lives, and what you can ask us to do with it."
-    />
-  );
+  return <DocumentPending titleKey="pending.privacyTitle" blurbKey="pending.privacyBlurb" />;
 }
 
 export function Guidelines() {
-  return (
-    <DocumentPending
-      title="Community Guidelines"
-      blurb="The guidelines describe how people are expected to treat each other here, and what happens when they don't."
-    />
-  );
+  return <DocumentPending titleKey="pending.guidelinesTitle" blurbKey="pending.guidelinesBlurb" />;
 }
 
 export function Blog() {
-  return (
-    <DocumentPending
-      title="Blog"
-      blurb="Notes on pets, the people who love them, and what we're building here."
-    />
-  );
+  return <DocumentPending titleKey="pending.blogTitle" blurbKey="pending.blogBlurb" />;
 }

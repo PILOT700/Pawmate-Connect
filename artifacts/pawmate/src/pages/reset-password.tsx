@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { useRequestPasswordReset, useConfirmPasswordReset } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiErrorMessage } from "@/lib/api-error";
+import { useT } from "@/lib/i18n";
 
 function Shell({ children }: { children: React.ReactNode }) {
   return (
@@ -31,6 +32,7 @@ function Shell({ children }: { children: React.ReactNode }) {
 /** Step one: ask for the link. */
 function RequestForm() {
   const { toast } = useToast();
+  const t = useT();
   const requestReset = useRequestPasswordReset();
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
@@ -44,8 +46,8 @@ function RequestForm() {
     } catch (err) {
       toast({
         variant: "destructive",
-        title: "Couldn't send the link",
-        description: apiErrorMessage(err, "Please try again."),
+        title: t("reset.couldNotSend"),
+        description: apiErrorMessage(err, t("common.tryAgain")),
       });
     }
   };
@@ -56,15 +58,14 @@ function RequestForm() {
         <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
           <MailCheck className="w-6 h-6 text-primary" />
         </div>
-        <h1 className="font-serif text-2xl font-semibold text-foreground">Check your email</h1>
+        <h1 className="font-serif text-2xl font-semibold text-foreground">{t("reset.checkEmail")}</h1>
         {/* Worded so it stays true whether or not that address has an account —
             the server answers the same either way, on purpose. */}
         <p className="text-sm text-muted-foreground leading-relaxed">
-          If there's a Pawmate account for {email}, a link to choose a new password is on its
-          way. It works for one hour.
+          {t("reset.checkEmailBody", { email })}
         </p>
         <Link href="/login" className="inline-block text-sm text-primary hover:underline pt-2">
-          Back to sign in
+          {t("reset.backToSignIn")}
         </Link>
       </div>
     );
@@ -73,13 +74,13 @@ function RequestForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       <div className="space-y-2">
-        <h1 className="font-serif text-2xl font-semibold text-foreground">Forgot your password?</h1>
+        <h1 className="font-serif text-2xl font-semibold text-foreground">{t("reset.forgotTitle")}</h1>
         <p className="text-sm text-muted-foreground leading-relaxed">
-          Give us the address you signed up with and we'll send a link to set a new one.
+          {t("reset.forgotBody")}
         </p>
       </div>
       <div className="space-y-1.5">
-        <Label htmlFor="reset-email" className="text-sm font-medium">Email</Label>
+        <Label htmlFor="reset-email" className="text-sm font-medium">{t("auth.email")}</Label>
         <Input
           id="reset-email"
           type="email"
@@ -97,10 +98,10 @@ function RequestForm() {
         className="w-full h-11 rounded-xl bg-primary text-primary-foreground text-sm font-medium"
         data-testid="btn-reset-request"
       >
-        {requestReset.isPending ? "Sending…" : "Send the link"}
+        {requestReset.isPending ? t("reset.sending") : t("reset.sendLink")}
       </Button>
       <p className="text-center text-sm text-muted-foreground">
-        <Link href="/login" className="text-primary hover:underline">Back to sign in</Link>
+        <Link href="/login" className="text-primary hover:underline">{t("reset.backToSignIn")}</Link>
       </p>
     </form>
   );
@@ -110,6 +111,7 @@ function RequestForm() {
 function ConfirmForm({ token }: { token: string }) {
   const { toast } = useToast();
   const [, navigate] = useLocation();
+  const t = useT();
   const confirmReset = useConfirmPasswordReset();
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -124,15 +126,15 @@ function ConfirmForm({ token }: { token: string }) {
     try {
       await confirmReset.mutateAsync({ data: { token, password } });
       toast({
-        title: "Password changed",
-        description: "You've been signed out everywhere else. Sign in with the new one.",
+        title: t("reset.changed"),
+        description: t("reset.changedBody"),
       });
       navigate("/login");
     } catch (err) {
       toast({
         variant: "destructive",
-        title: "Couldn't change the password",
-        description: apiErrorMessage(err, "Ask for a fresh link and try again."),
+        title: t("reset.couldNotChange"),
+        description: apiErrorMessage(err, t("reset.askAgain")),
       });
     }
   };
@@ -140,14 +142,14 @@ function ConfirmForm({ token }: { token: string }) {
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       <div className="space-y-2">
-        <h1 className="font-serif text-2xl font-semibold text-foreground">Choose a new password</h1>
+        <h1 className="font-serif text-2xl font-semibold text-foreground">{t("reset.chooseNew")}</h1>
         <p className="text-sm text-muted-foreground leading-relaxed">
-          At least ten characters, and not one that has turned up in a data breach. Signing in anywhere else will need the new one.
+          {t("reset.chooseNewBody")}
         </p>
       </div>
 
       <div className="space-y-1.5">
-        <Label htmlFor="new-password" className="text-sm font-medium">New password</Label>
+        <Label htmlFor="new-password" className="text-sm font-medium">{t("reset.newPassword")}</Label>
         <div className="relative">
           <Input
             id="new-password"
@@ -172,7 +174,7 @@ function ConfirmForm({ token }: { token: string }) {
       </div>
 
       <div className="space-y-1.5">
-        <Label htmlFor="confirm-password" className="text-sm font-medium">Repeat it</Label>
+        <Label htmlFor="confirm-password" className="text-sm font-medium">{t("reset.repeatIt")}</Label>
         <Input
           id="confirm-password"
           type={show ? "text" : "password"}
@@ -184,7 +186,7 @@ function ConfirmForm({ token }: { token: string }) {
         />
         {mismatch && (
           <p className="text-xs text-destructive" data-testid="text-password-mismatch">
-            These two don't match.
+            {t("reset.mismatch")}
           </p>
         )}
       </div>
@@ -195,7 +197,7 @@ function ConfirmForm({ token }: { token: string }) {
         className="w-full h-11 rounded-xl bg-primary text-primary-foreground text-sm font-medium"
         data-testid="btn-reset-confirm"
       >
-        {confirmReset.isPending ? "Saving…" : "Set the password"}
+        {confirmReset.isPending ? t("reset.saving") : t("reset.setPassword")}
       </Button>
     </form>
   );
