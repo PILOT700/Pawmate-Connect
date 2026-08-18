@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Figtree:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,400;7..72,500;7..72,600;7..72,700&family=Onest:wght@300;400;500;600;700&display=swap');
 @import "tailwindcss";
 @import "tw-animate-css";
 @plugin "@tailwindcss/typography";
@@ -167,8 +167,8 @@
   --sidebar-accent-foreground: 38 15% 25%;
   --sidebar-ring: 106 10% 56%;
 
-  --app-font-sans: 'Figtree', system-ui, sans-serif;
-  --app-font-serif: 'Fraunces', Georgia, serif;
+  --app-font-sans: 'Onest', system-ui, sans-serif;
+  --app-font-serif: 'Literata', Georgia, serif;
   --app-font-mono: Menlo, monospace;
   --radius: 1rem;
   --shadow-2xs: 0px 2px 4px 0px rgba(92, 85, 82, 0.02);
