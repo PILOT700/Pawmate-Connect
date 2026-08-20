@@ -27,11 +27,16 @@
  *
  *  `alt` is not decoration: it is what someone using a screen reader hears, and
  *  what shows if the file is missing. Update it with the picture.
+ *
+ *  It is a dictionary key rather than a sentence, because a Russian reader
+ *  should not be read English. The empty string is the exception and means
+ *  what it means in HTML: this picture carries nothing a reader needs.
  */
+import type { TranslationKey } from "@/lib/i18n";
 
 export interface LandingImage {
   src: string;
-  alt: string;
+  alt: TranslationKey | "";
   /**
    * Optional wider versions of the same photograph. The browser picks one from
    * its own screen and connection, so a phone is not made to download a
@@ -54,12 +59,12 @@ export const heroImage: LandingImage = {
   ].join(", "),
   // Beside the text on a wide screen, full width once the two stack.
   sizes: "(min-width: 1024px) 58vw, 100vw",
-  alt: "Two couples walking a sunlit promenade with a golden retriever and a cat",
+  alt: "landing.heroAlt",
 };
 
 export const communityImage: LandingImage = {
   src: `${DIR}/community.png`,
-  alt: "A border collie running along a sunlit woodland path",
+  alt: "landing.communityAlt",
 };
 
 // Borrowed from Olivia's card: the caption beside it says she is the match, and
@@ -85,10 +90,10 @@ export interface LandingMember extends LandingImage {
  * a dachshund.
  */
 export const members: LandingMember[] = [
-  { name: "Olivia", age: 48, role: "Teacher", distanceKm: 2, src: `${DIR}/member-1.png`, alt: "Olivia's golden retriever running through a sunlit meadow" },
-  { name: "David", age: 52, role: "Architect", distanceKm: 5, src: `${DIR}/member-2.png`, alt: "David's ginger cat lying in a patch of sunlight" },
-  { name: "Sophie", age: 50, role: "Marketing Manager", distanceKm: 3, src: `${DIR}/member-3.png`, alt: "Sophie's border collie running along a woodland path" },
-  { name: "James", age: 54, role: "Entrepreneur", distanceKm: 4, src: `${DIR}/member-4.png`, alt: "James's Siamese cat sitting in the light" },
+  { name: "Olivia", age: 48, role: "Teacher", distanceKm: 2, src: `${DIR}/member-1.png`, alt: "landing.oliviaAlt" },
+  { name: "David", age: 52, role: "Architect", distanceKm: 5, src: `${DIR}/member-2.png`, alt: "landing.davidAlt" },
+  { name: "Sophie", age: 50, role: "Marketing Manager", distanceKm: 3, src: `${DIR}/member-3.png`, alt: "landing.sophieAlt" },
+  { name: "James", age: 54, role: "Entrepreneur", distanceKm: 4, src: `${DIR}/member-4.png`, alt: "landing.jamesAlt" },
 ];
 
 export interface LandingVoice extends LandingImage {

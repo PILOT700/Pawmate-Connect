@@ -16,6 +16,7 @@ import {
   Play,
 } from "lucide-react";
 import { heroImage, communityImage, matchImage, members, voices } from "@/lib/landing-images";
+import type { TranslationKey } from "@/lib/i18n";
 import { useT } from "@/lib/i18n";
 
 /**
@@ -60,6 +61,10 @@ function StoreBadge({ icon: Icon, small, large }: { icon: typeof Apple; small: s
 
 export default function Home() {
   const t = useT();
+
+  // An empty `alt` is meaningful HTML — it tells a screen reader to skip a
+  // picture that carries nothing. Only a real key gets translated.
+  const altText = (key: TranslationKey | "") => (key ? t(key) : "");
 
   return (
     <div className="flex flex-col">
@@ -118,7 +123,7 @@ export default function Home() {
               src={heroImage.src}
               srcSet={heroImage.srcSet}
               sizes={heroImage.sizes}
-              alt={heroImage.alt}
+              alt={altText(heroImage.alt)}
               // The one picture above the fold: fetched eagerly and early, so it
               // is not queued behind everything else the page asks for.
               fetchPriority="high"
@@ -168,7 +173,7 @@ export default function Home() {
                     className="bg-card border border-card-border rounded-2xl overflow-hidden shadow-xs"
                   >
                     <div className="aspect-[4/5] overflow-hidden bg-sand">
-                      <img src={m.src} alt={m.alt} className="w-full h-full object-cover" loading="lazy" />
+                      <img src={m.src} alt={altText(m.alt)} className="w-full h-full object-cover" loading="lazy" />
                     </div>
                     <div className="p-3.5">
                       <h3 className="font-semibold text-sm text-forest">{m.name}, {m.age}</h3>
@@ -194,7 +199,7 @@ export default function Home() {
                 <div className="pt-6 pb-7 px-5">
                   <p className="font-serif text-[0.95rem] text-forest mb-4">PawMate</p>
                   <div className="w-28 h-28 rounded-full overflow-hidden mx-auto mb-4 bg-sand">
-                    <img src={matchImage.src} alt={matchImage.alt} className="w-full h-full object-cover" loading="lazy" />
+                    <img src={matchImage.src} alt={altText(matchImage.alt)} className="w-full h-full object-cover" loading="lazy" />
                   </div>
                   <p className="font-serif text-[1.3rem] font-semibold text-forest">{t("home.itsAMatch")}</p>
                   <p className="text-[0.7rem] text-foreground/60 mt-1.5 leading-snug">
@@ -229,7 +234,7 @@ export default function Home() {
           <div className="h-72 lg:h-auto lg:min-h-[27rem] bg-sand">
             <img
               src={communityImage.src}
-              alt={communityImage.alt}
+              alt={altText(communityImage.alt)}
               className="w-full h-full object-cover"
               loading="lazy"
             />
@@ -264,7 +269,7 @@ export default function Home() {
                   </blockquote>
                   <figcaption className="flex items-center gap-2 mt-5 text-xs text-foreground/60">
                     <span className="w-7 h-7 rounded-full overflow-hidden bg-sand shrink-0">
-                      <img src={v.src} alt={v.alt} className="w-full h-full object-cover" loading="lazy" />
+                      <img src={v.src} alt={altText(v.alt)} className="w-full h-full object-cover" loading="lazy" />
                     </span>
                     — {v.who}
                   </figcaption>

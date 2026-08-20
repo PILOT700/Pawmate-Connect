@@ -605,6 +605,15 @@ export const en = {
     locPlaza: "City Plaza",
   },
 
+  landing: {
+    heroAlt: "Two couples walking a sunlit promenade with a golden retriever and a cat",
+    communityAlt: "A border collie running along a sunlit woodland path",
+    oliviaAlt: "Olivia's golden retriever running through a sunlit meadow",
+    davidAlt: "David's ginger cat lying in a patch of sunlight",
+    sophieAlt: "Sophie's border collie running along a woodland path",
+    jamesAlt: "James's Siamese cat sitting in the light",
+  },
+
   species: {
     dog: "Dog",
     cat: "Cat",
