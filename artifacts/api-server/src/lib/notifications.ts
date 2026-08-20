@@ -5,8 +5,22 @@ import { logger } from "./logger";
 export type NotificationInput = {
   userId: string;
   type: "match" | "message" | "view" | "playdate";
+  /**
+   * English text, rendered here and stored as written.
+   *
+   * It is the fallback: a reader whose client cannot resolve `params` sees
+   * this, and it is what every row created before `params` existed carries.
+   * For a `message` the body is the sender's own words and is shown verbatim
+   * whatever language the reader is in.
+   */
   title: string;
   body: string;
+  /**
+   * The values behind the sentence — a name, a place. The reader's client
+   * composes the wording from these in the reader's own language, so the
+   * server never decides what language a notification is read in.
+   */
+  params?: Record<string, string>;
   relatedEntityType?: string;
   relatedEntityId?: string;
   avatarUrl?: string | null;
@@ -59,6 +73,7 @@ export async function createNotifications(inputs: NotificationInput[]): Promise<
         type: input.type,
         title: input.title,
         body: input.body,
+        params: input.params ?? null,
         relatedEntityType: input.relatedEntityType ?? null,
         relatedEntityId: input.relatedEntityId ?? null,
         avatarUrl: input.avatarUrl ?? null,

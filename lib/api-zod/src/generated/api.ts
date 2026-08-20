@@ -1054,6 +1054,7 @@ export const ListNotificationsResponse = zod.object({
   "type": zod.enum(['match', 'message', 'view', 'playdate']),
   "title": zod.string(),
   "body": zod.string(),
+  "params": zod.record(zod.string(), zod.string()).nullish().describe('The values behind the text, so the client can compose the sentence in the reader\'s language. Null on rows written before this existed; those fall back to title and body, which are English.'),
   "relatedEntityType": zod.string().nullish(),
   "relatedEntityId": zod.string().uuid().nullish(),
   "avatarUrl": zod.string().nullish(),

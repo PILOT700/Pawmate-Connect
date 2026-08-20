@@ -80,6 +80,9 @@ router.post("/likes", requireAuth, async (req, res) => {
             type: "match" as const,
             title: "New match",
             body: `You and ${other?.firstName ?? "someone"} liked each other.`,
+            // Only when the name is known: without it the reader's client has
+            // nothing to compose from and is better off with the line above.
+            ...(other?.firstName ? { params: { name: other.firstName } } : {}),
             relatedEntityType: "match",
             relatedEntityId: match!.id,
             avatarUrl: other?.avatarUrl ?? null,

@@ -7,6 +7,7 @@ import { useListNotifications, useMarkNotificationRead, useMarkAllNotificationsR
 import { useToast } from "@/hooks/use-toast";
 import { apiErrorMessage } from "@/lib/api-error";
 import { useT, useFormatters } from "@/lib/i18n";
+import { notificationText } from "@/lib/notification-text";
 
 type NotifType = "match" | "message" | "view" | "playdate" | "comment" | "like";
 
@@ -176,6 +177,7 @@ export function NotificationsDrawer({ open, onClose }: Props) {
                     const notifType = mapNotificationType(n.type);
                     const href = getNotificationHref(n.type, n.relatedEntityId ?? undefined);
                     const displayTime = formatTime(n.createdAt as any);
+                    const text = notificationText(n, t);
 
                     return (
                       <motion.div
@@ -211,10 +213,10 @@ export function NotificationsDrawer({ open, onClose }: Props) {
 
                           <div className="flex-1 min-w-0">
                             <p className={`text-sm leading-snug mb-0.5 ${!n.read ? "font-semibold text-foreground" : "font-medium text-foreground"}`}>
-                              {n.title}
+                              {text.title}
                             </p>
                             <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">
-                              {n.body}
+                              {text.body}
                             </p>
                             <p className="text-[10px] text-muted-foreground/60 mt-1.5">{displayTime}</p>
                           </div>

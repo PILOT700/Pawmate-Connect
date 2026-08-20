@@ -491,11 +491,18 @@ export interface CreateStoryRequest {
   isPetMoment?: boolean;
 }
 
+/**
+ * The values behind the text, so the client can compose the sentence in the reader's language. Null on rows written before this existed; those fall back to title and body, which are English.
+ */
+export type NotificationParams = {[key: string]: string} | null;
+
 export interface Notification {
   id: string;
   type: NotificationType;
   title: string;
   body: string;
+  /** The values behind the text, so the client can compose the sentence in the reader's language. Null on rows written before this existed; those fall back to title and body, which are English. */
+  params?: NotificationParams;
   relatedEntityType?: string | null;
   relatedEntityId?: string | null;
   avatarUrl?: string | null;

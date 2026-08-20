@@ -5,6 +5,7 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { NotificationParams } from './notificationParams';
 import type { NotificationType } from './notificationType';
 
 export interface Notification {
@@ -12,6 +13,8 @@ export interface Notification {
   type: NotificationType;
   title: string;
   body: string;
+  /** The values behind the text, so the client can compose the sentence in the reader's language. Null on rows written before this existed; those fall back to title and body, which are English. */
+  params?: NotificationParams;
   relatedEntityType?: string | null;
   relatedEntityId?: string | null;
   avatarUrl?: string | null;

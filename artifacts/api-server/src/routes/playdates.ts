@@ -61,6 +61,7 @@ router.post("/matches/:matchId/playdates", requireAuth, async (req, res) => {
       type: "playdate",
       title: "Playdate invite",
       body: `${proposer?.firstName ?? "Your match"} suggested ${body.place}.`,
+      ...(proposer?.firstName ? { params: { name: proposer.firstName, place: body.place } } : {}),
       relatedEntityType: "match",
       relatedEntityId: matchId,
       avatarUrl: proposer?.avatarUrl ?? null,
