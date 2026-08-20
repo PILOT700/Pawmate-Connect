@@ -6,36 +6,63 @@
  * `en-US` with `hour12: true`, which reads "3:33 PM" and puts the month first —
  * correct in one country and confusing across the ones this is built for.
  *
- * The locale stays English because the interface is still English; only the
- * conventions change. When the interface is translated, this is the file that
- * learns the user's language.
+ * Now that the interface is translated, the locale follows the chosen language:
+ * a Russian screen that still said "Sat, 16 Aug" would be half-translated.
+ * `useFormatters` in `lib/i18n` is how screens reach these — the bare functions
+ * below stay exported for the odd caller that has no React context to read.
  */
-const LOCALE = "en-GB";
 
-/** 15:33 */
-export function formatTime(value: Date | string | number): string {
-  return new Date(value).toLocaleTimeString(LOCALE, {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  });
+/**
+ * `ru-RU` rather than plain `ru`: the bare language tag leaves the region to
+ * the browser, and a day-month order is the point of this file.
+ */
+const LOCALES = { en: "en-GB", ru: "ru-RU" } as const;
+
+export type FormatLanguage = keyof typeof LOCALES;
+
+export interface Formatters {
+  /** The BCP 47 tag behind these formatters, for one-off `Intl` calls. */
+  locale: string;
+  /** 15:33 */
+  formatTime: (value: Date | string | number) => string;
+  /** 16 Aug · 16 авг. */
+  formatDayMonth: (value: Date | string | number) => string;
+  /** Sat, 16 Aug · сб, 16 авг. */
+  formatWeekdayDate: (value: Date | string | number) => string;
+  /** 16/08/2026 · 16.08.2026 */
+  formatDate: (value: Date | string | number) => string;
 }
 
-/** 16 Aug */
-export function formatDayMonth(value: Date | string | number): string {
-  return new Date(value).toLocaleDateString(LOCALE, { day: "numeric", month: "short" });
+export function makeFormatters(language: FormatLanguage): Formatters {
+  const locale = LOCALES[language];
+
+  return {
+    locale,
+
+    formatTime: (value) =>
+      new Date(value).toLocaleTimeString(locale, {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+      }),
+
+    formatDayMonth: (value) =>
+      new Date(value).toLocaleDateString(locale, { day: "numeric", month: "short" }),
+
+    formatWeekdayDate: (value) =>
+      new Date(value).toLocaleDateString(locale, {
+        weekday: "short",
+        day: "numeric",
+        month: "short",
+      }),
+
+    formatDate: (value) => new Date(value).toLocaleDateString(locale),
+  };
 }
 
-/** Sat, 16 Aug */
-export function formatWeekdayDate(value: Date | string | number): string {
-  return new Date(value).toLocaleDateString(LOCALE, {
-    weekday: "short",
-    day: "numeric",
-    month: "short",
-  });
-}
+const english = makeFormatters("en");
 
-/** 16/08/2026 */
-export function formatDate(value: Date | string | number): string {
-  return new Date(value).toLocaleDateString(LOCALE);
-}
+export const formatTime = english.formatTime;
+export const formatDayMonth = english.formatDayMonth;
+export const formatWeekdayDate = english.formatWeekdayDate;
+export const formatDate = english.formatDate;

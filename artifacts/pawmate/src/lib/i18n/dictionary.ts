@@ -303,6 +303,24 @@ export const en = {
 } as const;
 
 /**
+ * A count-dependent string, as its Intl plural categories.
+ *
+ * `other` is required because every language has it — it is what the lookup
+ * falls back to. The rest are optional precisely so the languages can differ:
+ * English fills `one` and `other`, Russian fills `one`, `few` and `many`.
+ */
+export type PluralForms = Partial<Record<Intl.LDMLPluralRule, string>> & { other: string };
+
+/**
+ * Whether a node is a set of plural forms rather than a group of keys.
+ *
+ * The test is that *every* key is a plural category — `{ one, other }` passes,
+ * `{ title, subtitle }` does not. Without it a plural node would be widened
+ * key-by-key and Russian could not add the `few` and `many` English lacks.
+ */
+type IsPlural<T> = [keyof T] extends [Intl.LDMLPluralRule] ? true : false;
+
+/**
  * The shape every language must fill.
  *
  * `as const` above pins each English string to its own literal type, which is
@@ -310,6 +328,12 @@ export const en = {
  * the English words verbatim. Widening the leaves back to `string` keeps the
  * keys strict and lets the values differ.
  */
-type Widen<T> = { [K in keyof T]: T[K] extends string ? string : Widen<T[K]> };
+type Widen<T> = {
+  [K in keyof T]: T[K] extends string
+    ? string
+    : IsPlural<T[K]> extends true
+      ? PluralForms
+      : Widen<T[K]>;
+};
 
 export type Dictionary = Widen<typeof en>;

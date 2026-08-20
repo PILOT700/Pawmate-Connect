@@ -1,5 +1,8 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import { en, type Dictionary } from "./dictionary";
+import { ru as ruDateLocale } from "date-fns/locale";
+import type { Locale as DateFnsLocale } from "date-fns";
+import { makeFormatters, type Formatters } from "../format";
+import { en, type Dictionary, type PluralForms } from "./dictionary";
 import { ru } from "./ru";
 
 export const LANGUAGES = [
@@ -29,29 +32,67 @@ function detectLanguage(): Language {
   return preferred.some((l) => l?.toLowerCase().startsWith("ru")) ? "ru" : "en";
 }
 
-/** Follows the `a.b.c` path of a dictionary key. */
+/** A node is plural forms, not a group of keys, when every key is a category. */
+type IsPlural<T> = [keyof T] extends [Intl.LDMLPluralRule] ? true : false;
+
+/**
+ * Follows the `a.b.c` path of a dictionary key.
+ *
+ * Plural nodes are addressed whole — `messages.unreadCount`, never
+ * `messages.unreadCount.one` — so they are a leaf here rather than a branch,
+ * and they belong to `PluralKey` instead of `TranslationKey`.
+ */
 type Leaves<T, Prefix extends string = ""> = {
   [K in keyof T & string]: T[K] extends string
     ? `${Prefix}${K}`
-    : Leaves<T[K], `${Prefix}${K}.`>;
+    : IsPlural<T[K]> extends true
+      ? never
+      : Leaves<T[K], `${Prefix}${K}.`>;
+}[keyof T & string];
+
+type PluralLeaves<T, Prefix extends string = ""> = {
+  [K in keyof T & string]: T[K] extends string
+    ? never
+    : IsPlural<T[K]> extends true
+      ? `${Prefix}${K}`
+      : PluralLeaves<T[K], `${Prefix}${K}.`>;
 }[keyof T & string];
 
 export type TranslationKey = Leaves<Dictionary>;
+export type PluralKey = PluralLeaves<Dictionary>;
 
 interface I18nValue {
   language: Language;
   setLanguage: (next: Language) => void;
   t: (key: TranslationKey, vars?: Record<string, string | number>) => string;
+  tn: (key: PluralKey, count: number, vars?: Record<string, string | number>) => string;
 }
 
 const I18nContext = createContext<I18nValue | null>(null);
 
-function lookup(dict: Dictionary, key: string): string | undefined {
-  const value = key.split(".").reduce<unknown>((acc, part) => {
+function lookupNode(dict: Dictionary, key: string): unknown {
+  return key.split(".").reduce<unknown>((acc, part) => {
     if (acc && typeof acc === "object" && part in acc) return (acc as Record<string, unknown>)[part];
     return undefined;
   }, dict);
+}
+
+function lookup(dict: Dictionary, key: string): string | undefined {
+  const value = lookupNode(dict, key);
   return typeof value === "string" ? value : undefined;
+}
+
+function lookupForms(dict: Dictionary, key: string): PluralForms | undefined {
+  const value = lookupNode(dict, key);
+  return value && typeof value === "object" ? (value as PluralForms) : undefined;
+}
+
+/** Fills `{{name}}` placeholders, leaving any it has no value for untouched. */
+function fill(template: string, vars?: Record<string, string | number>): string {
+  if (!vars) return template;
+  return template.replace(/\{\{(\w+)\}\}/g, (whole, name: string) =>
+    name in vars ? String(vars[name]) : whole,
+  );
 }
 
 export function I18nProvider({ children }: { children: ReactNode }) {
@@ -76,16 +117,31 @@ export function I18nProvider({ children }: { children: ReactNode }) {
       // Falls back to English rather than showing the raw key: an untranslated
       // sentence is readable, `home.ctaBody` is not.
       const template = lookup(DICTIONARIES[language], key) ?? lookup(en, key) ?? key;
-
-      if (!vars) return template;
-      return template.replace(/\{\{(\w+)\}\}/g, (whole, name: string) =>
-        name in vars ? String(vars[name]) : whole,
-      );
+      return fill(template, vars);
     },
     [language],
   );
 
-  const value = useMemo(() => ({ language, setLanguage, t }), [language, setLanguage, t]);
+  /**
+   * The count-dependent twin of `t`. Russian needs one/few/many where English
+   * needs one/other, so the category comes from `Intl.PluralRules` for the
+   * language actually being shown — never from a hand-written `n === 1`.
+   *
+   * `{{count}}` is filled in automatically; anything else comes from `vars`.
+   */
+  const tn = useCallback<I18nValue["tn"]>(
+    (key, count, vars) => {
+      const forms = lookupForms(DICTIONARIES[language], key) ?? lookupForms(en, key);
+      if (!forms) return key;
+
+      const rule = new Intl.PluralRules(language).select(count);
+      const template = forms[rule] ?? forms.other;
+      return fill(template, { count, ...vars });
+    },
+    [language],
+  );
+
+  const value = useMemo(() => ({ language, setLanguage, t, tn }), [language, setLanguage, t, tn]);
 
   return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
 }
@@ -99,6 +155,11 @@ export function useI18n(): I18nValue {
 /** Shorthand for the common case of only needing the translate function. */
 export function useT(): I18nValue["t"] {
   return useI18n().t;
+}
+
+/** Shorthand for screens that only need the count-aware translate function. */
+export function useTn(): I18nValue["tn"] {
+  return useI18n().tn;
 }
 
 /**
@@ -116,4 +177,23 @@ export function usePlural() {
     },
     [language],
   );
+}
+
+/**
+ * Dates and times in the chosen language. Wraps `lib/format`, which holds the
+ * day-first, 24-hour conventions this audience expects; the language only picks
+ * which locale renders them.
+ */
+export function useFormatters(): Formatters {
+  const { language } = useI18n();
+  return useMemo(() => makeFormatters(language), [language]);
+}
+
+/**
+ * The locale object `date-fns` wants, for the two screens that use it to say
+ * things like "3 days ago" — `undefined` is its own English default.
+ */
+export function useDateFnsLocale(): DateFnsLocale | undefined {
+  const { language } = useI18n();
+  return language === "ru" ? ruDateLocale : undefined;
 }
