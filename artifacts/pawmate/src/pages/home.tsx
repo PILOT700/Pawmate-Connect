@@ -265,13 +265,13 @@ export default function Home() {
                 <figure key={v.who} className="bg-card border border-card-border rounded-2xl p-5 flex flex-col">
                   <Quote className="w-5 h-5 text-warm/70 fill-warm/30 mb-3" />
                   <blockquote className="text-[0.85rem] text-foreground/80 leading-relaxed flex-1">
-                    {v.quote}
+                    {t(v.quote)}
                   </blockquote>
                   <figcaption className="flex items-center gap-2 mt-5 text-xs text-foreground/60">
                     <span className="w-7 h-7 rounded-full overflow-hidden bg-sand shrink-0">
                       <img src={v.src} alt={altText(v.alt)} className="w-full h-full object-cover" loading="lazy" />
                     </span>
-                    — {v.who}
+                    — {t(v.who)}
                   </figcaption>
                 </figure>
               ))}

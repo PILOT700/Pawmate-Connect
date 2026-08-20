@@ -97,27 +97,34 @@ export const members: LandingMember[] = [
 ];
 
 export interface LandingVoice extends LandingImage {
-  quote: string;
-  who: string;
+  quote: TranslationKey;
+  who: TranslationKey;
 }
 
-/** Illustrative testimonials. Nobody has said these things. */
+/**
+ * Illustrative testimonials. Nobody has said these things.
+ *
+ * Keys rather than sentences, and the types say so: an English quote written
+ * here would not compile. The names are transliterated rather than replaced,
+ * following `home.matchSubtitle`, where Olivia is Оливия — these are invented
+ * people, but they are still the same invented people in both languages.
+ */
 export const voices: LandingVoice[] = [
   {
-    quote: "I found not only a great companion, but my dog found a new best friend too!",
-    who: "Sarah & Max",
+    quote: "landing.voice1",
+    who: "landing.voice1Who",
     src: `${DIR}/voice-1.png`,
     alt: "",
   },
   {
-    quote: "PawMate brought us together. We fit in perfectly!",
-    who: "Laura & Charlie",
+    quote: "landing.voice2",
+    who: "landing.voice2Who",
     src: `${DIR}/voice-2.png`,
     alt: "",
   },
   {
-    quote: "Finally a place where pets come first. That makes all the difference.",
-    who: "Mark & Bella",
+    quote: "landing.voice3",
+    who: "landing.voice3Who",
     src: `${DIR}/voice-3.png`,
     alt: "",
   },

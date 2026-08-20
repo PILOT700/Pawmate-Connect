@@ -612,6 +612,12 @@ export const en = {
     davidAlt: "David's ginger cat lying in a patch of sunlight",
     sophieAlt: "Sophie's border collie running along a woodland path",
     jamesAlt: "James's Siamese cat sitting in the light",
+    voice1: "I found not only a great companion, but my dog found a new best friend too!",
+    voice1Who: "Sarah & Max",
+    voice2: "PawMate brought us together. We fit in perfectly!",
+    voice2Who: "Laura & Charlie",
+    voice3: "Finally a place where pets come first. That makes all the difference.",
+    voice3Who: "Mark & Bella",
   },
 
   species: {
