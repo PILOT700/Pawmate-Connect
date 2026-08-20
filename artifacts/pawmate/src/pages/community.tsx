@@ -6,7 +6,7 @@ import {
   ChevronDown, ChevronUp, Search, PawPrint, TreePine, Coffee,
   Heart, Star, Sparkles, Send, Filter, Loader
 } from "lucide-react";
-import { formatTime, formatDayMonth, formatWeekdayDate } from "@/lib/format";
+import { useT, useTn, useFormatters, type TranslationKey } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -27,13 +27,13 @@ import { apiErrorMessage } from "@/lib/api-error";
 
 type EventCategory = "all" | "meetup" | "cafe" | "adoption" | "training" | "trail";
 
-const CATEGORIES: { id: EventCategory; label: string; icon: React.ReactNode; color: string; activeBg: string }[] = [
-  { id: "all", label: "All Events", icon: <Sparkles className="w-3.5 h-3.5" />, color: "text-foreground", activeBg: "bg-foreground text-background" },
-  { id: "meetup", label: "Meetups", icon: <PawPrint className="w-3.5 h-3.5" />, color: "text-primary", activeBg: "bg-primary text-primary-foreground" },
-  { id: "cafe", label: "Pet Cafés", icon: <Coffee className="w-3.5 h-3.5" />, color: "text-amber-700", activeBg: "bg-amber-600 text-white" },
-  { id: "adoption", label: "Adoption", icon: <Heart className="w-3.5 h-3.5" />, color: "text-rose-600", activeBg: "bg-rose-500 text-white" },
-  { id: "training", label: "Training", icon: <Star className="w-3.5 h-3.5" />, color: "text-violet-600", activeBg: "bg-violet-500 text-white" },
-  { id: "trail", label: "Trail Walks", icon: <TreePine className="w-3.5 h-3.5" />, color: "text-emerald-700", activeBg: "bg-emerald-600 text-white" },
+const CATEGORIES: { id: EventCategory; label: TranslationKey; icon: React.ReactNode; color: string; activeBg: string }[] = [
+  { id: "all", label: "categoryFilter.all", icon: <Sparkles className="w-3.5 h-3.5" />, color: "text-foreground", activeBg: "bg-foreground text-background" },
+  { id: "meetup", label: "categoryFilter.meetup", icon: <PawPrint className="w-3.5 h-3.5" />, color: "text-primary", activeBg: "bg-primary text-primary-foreground" },
+  { id: "cafe", label: "categoryFilter.cafe", icon: <Coffee className="w-3.5 h-3.5" />, color: "text-amber-700", activeBg: "bg-amber-600 text-white" },
+  { id: "adoption", label: "categoryFilter.adoption", icon: <Heart className="w-3.5 h-3.5" />, color: "text-rose-600", activeBg: "bg-rose-500 text-white" },
+  { id: "training", label: "categoryFilter.training", icon: <Star className="w-3.5 h-3.5" />, color: "text-violet-600", activeBg: "bg-violet-500 text-white" },
+  { id: "trail", label: "categoryFilter.trail", icon: <TreePine className="w-3.5 h-3.5" />, color: "text-emerald-700", activeBg: "bg-emerald-600 text-white" },
 ];
 
 
@@ -48,6 +48,8 @@ const CATEGORY_STYLE: Record<Exclude<EventCategory, "all">, { badge: string; ico
 };
 
 function EventCard({ event, onRefetch }: { event: CommunityEvent; onRefetch: () => void }) {
+  const t = useT();
+  const { formatTime, formatWeekdayDate } = useFormatters();
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [newComment, setNewComment] = useState("");
   const { user } = useAuth();
@@ -81,8 +83,8 @@ function EventCard({ event, onRefetch }: { event: CommunityEvent; onRefetch: () 
     } catch (err) {
       toast({
         variant: "destructive",
-        title: "Error",
-        description: apiErrorMessage(err, "Failed to update RSVP"),
+        title: t("community.couldNotRsvp"),
+        description: apiErrorMessage(err, t("common.tryAgain")),
       });
     }
   };
@@ -98,8 +100,8 @@ function EventCard({ event, onRefetch }: { event: CommunityEvent; onRefetch: () 
     } catch (err) {
       toast({
         variant: "destructive",
-        title: "Error",
-        description: apiErrorMessage(err, "Failed to update bookmark"),
+        title: t("community.couldNotSave"),
+        description: apiErrorMessage(err, t("common.tryAgain")),
       });
     }
   };
@@ -118,8 +120,8 @@ function EventCard({ event, onRefetch }: { event: CommunityEvent; onRefetch: () 
     } catch (err) {
       toast({
         variant: "destructive",
-        title: "Error",
-        description: apiErrorMessage(err, "Failed to add comment"),
+        title: t("community.couldNotComment"),
+        description: apiErrorMessage(err, t("common.tryAgain")),
       });
     }
   };
@@ -135,8 +137,8 @@ function EventCard({ event, onRefetch }: { event: CommunityEvent; onRefetch: () 
     } catch (err) {
       toast({
         variant: "destructive",
-        title: "Error",
-        description: apiErrorMessage(err, "Failed to update like"),
+        title: t("community.couldNotLike"),
+        description: apiErrorMessage(err, t("common.tryAgain")),
       });
     }
   };
@@ -157,7 +159,7 @@ function EventCard({ event, onRefetch }: { event: CommunityEvent; onRefetch: () 
           <img src={event.imageUrl} alt={event.title} className="w-full h-full object-cover object-center" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
           <span className="absolute top-3 left-3 flex items-center gap-1.5 bg-amber-400 text-amber-900 text-[11px] font-bold px-2.5 py-1 rounded-full">
-            <Sparkles className="w-3 h-3" /> Featured
+            <Sparkles className="w-3 h-3" /> {t("community.featured")}
           </span>
         </div>
       )}
@@ -172,7 +174,7 @@ function EventCard({ event, onRefetch }: { event: CommunityEvent; onRefetch: () 
               className="w-9 h-9 rounded-full object-cover border border-border/50 flex-shrink-0"
             />
             <div>
-              <p className="text-xs text-muted-foreground leading-none">Organized by</p>
+              <p className="text-xs text-muted-foreground leading-none">{t("community.organizedBy")}</p>
               <p className="text-sm font-semibold text-foreground leading-tight mt-0.5">
                 {event.organizer.firstName}
               </p>
@@ -180,7 +182,7 @@ function EventCard({ event, onRefetch }: { event: CommunityEvent; onRefetch: () 
           </div>
           <span className={`flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-full border flex-shrink-0 ${style.badge}`}>
             {style.icon}
-            {event.category.charAt(0).toUpperCase() + event.category.slice(1)}
+            {t(`category.${event.category}` as TranslationKey)}
           </span>
         </div>
 
@@ -217,9 +219,9 @@ function EventCard({ event, onRefetch }: { event: CommunityEvent; onRefetch: () 
           <div className="flex items-center justify-between text-xs">
             <span className="flex items-center gap-1.5 text-muted-foreground">
               <Users className="w-3.5 h-3.5" />
-              {event.attendeeCount} / {maxAttendees} attending
+              {t("community.attending", { count: event.attendeeCount, max: maxAttendees })}
             </span>
-            {almostFull && <span className="text-amber-600 font-semibold">Almost full!</span>}
+            {almostFull && <span className="text-amber-600 font-semibold">{t("community.almostFull")}</span>}
           </div>
           <div className="h-1.5 bg-secondary rounded-full overflow-hidden">
             <motion.div
@@ -244,7 +246,7 @@ function EventCard({ event, onRefetch }: { event: CommunityEvent; onRefetch: () 
               }`}
               data-testid={`btn-rsvp-${event.id}`}
             >
-              {event.rsvped ? "✓ Going" : "RSVP"}
+              {event.rsvped ? t("community.going") : t("community.rsvp")}
             </Button>
           </motion.div>
           <button
@@ -284,7 +286,7 @@ function EventCard({ event, onRefetch }: { event: CommunityEvent; onRefetch: () 
                     <Loader className="w-4 h-4 animate-spin text-muted-foreground" />
                   </div>
                 ) : comments.length === 0 ? (
-                  <p className="text-sm text-muted-foreground text-center py-2">No comments yet — be the first!</p>
+                  <p className="text-sm text-muted-foreground text-center py-2">{t("community.noComments")}</p>
                 ) : (
                   comments.map(c => (
                     <div key={c.id} className="flex gap-3">
@@ -310,13 +312,13 @@ function EventCard({ event, onRefetch }: { event: CommunityEvent; onRefetch: () 
 
                 {/* New comment input */}
                 <form onSubmit={handleAddComment} className="flex gap-2 items-center pt-1">
-                  <img src={user?.avatarUrl || FALLBACK_ORGANIZER_AVATAR} alt="You" className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
+                  <img src={user?.avatarUrl || FALLBACK_ORGANIZER_AVATAR} alt={t("community.you")} className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
                   <div className="flex-1 flex items-center bg-secondary/60 border border-border/50 rounded-full px-4 h-9 focus-within:border-primary/30 transition-colors">
                     <input
                       type="text"
                       value={newComment}
                       onChange={e => setNewComment(e.target.value)}
-                      placeholder="Add a comment…"
+                      placeholder={t("community.commentPlaceholder")}
                       className="bg-transparent text-sm w-full focus:outline-none"
                       data-testid={`input-comment-${event.id}`}
                     />
@@ -340,6 +342,9 @@ function EventCard({ event, onRefetch }: { event: CommunityEvent; onRefetch: () 
 }
 
 export default function Community() {
+  const t = useT();
+  const tn = useTn();
+  const { formatTime, formatDayMonth } = useFormatters();
   const [category, setCategory] = useState<EventCategory>("all");
   const [query, setQuery] = useState("");
   const { toast } = useToast();
@@ -355,11 +360,11 @@ export default function Community() {
     if (error) {
       toast({
         variant: "destructive",
-        title: "Error loading events",
-        description: apiErrorMessage(error, "Failed to load events"),
+        title: t("community.errorLoading"),
+        description: apiErrorMessage(error, t("common.tryAgain")),
       });
     }
-  }, [error, toast]);
+  }, [error, toast, t]);
 
   const filtered = events.filter(e => {
     const matchQuery = !query || e.title.toLowerCase().includes(query.toLowerCase()) || e.location.toLowerCase().includes(query.toLowerCase()) || e.tags.some(t => t.toLowerCase().includes(query.toLowerCase()));
@@ -371,8 +376,8 @@ export default function Community() {
       {/* Page header */}
       <div className="border-b border-border bg-background/95 backdrop-blur-md">
         <div className="container mx-auto px-4 md:px-8 pt-10 pb-6">
-          <h1 className="font-serif text-3xl md:text-4xl font-semibold text-foreground mb-1">Community</h1>
-          <p className="text-muted-foreground text-sm">Local events for pet lovers near you</p>
+          <h1 className="font-serif text-3xl md:text-4xl font-semibold text-foreground mb-1">{t("community.title")}</h1>
+          <p className="text-muted-foreground text-sm">{t("community.subtitle")}</p>
         </div>
       </div>
 
@@ -389,7 +394,7 @@ export default function Community() {
                 <Input
                   value={query}
                   onChange={e => setQuery(e.target.value)}
-                  placeholder="Search events, locations, or tags…"
+                  placeholder={t("community.searchPlaceholder")}
                   className="pl-10 h-11 rounded-full bg-card border-border"
                   data-testid="input-search-events"
                 />
@@ -408,7 +413,7 @@ export default function Community() {
                         : "bg-card border-border " + cat.color + " hover:border-primary/30"
                     }`}
                   >
-                    {cat.icon} {cat.label}
+                    {cat.icon} {t(cat.label)}
                   </button>
                 ))}
               </div>
@@ -422,7 +427,7 @@ export default function Community() {
             ) : (
               <>
                 <p className="text-xs text-muted-foreground font-medium">
-                  {filtered.length} event{filtered.length !== 1 ? "s" : ""} near you
+                  {tn("community.eventsNear", filtered.length)}
                 </p>
 
                 {/* Event cards */}
@@ -432,10 +437,10 @@ export default function Community() {
                       <div className="w-16 h-16 bg-secondary rounded-full flex items-center justify-center mx-auto mb-4">
                         <PawPrint className="w-7 h-7 text-muted-foreground" />
                       </div>
-                      <h3 className="font-serif text-xl text-foreground mb-2">No events found</h3>
-                      <p className="text-sm text-muted-foreground">Try a different category or search term</p>
+                      <h3 className="font-serif text-xl text-foreground mb-2">{t("community.noEvents")}</h3>
+                      <p className="text-sm text-muted-foreground">{t("community.noEventsBody")}</p>
                       <Button variant="outline" className="mt-4 rounded-full" onClick={() => { setCategory("all"); setQuery(""); }}>
-                        Clear filters
+                        {t("community.clearFilters")}
                       </Button>
                     </motion.div>
                   ) : (
@@ -459,9 +464,9 @@ export default function Community() {
 
             {/* Your RSVPs */}
             <div className="bg-card border border-border rounded-2xl p-5">
-              <h3 className="font-serif text-lg font-semibold text-foreground mb-4">Your RSVPs</h3>
+              <h3 className="font-serif text-lg font-semibold text-foreground mb-4">{t("community.yourRsvps")}</h3>
               {events.filter(e => e.rsvped).length === 0 ? (
-                <p className="text-sm text-muted-foreground">RSVP to events to see them here.</p>
+                <p className="text-sm text-muted-foreground">{t("community.noRsvps")}</p>
               ) : (
                 <div className="space-y-3">
                   {events.filter(e => e.rsvped).map(e => (
@@ -479,9 +484,9 @@ export default function Community() {
 
             {/* Saved events */}
             <div className="bg-card border border-border rounded-2xl p-5">
-              <h3 className="font-serif text-lg font-semibold text-foreground mb-4">Saved Events</h3>
+              <h3 className="font-serif text-lg font-semibold text-foreground mb-4">{t("community.savedEvents")}</h3>
               {events.filter(e => e.saved).length === 0 ? (
-                <p className="text-sm text-muted-foreground">Bookmark events to save them here.</p>
+                <p className="text-sm text-muted-foreground">{t("community.noSaved")}</p>
               ) : (
                 <div className="space-y-3">
                   {events.filter(e => e.saved).map(e => (
@@ -503,12 +508,12 @@ export default function Community() {
                 <Sparkles className="w-5 h-5 text-primary" />
               </div>
               <div>
-                <h3 className="font-serif text-base font-semibold text-foreground">Host an event</h3>
-                <p className="text-xs text-muted-foreground mt-1 leading-relaxed">Organize a meetup, walk, or gathering for the Pawmate community.</p>
+                <h3 className="font-serif text-base font-semibold text-foreground">{t("community.hostTitle")}</h3>
+                <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{t("community.hostBody")}</p>
               </div>
               <Link href="/create-event" data-testid="btn-host-event">
                 <Button className="w-full h-9 rounded-full text-sm bg-primary text-primary-foreground">
-                  Suggest an event
+                  {t("community.suggestEvent")}
                 </Button>
               </Link>
             </div>

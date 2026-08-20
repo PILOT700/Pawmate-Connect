@@ -160,7 +160,7 @@ export function MatchCelebrationModal({ open, profile, onClose }: MatchCelebrati
                   transition={{ delay: 0.2, type: "spring", stiffness: 300, damping: 24 }}
                   className="relative w-24 h-24 rounded-full border-4 border-white shadow-lg overflow-hidden bg-secondary z-10"
                 >
-                  <img src="/profile1.png" alt="You" className="w-full h-full object-cover" />
+                  <img src="/profile1.png" alt={t("messages.you")} className="w-full h-full object-cover" />
                 </motion.div>
 
                 {/* Heart burst */}
@@ -195,10 +195,10 @@ export function MatchCelebrationModal({ open, profile, onClose }: MatchCelebrati
               >
                 <p className="text-xs font-semibold text-primary uppercase tracking-widest mb-1">{t("home.itsAMatch")}</p>
                 <h2 className="font-serif text-2xl font-semibold text-foreground">
-                  You & {profile.name} liked each other
+                  {t("match.bothLiked", { name: profile.name })}
                 </h2>
                 <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
-                  You both have great taste. Say hello and see where it goes 🐾
+                  {t("match.greatTaste")}
                 </p>
               </motion.div>
             </div>
@@ -216,7 +216,7 @@ export function MatchCelebrationModal({ open, profile, onClose }: MatchCelebrati
                 data-testid="btn-send-first-message"
               >
                 <MessageCircle className="w-4 h-4 mr-2" />
-                Send {profile.name} a message
+                {t("match.sendMessage", { name: profile.name })}
               </Button>
               <Button
                 variant="ghost"
@@ -224,7 +224,7 @@ export function MatchCelebrationModal({ open, profile, onClose }: MatchCelebrati
                 className="w-full h-12 rounded-full text-muted-foreground text-sm"
                 data-testid="btn-keep-discovering"
               >
-                Keep discovering
+                {t("match.keepDiscovering")}
               </Button>
             </motion.div>
           </motion.div>

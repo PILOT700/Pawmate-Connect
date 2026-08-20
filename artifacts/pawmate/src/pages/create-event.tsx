@@ -17,10 +17,12 @@ import { useCreateEvent } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiErrorMessage } from "@/lib/api-error";
 import { uploadImage } from "@/lib/cloudinary";
+import { useT, type TranslationKey } from "@/lib/i18n";
 
 const CATEGORIES = ["meetup", "cafe", "adoption", "training", "trail"] as const;
 
 export default function CreateEvent() {
+  const t = useT();
   const [, setRoute] = useLocation();
   const { toast } = useToast();
   const [title, setTitle] = useState("");
@@ -47,7 +49,7 @@ export default function CreateEvent() {
     if (!file) return;
 
     if (!file.type.startsWith("image/")) {
-      setError("Please select an image file");
+      setError(t("story.imagesOnly"));
       return;
     }
 
@@ -76,12 +78,12 @@ export default function CreateEvent() {
     setError(null);
 
     if (!title.trim() || !description.trim() || !location.trim()) {
-      setError("Title, description, and location are required");
+      setError(t("createEvent.fieldsRequired"));
       return;
     }
 
     if (!startDate || !startTime || !endDate || !endTime) {
-      setError("Start and end dates/times are required");
+      setError(t("createEvent.datesRequired"));
       return;
     }
 
@@ -90,7 +92,7 @@ export default function CreateEvent() {
       const endAt = new Date(`${endDate}T${endTime}`);
 
       if (startAt >= endAt) {
-        setError("End time must be after start time");
+        setError(t("createEvent.endAfterStart"));
         return;
       }
 
@@ -116,14 +118,14 @@ export default function CreateEvent() {
       });
 
       toast({
-        title: "Success",
-        description: "Event created successfully!",
+        title: t("common.success"),
+        description: t("createEvent.created"),
       });
 
       setRoute("/community");
     } catch (err) {
       setIsUploading(false);
-      setError(apiErrorMessage(err, "Could not create event"));
+      setError(apiErrorMessage(err, t("createEvent.couldNotCreate")));
     }
   };
 
@@ -137,10 +139,10 @@ export default function CreateEvent() {
           className="bg-card border border-border rounded-3xl p-8 shadow-xl"
         >
           <h1 className="font-serif text-3xl font-semibold text-foreground mb-2">
-            Create Event
+            {t("createEvent.title")}
           </h1>
           <p className="text-muted-foreground mb-8">
-            Organize a fun gathering for pet lovers in your community
+            {t("createEvent.subtitle")}
           </p>
 
           {error && (
@@ -153,12 +155,12 @@ export default function CreateEvent() {
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Image Upload */}
             <div className="space-y-2">
-              <Label className="text-sm font-medium">Event Image</Label>
+              <Label className="text-sm font-medium">{t("createEvent.imageLabel")}</Label>
               {imagePreview ? (
                 <div className="relative rounded-xl overflow-hidden">
                   <img
                     src={imagePreview}
-                    alt="Event preview"
+                    alt={t("createEvent.preview")}
                     className="w-full h-48 object-cover"
                   />
                   <button
@@ -177,7 +179,7 @@ export default function CreateEvent() {
                   <div className="flex flex-col items-center justify-center pt-5 pb-6">
                     <Upload className="w-6 h-6 text-muted-foreground mb-2" />
                     <p className="text-sm text-muted-foreground">
-                      Click to upload event image
+                      {t("createEvent.uploadHint")}
                     </p>
                   </div>
                   <input
@@ -193,11 +195,11 @@ export default function CreateEvent() {
             {/* Title */}
             <div className="space-y-2">
               <Label htmlFor="title" className="text-sm font-medium">
-                Event Title *
+                {t("createEvent.titleLabel")}
               </Label>
               <Input
                 id="title"
-                placeholder="e.g., Dog Park Playdate"
+                placeholder={t("createEvent.titlePlaceholder")}
                 className="h-11 bg-background rounded-xl"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
@@ -208,11 +210,11 @@ export default function CreateEvent() {
             {/* Description */}
             <div className="space-y-2">
               <Label htmlFor="description" className="text-sm font-medium">
-                Description *
+                {t("createEvent.descLabel")}
               </Label>
               <Textarea
                 id="description"
-                placeholder="Tell people about your event..."
+                placeholder={t("createEvent.descPlaceholder")}
                 className="bg-background rounded-xl resize-none"
                 rows={4}
                 value={description}
@@ -224,11 +226,11 @@ export default function CreateEvent() {
             {/* Location */}
             <div className="space-y-2">
               <Label htmlFor="location" className="text-sm font-medium">
-                Location *
+                {t("createEvent.locationLabel")}
               </Label>
               <Input
                 id="location"
-                placeholder="e.g., Central Park, New York"
+                placeholder={t("createEvent.locationPlaceholder")}
                 className="h-11 bg-background rounded-xl"
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
@@ -239,7 +241,7 @@ export default function CreateEvent() {
             {/* Category */}
             <div className="space-y-2">
               <Label htmlFor="category" className="text-sm font-medium">
-                Category *
+                {t("createEvent.categoryLabel")}
               </Label>
               <Select value={category} onValueChange={(val) => setCategory(val as typeof CATEGORIES[number])}>
                 <SelectTrigger className="h-11 bg-background rounded-xl">
@@ -248,7 +250,7 @@ export default function CreateEvent() {
                 <SelectContent>
                   {CATEGORIES.map((cat) => (
                     <SelectItem key={cat} value={cat}>
-                      {cat.charAt(0).toUpperCase() + cat.slice(1)}
+                      {t(`category.${cat}` as TranslationKey)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -259,7 +261,7 @@ export default function CreateEvent() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="startDate" className="text-sm font-medium">
-                  Start Date *
+                  {t("createEvent.startDate")}
                 </Label>
                 <Input
                   id="startDate"
@@ -272,7 +274,7 @@ export default function CreateEvent() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="startTime" className="text-sm font-medium">
-                  Start Time *
+                  {t("createEvent.startTime")}
                 </Label>
                 <Input
                   id="startTime"
@@ -285,7 +287,7 @@ export default function CreateEvent() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="endDate" className="text-sm font-medium">
-                  End Date *
+                  {t("createEvent.endDate")}
                 </Label>
                 <Input
                   id="endDate"
@@ -298,7 +300,7 @@ export default function CreateEvent() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="endTime" className="text-sm font-medium">
-                  End Time *
+                  {t("createEvent.endTime")}
                 </Label>
                 <Input
                   id="endTime"
@@ -314,12 +316,12 @@ export default function CreateEvent() {
             {/* Max Attendees */}
             <div className="space-y-2">
               <Label htmlFor="maxAttendees" className="text-sm font-medium">
-                Max Attendees (Optional)
+                {t("createEvent.maxLabel")}
               </Label>
               <Input
                 id="maxAttendees"
                 type="number"
-                placeholder="Leave blank for unlimited"
+                placeholder={t("createEvent.maxPlaceholder")}
                 className="h-11 bg-background rounded-xl"
                 value={maxAttendees}
                 onChange={(e) => setMaxAttendees(e.target.value)}
@@ -329,10 +331,10 @@ export default function CreateEvent() {
 
             {/* Tags */}
             <div className="space-y-2">
-              <Label className="text-sm font-medium">Tags (Optional)</Label>
+              <Label className="text-sm font-medium">{t("createEvent.tagsLabel")}</Label>
               <div className="flex gap-2">
                 <Input
-                  placeholder="Add a tag and press Enter"
+                  placeholder={t("createEvent.tagPlaceholder")}
                   className="h-11 bg-background rounded-xl"
                   value={tagInput}
                   onChange={(e) => setTagInput(e.target.value)}
@@ -349,7 +351,7 @@ export default function CreateEvent() {
                   onClick={handleAddTag}
                   className="h-11 rounded-xl"
                 >
-                  Add
+                  {t("createEvent.addTag")}
                 </Button>
               </div>
               {tags.length > 0 && (
@@ -380,7 +382,7 @@ export default function CreateEvent() {
                 disabled={isSubmitting}
                 className="flex-1 h-11 rounded-xl bg-primary text-primary-foreground font-medium"
               >
-                {isUploading ? "Uploading…" : isSubmitting ? "Creating…" : "Create Event"}
+                {isUploading ? t("story.uploading") : isSubmitting ? t("createEvent.creating") : t("createEvent.submit")}
               </Button>
               <Button
                 type="button"
@@ -388,7 +390,7 @@ export default function CreateEvent() {
                 onClick={() => setRoute("/community")}
                 className="flex-1 h-11 rounded-xl"
               >
-                Cancel
+                {t("common.cancel")}
               </Button>
             </div>
           </form>

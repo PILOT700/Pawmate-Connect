@@ -229,7 +229,7 @@ function DailySparkCard({
             <Heart className="w-4 h-4 text-rose-500 fill-rose-500" />
           </div>
           <p className="text-sm text-rose-700 font-medium flex-1">
-            You liked <span className="font-semibold">{spark.name}</span> — fingers crossed for a mutual match! 🐾
+            {t("discover.youLiked", { name: spark.name })}
           </p>
           <button
             onClick={onDismiss}
@@ -522,7 +522,7 @@ export default function Discover() {
           <div className="text-center py-24">
             <p className="text-muted-foreground mb-4">{t("discover.couldNotLoad")}</p>
             <Button variant="outline" className="rounded-full" onClick={() => refetch()} data-testid="btn-retry-discover">
-              Try again
+              {t("discover.retry")}
             </Button>
           </div>
         ) : (
@@ -560,7 +560,7 @@ export default function Discover() {
                   onClick={() => { setLikedIds(new Set()); refetch(); }}
                   data-testid="btn-refresh-profiles"
                 >
-                  Refresh Profiles
+                  {t("discover.refreshProfiles")}
                 </Button>
               </div>
             ) : (

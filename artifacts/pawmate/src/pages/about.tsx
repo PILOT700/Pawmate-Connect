@@ -1,32 +1,20 @@
 import { Link } from "wouter";
 import { motion } from "framer-motion";
-import { PawPrint, Heart, Users, ShieldCheck } from "lucide-react";
+import { PawPrint, Heart, Users, ShieldCheck, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useT, type TranslationKey } from "@/lib/i18n";
 
-const PRINCIPLES = [
-  {
-    icon: PawPrint,
-    title: "Your pet is part of the introduction",
-    body: "A profile here has two halves. Yours, and the animal you share your life with. Species, breed, age, the photo you actually like — all of it sits alongside your own, because for most people it is not a detail, it is the shape of the day.",
-  },
-  {
-    icon: Heart,
-    title: "Interest is deliberate",
-    body: "You like someone from their profile or from the feed, and nothing happens until they like you back. There is no ranking to climb and no reward for opening the app more often.",
-  },
-  {
-    icon: Users,
-    title: "Meeting can be the point",
-    body: "Conversations can turn into a proposed playdate with a place and a time, and the community side runs real events — walks, meetups, cafés — that anyone can host and RSVP to.",
-  },
-  {
-    icon: ShieldCheck,
-    title: "Leaving is as easy as arriving",
-    body: "Anyone can be blocked or reported from their profile, blocks are visible and reversible in Settings, and deleting your account removes it. Nothing is designed to be hard to undo.",
-  },
+/** Keys rather than sentences: the copy lives in the dictionary, in both languages. */
+const PRINCIPLES: { icon: LucideIcon; title: TranslationKey; body: TranslationKey }[] = [
+  { icon: PawPrint, title: "about.petTitle", body: "about.petBody" },
+  { icon: Heart, title: "about.interestTitle", body: "about.interestBody" },
+  { icon: Users, title: "about.meetTitle", body: "about.meetBody" },
+  { icon: ShieldCheck, title: "about.leaveTitle", body: "about.leaveBody" },
 ];
 
 export default function About() {
+  const t = useT();
+
   return (
     <div className="min-h-screen bg-background">
       <section className="border-b border-border bg-card">
@@ -37,11 +25,10 @@ export default function About() {
             transition={{ duration: 0.5 }}
           >
             <h1 className="font-serif text-4xl md:text-6xl font-semibold text-foreground mb-6">
-              About Pawmate
+              {t("about.title")}
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground font-light leading-relaxed">
-              Pawmate is a place to meet people through the animals you both care about —
-              for a relationship, a friendship, or a standing walk on Sunday mornings.
+              {t("about.intro")}
             </p>
           </motion.div>
         </div>
@@ -57,8 +44,8 @@ export default function About() {
                   <Icon className="w-5 h-5 text-primary" />
                 </div>
                 <div>
-                  <h2 className="font-serif text-2xl font-semibold text-foreground mb-3">{p.title}</h2>
-                  <p className="text-muted-foreground leading-relaxed font-light">{p.body}</p>
+                  <h2 className="font-serif text-2xl font-semibold text-foreground mb-3">{t(p.title)}</h2>
+                  <p className="text-muted-foreground leading-relaxed font-light">{t(p.body)}</p>
                 </div>
               </div>
             );
@@ -67,18 +54,18 @@ export default function About() {
 
         <div className="mt-20 pt-12 border-t border-border text-center">
           <h2 className="font-serif text-2xl font-semibold text-foreground mb-3">
-            Questions about how something works?
+            {t("about.questionsTitle")}
           </h2>
           <p className="text-muted-foreground font-light mb-8">
-            The Help Center walks through profiles, matches, messages and events.
+            {t("about.questionsBody")}
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link href="/help">
-              <Button variant="outline" className="rounded-full px-8 h-12">Visit the Help Center</Button>
+              <Button variant="outline" className="rounded-full px-8 h-12">{t("pending.visitHelp")}</Button>
             </Link>
             <Link href="/discover">
               <Button className="rounded-full px-8 h-12 bg-primary text-primary-foreground">
-                Start exploring
+                {t("about.startExploring")}
               </Button>
             </Link>
           </div>

@@ -63,19 +63,23 @@ import {
 import { useAuth } from "@/contexts/auth-context";
 import { useToast } from "@/hooks/use-toast";
 import { apiErrorMessage } from "@/lib/api-error";
+import { useT, useTn, type TranslationKey } from "@/lib/i18n";
+import { lifestyleTagKey } from "@/lib/lifestyle-tags";
 
 const FALLBACK_IMAGE = "/profile1.png";
 
-const REPORT_REASONS: { value: ReportReason; label: string }[] = [
-  { value: "harassment", label: "Harassment or abuse" },
-  { value: "spam", label: "Spam or scam" },
-  { value: "fake_profile", label: "Fake profile" },
-  { value: "inappropriate_content", label: "Inappropriate content" },
-  { value: "animal_welfare", label: "Animal welfare concern" },
-  { value: "other", label: "Something else" },
+const REPORT_REASONS: { value: ReportReason; label: TranslationKey }[] = [
+  { value: "harassment", label: "profile.reasonHarassment" },
+  { value: "spam", label: "profile.reasonSpam" },
+  { value: "fake_profile", label: "profile.reasonFake" },
+  { value: "inappropriate_content", label: "profile.reasonInappropriate" },
+  { value: "animal_welfare", label: "profile.reasonAnimalWelfare" },
+  { value: "other", label: "profile.reasonOther" },
 ];
 
 export default function Profile() {
+  const t = useT();
+  const tn = useTn();
   const { id } = useParams();
   const { user: currentUser } = useAuth();
   const { toast } = useToast();
@@ -155,8 +159,8 @@ export default function Profile() {
       setLiked(false);
       toast({
         variant: "destructive",
-        title: "Couldn't like this profile",
-        description: apiErrorMessage(err, "Please try again."),
+        title: t("profile.couldNotLike"),
+        description: apiErrorMessage(err, t("common.tryAgain")),
       });
     }
   };
@@ -167,13 +171,13 @@ export default function Profile() {
 
     try {
       await blockUser.mutateAsync({ data: { userId: id } });
-      toast({ title: "Blocked", description: "You won't see each other on Pawmate." });
+      toast({ title: t("profile.blocked"), description: t("profile.blockedBody") });
       setLocation("/discover");
     } catch (err) {
       toast({
         variant: "destructive",
-        title: "Couldn't block this member",
-        description: apiErrorMessage(err, "Please try again."),
+        title: t("profile.couldNotBlock"),
+        description: apiErrorMessage(err, t("common.tryAgain")),
       });
     }
   };
@@ -187,12 +191,12 @@ export default function Profile() {
         data: { userId: id, reason: reportReason, details: reportDetails || undefined },
       });
       setReportDetails("");
-      toast({ title: "Report sent", description: "Thanks — we'll take a look." });
+      toast({ title: t("profile.reportSent"), description: t("profile.reportSentBody") });
     } catch (err) {
       toast({
         variant: "destructive",
-        title: "Couldn't send the report",
-        description: apiErrorMessage(err, "Please try again."),
+        title: t("profile.couldNotReport"),
+        description: apiErrorMessage(err, t("common.tryAgain")),
       });
     }
   };
@@ -211,10 +215,10 @@ export default function Profile() {
         <div className="w-16 h-16 rounded-full bg-secondary flex items-center justify-center mb-4">
           <PawPrint className="w-7 h-7 text-muted-foreground" />
         </div>
-        <h1 className="font-serif text-2xl text-foreground mb-2">Profile not found</h1>
-        <p className="text-muted-foreground mb-6">This member may have left Pawmate.</p>
+        <h1 className="font-serif text-2xl text-foreground mb-2">{t("profile.notFound")}</h1>
+        <p className="text-muted-foreground mb-6">{t("profile.notFoundBody")}</p>
         <Link href="/discover">
-          <Button className="rounded-full px-8">Back to Discover</Button>
+          <Button className="rounded-full px-8">{t("profile.backToDiscover")}</Button>
         </Link>
       </div>
     );
@@ -255,7 +259,7 @@ export default function Profile() {
           {/* Story Strip */}
           {(storiesLoading || stories.length > 0) && (
             <div className="mb-8">
-              <h2 className="font-serif text-xl font-medium text-foreground mb-4">Moments</h2>
+              <h2 className="font-serif text-xl font-medium text-foreground mb-4">{t("profile.moments")}</h2>
               {storiesLoading ? (
                 <div className="flex items-center justify-center py-8">
                   <Loader className="w-5 h-5 animate-spin text-muted-foreground" />
@@ -284,7 +288,7 @@ export default function Profile() {
               {isOwnProfile ? (
                 <Link href="/create-profile" data-testid="btn-edit-profile" className="flex-1 md:flex-none">
                   <Button size="lg" variant="outline" className="w-full rounded-full px-8 h-14 border-border">
-                    Edit profile
+                    {t("profile.edit")}
                   </Button>
                 </Link>
               ) : (
@@ -296,11 +300,11 @@ export default function Profile() {
                     className="flex-1 md:flex-none rounded-full px-8 bg-accent text-accent-foreground hover:bg-accent/90 shadow-sm border border-accent-foreground/10 h-14"
                     data-testid="btn-profile-like"
                   >
-                    <Heart className="w-5 h-5 mr-2 fill-current" /> {liked ? "Liked" : "Like"}
+                    <Heart className="w-5 h-5 mr-2 fill-current" /> {liked ? t("profile.likedState") : t("profile.like")}
                   </Button>
                   <Link href="/messages" data-testid="btn-profile-message" className="flex-1 md:flex-none">
                     <Button size="lg" variant="outline" className="w-full rounded-full px-8 h-14 border-border">
-                      <MessageCircle className="w-5 h-5 mr-2" /> Message
+                      <MessageCircle className="w-5 h-5 mr-2" /> {t("profile.message")}
                     </Button>
                   </Link>
                   <DropdownMenu>
@@ -309,7 +313,7 @@ export default function Profile() {
                         size="lg"
                         variant="outline"
                         className="rounded-full h-14 w-14 p-0 border-border flex-shrink-0"
-                        aria-label={`More options for ${profile.firstName}`}
+                        aria-label={t("profile.moreOptions", { name: profile.firstName })}
                         data-testid="btn-profile-more"
                       >
                         <MoreHorizontal className="w-5 h-5" />
@@ -317,14 +321,14 @@ export default function Profile() {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem onClick={() => setReportOpen(true)} data-testid="menu-report">
-                        <Flag className="w-4 h-4 mr-2" /> Report {profile.firstName}
+                        <Flag className="w-4 h-4 mr-2" /> {t("profile.reportName", { name: profile.firstName })}
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() => setBlockOpen(true)}
                         className="text-destructive focus:text-destructive"
                         data-testid="menu-block"
                       >
-                        <Ban className="w-4 h-4 mr-2" /> Block {profile.firstName}
+                        <Ban className="w-4 h-4 mr-2" /> {t("profile.blockName", { name: profile.firstName })}
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -338,20 +342,24 @@ export default function Profile() {
             <div className="md:col-span-3 space-y-10">
               {profile.bio && (
                 <section>
-                  <h2 className="font-serif text-2xl font-medium text-foreground mb-4">About Me</h2>
+                  <h2 className="font-serif text-2xl font-medium text-foreground mb-4">{t("profile.aboutMe")}</h2>
                   <p className="text-muted-foreground text-lg leading-relaxed font-light">{profile.bio}</p>
                 </section>
               )}
 
               {profile.lifestyleTags.length > 0 && (
                 <section>
-                  <h2 className="font-serif text-2xl font-medium text-foreground mb-4">Lifestyle</h2>
+                  <h2 className="font-serif text-2xl font-medium text-foreground mb-4">{t("profile.lifestyle")}</h2>
                   <div className="flex flex-wrap gap-2">
-                    {profile.lifestyleTags.map((tag) => (
-                      <Badge key={tag} variant="secondary" className="px-4 py-2 rounded-full text-sm bg-secondary text-secondary-foreground font-normal">
-                        {tag}
-                      </Badge>
-                    ))}
+                    {profile.lifestyleTags.map((tag) => {
+                      // A tag saved before this list changed has no key; show it as stored.
+                      const key = lifestyleTagKey(tag);
+                      return (
+                        <Badge key={tag} variant="secondary" className="px-4 py-2 rounded-full text-sm bg-secondary text-secondary-foreground font-normal">
+                          {key ? t(key) : tag}
+                        </Badge>
+                      );
+                    })}
                   </div>
                 </section>
               )}
@@ -359,7 +367,7 @@ export default function Profile() {
               {/* Compatibility score — mobile placement */}
               {!isOwnProfile && pet && (
                 <div className="md:hidden">
-                  <h2 className="font-serif text-2xl font-medium text-foreground mb-4">Your Match</h2>
+                  <h2 className="font-serif text-2xl font-medium text-foreground mb-4">{t("profile.yourMatch")}</h2>
                   <CompatibilityScore input={compatInput} />
                 </div>
               )}
@@ -369,7 +377,7 @@ export default function Profile() {
             <div className="md:col-span-2 space-y-6">
               {pet ? (
                 <div className="bg-secondary/30 rounded-[2rem] p-6 border border-secondary">
-                  <h2 className="font-serif text-2xl font-medium text-foreground mb-6 text-center">Meet {pet.name}</h2>
+                  <h2 className="font-serif text-2xl font-medium text-foreground mb-6 text-center">{t("profile.meetPet", { name: pet.name })}</h2>
                   {pet.photoUrl && (
                     <div className="aspect-square rounded-2xl overflow-hidden mb-6">
                       <img src={pet.photoUrl} alt={pet.name} className="w-full h-full object-cover" />
@@ -377,26 +385,26 @@ export default function Profile() {
                   )}
                   <div className="space-y-4">
                     <div className="flex justify-between items-center pb-3 border-b border-border/50">
-                      <span className="text-muted-foreground">Species</span>
-                      <span className="font-medium text-foreground capitalize">{pet.species}</span>
+                      <span className="text-muted-foreground">{t("profile.species")}</span>
+                      <span className="font-medium text-foreground">{t(`species.${pet.species}` as TranslationKey)}</span>
                     </div>
                     {pet.breed && (
                       <div className="flex justify-between items-center pb-3 border-b border-border/50">
-                        <span className="text-muted-foreground">Breed</span>
+                        <span className="text-muted-foreground">{t("profile.breed")}</span>
                         <span className="font-medium text-foreground">{pet.breed}</span>
                       </div>
                     )}
                     {pet.ageYears != null && (
                       <div className="flex justify-between items-center pb-3 border-b border-border/50">
-                        <span className="text-muted-foreground">Age</span>
+                        <span className="text-muted-foreground">{t("profile.age")}</span>
                         <span className="font-medium text-foreground">
-                          {pet.ageYears} {pet.ageYears === 1 ? "year" : "years"}
+                          {tn("profile.petYears", pet.ageYears)}
                         </span>
                       </div>
                     )}
                     {pet.traits.length > 0 && (
                       <div className="pt-2">
-                        <span className="text-muted-foreground block mb-2 text-sm">Traits</span>
+                        <span className="text-muted-foreground block mb-2 text-sm">{t("profile.traits")}</span>
                         <div className="flex flex-wrap gap-1">
                           {pet.traits.map((trait) => (
                             <Badge key={trait} variant="outline" className="rounded-full text-xs font-normal border-border bg-background">
@@ -412,11 +420,13 @@ export default function Profile() {
                 <div className="bg-secondary/30 rounded-[2rem] p-6 border border-secondary text-center">
                   <PawPrint className="w-7 h-7 text-muted-foreground mx-auto mb-3" />
                   <p className="text-sm text-muted-foreground mb-4">
-                    {isOwnProfile ? "You haven't added a pet yet." : `${profile.firstName} hasn't added a pet yet.`}
+                    {isOwnProfile
+                      ? t("profile.noPetOwn")
+                      : t("profile.noPetOther", { name: profile.firstName })}
                   </p>
                   {isOwnProfile && (
                     <Link href="/create-profile">
-                      <Button variant="outline" className="rounded-full">Add your pet</Button>
+                      <Button variant="outline" className="rounded-full">{t("profile.addPet")}</Button>
                     </Link>
                   )}
                 </div>
@@ -439,7 +449,7 @@ export default function Profile() {
           id: profile.id,
           name: profile.firstName,
           image: heroImage,
-          pet: { name: pet?.name ?? "their pet" },
+          pet: { name: pet?.name ?? t("profile.theirPet") },
         }}
         onClose={() => setMatchOpen(false)}
       />
@@ -447,17 +457,15 @@ export default function Profile() {
       <AlertDialog open={blockOpen} onOpenChange={setBlockOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Block {profile.firstName}?</AlertDialogTitle>
+            <AlertDialogTitle>{t("profile.blockTitle", { name: profile.firstName })}</AlertDialogTitle>
             <AlertDialogDescription>
-              You'll stop seeing each other on Pawmate, and any match between you ends —
-              along with the conversation. They aren't told they were blocked. You can
-              undo this in Settings.
+              {t("profile.blockBody")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel data-testid="btn-block-cancel">Cancel</AlertDialogCancel>
+            <AlertDialogCancel data-testid="btn-block-cancel">{t("common.cancel")}</AlertDialogCancel>
             <AlertDialogAction onClick={handleBlock} data-testid="btn-block-confirm">
-              Block
+              {t("profile.blockConfirm")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -466,10 +474,9 @@ export default function Profile() {
       <AlertDialog open={reportOpen} onOpenChange={setReportOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Report {profile.firstName}</AlertDialogTitle>
+            <AlertDialogTitle>{t("profile.reportTitle", { name: profile.firstName })}</AlertDialogTitle>
             <AlertDialogDescription>
-              Tell us what's wrong. Reports are private — {profile.firstName} won't know
-              who filed one.
+              {t("profile.reportBody", { name: profile.firstName })}
             </AlertDialogDescription>
           </AlertDialogHeader>
 
@@ -484,7 +491,7 @@ export default function Profile() {
               <SelectContent>
                 {REPORT_REASONS.map((reason) => (
                   <SelectItem key={reason.value} value={reason.value}>
-                    {reason.label}
+                    {t(reason.label)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -493,7 +500,7 @@ export default function Profile() {
             <Textarea
               value={reportDetails}
               onChange={(e) => setReportDetails(e.target.value)}
-              placeholder="Anything else we should know? (optional)"
+              placeholder={t("profile.reportPlaceholder")}
               maxLength={1000}
               className="rounded-xl resize-none"
               rows={3}
@@ -502,9 +509,9 @@ export default function Profile() {
           </div>
 
           <AlertDialogFooter>
-            <AlertDialogCancel data-testid="btn-report-cancel">Cancel</AlertDialogCancel>
+            <AlertDialogCancel data-testid="btn-report-cancel">{t("common.cancel")}</AlertDialogCancel>
             <AlertDialogAction onClick={handleReport} data-testid="btn-report-confirm">
-              Send report
+              {t("profile.sendReport")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

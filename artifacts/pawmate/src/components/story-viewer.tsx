@@ -159,7 +159,7 @@ export function StoryViewer({ stories, startIndex, name, avatar, open, onClose }
                 <p className="text-white text-sm font-semibold leading-tight drop-shadow-md">{name}</p>
                 {story.petMoment && (
                   <span className="flex items-center gap-1 text-white/80 text-[10px] font-medium">
-                    <PawPrint className="w-3 h-3" /> Pet moment
+                    <PawPrint className="w-3 h-3" /> {t("story.petMomentBadge")}
                   </span>
                 )}
               </div>

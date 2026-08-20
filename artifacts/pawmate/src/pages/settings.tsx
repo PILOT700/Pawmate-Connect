@@ -33,6 +33,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/auth-context";
 import { useToast } from "@/hooks/use-toast";
 import { apiErrorMessage } from "@/lib/api-error";
+import { useT, useI18n, useFormatters, LANGUAGES } from "@/lib/i18n";
 
 interface ToggleProps {
   enabled: boolean;
@@ -115,8 +116,11 @@ function Section({ title, children }: SectionProps) {
 }
 
 export default function Settings() {
+  const t = useT();
+  const { language } = useI18n();
+  const { formatDate } = useFormatters();
   const { toast } = useToast();
-  const { user, refreshSession } = useAuth();
+  const { refreshSession } = useAuth();
   const [, setLocation] = useLocation();
   const { data: settingsData, isLoading } = useGetMySettings();
   const updateMutation = useUpdateMySettings();
@@ -147,12 +151,12 @@ export default function Settings() {
       link.click();
       URL.revokeObjectURL(url);
 
-      toast({ title: "Downloaded", description: "Your data is in your downloads folder." });
+      toast({ title: t("settings.downloaded"), description: t("settings.downloadedBody") });
     } catch (err) {
       toast({
         variant: "destructive",
-        title: "Couldn't prepare your data",
-        description: apiErrorMessage(err, "Please try again."),
+        title: t("settings.couldNotExport"),
+        description: apiErrorMessage(err, t("common.tryAgain")),
       });
     } finally {
       setIsExporting(false);
@@ -169,12 +173,15 @@ export default function Settings() {
     try {
       await unblock.mutateAsync({ userId });
       await queryClient.invalidateQueries({ queryKey: getListBlockedUsersQueryKey() });
-      toast({ title: "Unblocked", description: `${firstName} can see you again.` });
+      toast({
+        title: t("settings.unblocked"),
+        description: t("settings.unblockedBody", { name: firstName }),
+      });
     } catch (err) {
       toast({
         variant: "destructive",
-        title: "Couldn't unblock",
-        description: apiErrorMessage(err, "Please try again."),
+        title: t("settings.couldNotUnblock"),
+        description: apiErrorMessage(err, t("common.tryAgain")),
       });
     }
   };
@@ -190,8 +197,8 @@ export default function Settings() {
     } catch (err) {
       toast({
         variant: "destructive",
-        title: "Couldn't delete your account",
-        description: apiErrorMessage(err, "Please try again."),
+        title: t("settings.couldNotDelete"),
+        description: apiErrorMessage(err, t("common.tryAgain")),
       });
     }
   };
@@ -232,8 +239,8 @@ export default function Settings() {
     } catch (err) {
       toast({
         variant: "destructive",
-        title: "Error",
-        description: apiErrorMessage(err, "Failed to save settings"),
+        title: t("settings.couldNotSave"),
+        description: apiErrorMessage(err, t("common.tryAgain")),
       });
       // Revert on error
       setSettings(prev => ({ ...prev, [key]: !v }));
@@ -245,23 +252,23 @@ export default function Settings() {
       {/* Header */}
       <div className="border-b border-border bg-background/95 backdrop-blur-md">
         <div className="container mx-auto px-4 md:px-8 py-10">
-          <h1 className="font-serif text-3xl md:text-4xl font-semibold text-foreground mb-1">Settings</h1>
-          <p className="text-muted-foreground text-sm">Manage your account and preferences</p>
+          <h1 className="font-serif text-3xl md:text-4xl font-semibold text-foreground mb-1">{t("settings.title")}</h1>
+          <p className="text-muted-foreground text-sm">{t("settings.subtitle")}</p>
         </div>
       </div>
 
       <div className="container mx-auto px-4 md:px-8 mt-8 max-w-2xl space-y-5">
 
         {/* Profile */}
-        <Section title="Profile">
+        <Section title={t("settings.secProfile")}>
           <Link href="/profile/me" data-testid="link-settings-profile">
             <div className="flex items-center gap-4 py-4 px-1 cursor-pointer hover:opacity-80 transition-opacity">
               <div className="w-14 h-14 rounded-full overflow-hidden bg-primary/10 border-2 border-border flex-shrink-0 flex items-center justify-center">
                 <User className="w-7 h-7 text-primary" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-foreground">Your Profile</p>
-                <p className="text-xs text-muted-foreground">Edit photos, bio, and lifestyle tags</p>
+                <p className="text-sm font-semibold text-foreground">{t("settings.yourProfile")}</p>
+                <p className="text-xs text-muted-foreground">{t("settings.yourProfileBody")}</p>
               </div>
               <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
             </div>
@@ -272,8 +279,8 @@ export default function Settings() {
                 <PawPrint className="w-4 h-4 text-amber-600" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-foreground">Pet Profile</p>
-                <p className="text-xs text-muted-foreground">Update your pet's details and photos</p>
+                <p className="text-sm font-medium text-foreground">{t("settings.petProfile")}</p>
+                <p className="text-xs text-muted-foreground">{t("settings.petProfileBody")}</p>
               </div>
               <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
             </div>
@@ -281,12 +288,12 @@ export default function Settings() {
         </Section>
 
         {/* Notifications */}
-        <Section title="Notifications">
+        <Section title={t("settings.secNotifications")}>
           <SettingRow
             icon={<Heart className="w-4 h-4 text-rose-500" />}
             iconBg="bg-rose-50"
-            label="New matches"
-            description="When someone likes you back"
+            label={t("settings.newMatches")}
+            description={t("settings.newMatchesBody")}
             toggle enabled={settings.notifyNewMatches}
             onToggle={toggle("notifyNewMatches")}
             testId="setting-new-matches"
@@ -294,8 +301,8 @@ export default function Settings() {
           <SettingRow
             icon={<MessageCircle className="w-4 h-4 text-primary" />}
             iconBg="bg-primary/10"
-            label="Messages"
-            description="When you receive a new message"
+            label={t("settings.messages")}
+            description={t("settings.messagesBody")}
             toggle enabled={settings.notifyMessages}
             onToggle={toggle("notifyMessages")}
             testId="setting-messages"
@@ -303,8 +310,8 @@ export default function Settings() {
           <SettingRow
             icon={<Eye className="w-4 h-4 text-muted-foreground" />}
             iconBg="bg-secondary"
-            label="Profile views"
-            description="When someone visits your profile"
+            label={t("settings.profileViews")}
+            description={t("settings.profileViewsBody")}
             toggle enabled={settings.notifyProfileViews}
             onToggle={toggle("notifyProfileViews")}
             testId="setting-profile-views"
@@ -312,8 +319,8 @@ export default function Settings() {
           <SettingRow
             icon={<Mail className="w-4 h-4 text-blue-500" />}
             iconBg="bg-blue-50"
-            label="Email notifications"
-            description="Weekly digest and match summaries"
+            label={t("settings.emailNotifs")}
+            description={t("settings.emailNotifsBody")}
             toggle enabled={settings.notifyEmail}
             onToggle={toggle("notifyEmail")}
             testId="setting-email-notifs"
@@ -321,8 +328,8 @@ export default function Settings() {
           <SettingRow
             icon={<Smartphone className="w-4 h-4 text-violet-500" />}
             iconBg="bg-violet-50"
-            label="Push notifications"
-            description="Real-time alerts on your device"
+            label={t("settings.pushNotifs")}
+            description={t("settings.pushNotifsBody")}
             toggle enabled={settings.notifyPush}
             onToggle={toggle("notifyPush")}
             testId="setting-push-notifs"
@@ -330,12 +337,12 @@ export default function Settings() {
         </Section>
 
         {/* Privacy */}
-        <Section title="Privacy">
+        <Section title={t("settings.secPrivacy")}>
           <SettingRow
             icon={<MapPin className="w-4 h-4 text-primary" />}
             iconBg="bg-primary/10"
-            label="Show distance"
-            description="Let others see how far away you are"
+            label={t("settings.showDistance")}
+            description={t("settings.showDistanceBody")}
             toggle enabled={settings.privacyShowDistance}
             onToggle={toggle("privacyShowDistance")}
             testId="setting-show-distance"
@@ -343,8 +350,8 @@ export default function Settings() {
           <SettingRow
             icon={<Eye className="w-4 h-4 text-muted-foreground" />}
             iconBg="bg-secondary"
-            label="Show last active"
-            description="Display when you were last online"
+            label={t("settings.lastActive")}
+            description={t("settings.lastActiveBody")}
             toggle enabled={settings.privacyShowLastActive}
             onToggle={toggle("privacyShowLastActive")}
             testId="setting-last-active"
@@ -352,7 +359,7 @@ export default function Settings() {
           <SettingRow
             icon={<User className="w-4 h-4 text-foreground" />}
             iconBg="bg-secondary"
-            label="Show age on profile"
+            label={t("settings.showAge")}
             toggle enabled={settings.privacyShowAge}
             onToggle={toggle("privacyShowAge")}
             testId="setting-show-age"
@@ -360,8 +367,8 @@ export default function Settings() {
           <SettingRow
             icon={<Shield className="w-4 h-4 text-amber-600" />}
             iconBg="bg-amber-50"
-            label="Incognito mode"
-            description="Browse profiles without being seen"
+            label={t("settings.incognito")}
+            description={t("settings.incognitoBody")}
             toggle enabled={settings.privacyIncognito}
             onToggle={toggle("privacyIncognito")}
             testId="setting-incognito"
@@ -369,8 +376,8 @@ export default function Settings() {
           <SettingRow
             icon={<Lock className="w-4 h-4 text-muted-foreground" />}
             iconBg="bg-secondary"
-            label="Read receipts"
-            description="Let matches know when you've read their messages"
+            label={t("settings.readReceipts")}
+            description={t("settings.readReceiptsBody")}
             toggle enabled={settings.readReceiptsEnabled}
             onToggle={toggle("readReceiptsEnabled")}
             testId="setting-read-receipts"
@@ -378,12 +385,12 @@ export default function Settings() {
         </Section>
 
         {/* Preferences */}
-        <Section title="Preferences">
+        <Section title={t("settings.secPreferences")}>
           <SettingRow
             icon={<Moon className="w-4 h-4 text-indigo-400" />}
             iconBg="bg-indigo-50"
-            label="Dark mode"
-            description="Easy on the eyes at night"
+            label={t("settings.darkMode")}
+            description={t("settings.darkModeBody")}
             toggle enabled={settings.darkMode}
             onToggle={toggle("darkMode")}
             testId="setting-dark-mode"
@@ -391,8 +398,8 @@ export default function Settings() {
           <SettingRow
             icon={<MapPin className="w-4 h-4 text-primary" />}
             iconBg="bg-primary/10"
-            label="Location services"
-            description="Used to show nearby members"
+            label={t("settings.locationServices")}
+            description={t("settings.locationServicesBody")}
             toggle enabled={settings.locationServicesEnabled}
             onToggle={toggle("locationServicesEnabled")}
             testId="setting-location"
@@ -400,16 +407,16 @@ export default function Settings() {
           <SettingRow
             icon={<Globe className="w-4 h-4 text-muted-foreground" />}
             iconBg="bg-secondary"
-            label="Language"
-            description={user?.language === "en" ? "English" : user?.language}
+            label={t("settings.language")}
+            description={LANGUAGES.find((l) => l.code === language)?.label}
             testId="setting-language"
           />
           <Link href="/onboarding" data-testid="link-settings-discovery">
             <SettingRow
               icon={<ToggleLeft className="w-4 h-4 text-muted-foreground" />}
               iconBg="bg-secondary"
-              label="Discovery preferences"
-              description="Age range, distance, pet type"
+              label={t("settings.discovery")}
+              description={t("settings.discoveryBody")}
               chevron
               testId="setting-discovery"
             />
@@ -418,7 +425,7 @@ export default function Settings() {
 
         {/* Blocked members — only worth showing when there are any */}
         {blockedUsers && blockedUsers.length > 0 && (
-          <Section title="Blocked">
+          <Section title={t("settings.secBlocked")}>
             {blockedUsers.map((blocked) => (
               <div key={blocked.id} className="flex items-center gap-4 py-4 px-1">
                 <div className="w-9 h-9 rounded-xl bg-secondary flex items-center justify-center flex-shrink-0 overflow-hidden">
@@ -431,7 +438,7 @@ export default function Settings() {
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-foreground">{blocked.firstName}</p>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    Blocked {new Date(blocked.blockedAt).toLocaleDateString()}
+                    {t("settings.blockedOn", { date: formatDate(blocked.blockedAt) })}
                   </p>
                 </div>
                 <Button
@@ -442,7 +449,7 @@ export default function Settings() {
                   disabled={unblock.isPending}
                   data-testid={`btn-unblock-${blocked.id}`}
                 >
-                  Unblock
+                  {t("settings.unblock")}
                 </Button>
               </div>
             ))}
@@ -452,7 +459,7 @@ export default function Settings() {
         {/* Your data — sits above the danger zone because downloading a copy
             is the opposite of destructive, and often what someone actually
             wants before they reach for delete. */}
-        <Section title="Your Data">
+        <Section title={t("settings.secData")}>
           <button
             type="button"
             onClick={handleExport}
@@ -463,20 +470,20 @@ export default function Settings() {
             <SettingRow
               icon={<Download className="w-4 h-4 text-primary" />}
               iconBg="bg-primary/10"
-              label={isExporting ? "Preparing your file…" : "Download my data"}
-              description="Everything Pawmate holds about you, as a JSON file"
+              label={isExporting ? t("settings.preparingFile") : t("settings.downloadData")}
+              description={t("settings.downloadDataBody")}
               testId="setting-export-data"
             />
           </button>
         </Section>
 
         {/* Danger zone */}
-        <Section title="Danger Zone">
+        <Section title={t("settings.secDanger")}>
           <button type="button" onClick={handleLogout} className="w-full text-left" data-testid="btn-settings-signout">
             <SettingRow
               icon={<LogOut className="w-4 h-4 text-destructive" />}
               iconBg="bg-destructive/10"
-              label="Sign out"
+              label={t("settings.signOut")}
               danger
               testId="setting-sign-out"
             />
@@ -485,8 +492,8 @@ export default function Settings() {
             <SettingRow
               icon={<Trash2 className="w-4 h-4 text-destructive" />}
               iconBg="bg-destructive/10"
-              label="Delete account"
-              description="Permanently remove your profile and all data"
+              label={t("settings.deleteAccount")}
+              description={t("settings.deleteAccountBody")}
               danger
               testId="setting-delete-account"
             />
@@ -494,22 +501,21 @@ export default function Settings() {
         </Section>
 
         {/* Version */}
-        <p className="text-center text-xs text-muted-foreground/50 pb-4">Pawmate v1.0 · Made with care for pet lovers</p>
+        <p className="text-center text-xs text-muted-foreground/50 pb-4">{t("settings.version")}</p>
       </div>
 
       <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete your account?</AlertDialogTitle>
+            <AlertDialogTitle>{t("settings.deleteTitle")}</AlertDialogTitle>
             <AlertDialogDescription>
-              This removes your profile, pets, matches, messages, and everything you've
-              posted. It cannot be undone.
+              {t("settings.deleteBody")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel data-testid="btn-delete-cancel">Keep my account</AlertDialogCancel>
+            <AlertDialogCancel data-testid="btn-delete-cancel">{t("settings.keepAccount")}</AlertDialogCancel>
             <AlertDialogAction onClick={handleDeleteAccount} data-testid="btn-delete-confirm">
-              Delete permanently
+              {t("settings.deleteConfirm")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

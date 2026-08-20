@@ -10,7 +10,7 @@ import {
   getListNotificationsQueryKey,
 } from "@workspace/api-client-react";
 import { useAuth } from "@/contexts/auth-context";
-import { useI18n, LANGUAGES } from "@/lib/i18n";
+import { useI18n, useT, LANGUAGES } from "@/lib/i18n";
 
 
 // The five entries the design asks for. Every one lands somewhere real:
@@ -36,11 +36,13 @@ function LanguageToggle({
   setLanguage: (next: "en" | "ru") => void;
   className?: string;
 }) {
+  const t = useT();
+
   return (
     <div
       className={`flex items-center rounded-xl border border-border overflow-hidden ${className}`}
       role="group"
-      aria-label="Language"
+      aria-label={t("nav.language")}
     >
       {LANGUAGES.map((l) => (
         <button
@@ -134,7 +136,7 @@ export function Navbar() {
                   className={`text-sm font-medium transition-colors ${location === "/discover" ? "text-foreground" : "text-muted-foreground hover:text-foreground"}`}
                   data-testid="link-nav-discover"
                 >
-                  Discover
+                  {t("nav.discover")}
                 </Link>
                 <Link
                   href="/liked"
@@ -142,14 +144,14 @@ export function Navbar() {
                   data-testid="link-nav-liked"
                 >
                   <Heart className={`w-3.5 h-3.5 ${location === "/liked" ? "fill-current text-primary" : ""}`} />
-                  Liked
+                  {t("nav.liked")}
                 </Link>
                 <Link
                   href="/community"
                   className={`text-sm font-medium transition-colors ${location === "/community" ? "text-foreground" : "text-muted-foreground hover:text-foreground"}`}
                   data-testid="link-nav-community"
                 >
-                  Community
+                  {t("nav.community")}
                 </Link>
                 <div className="h-4 w-px bg-border/30" />
                 <Link
@@ -157,21 +159,21 @@ export function Navbar() {
                   className={`text-sm font-medium transition-colors ${location === "/create-event" ? "text-foreground" : "text-muted-foreground hover:text-foreground"}`}
                   data-testid="link-nav-create-event"
                 >
-                  + Event
+                  {t("nav.createEvent")}
                 </Link>
                 <Link
                   href="/create-story"
                   className={`text-sm font-medium transition-colors ${location === "/create-story" ? "text-foreground" : "text-muted-foreground hover:text-foreground"}`}
                   data-testid="link-nav-create-story"
                 >
-                  + Story
+                  {t("nav.createStory")}
                 </Link>
                 <Link
                   href="/messages"
                   className={`text-sm font-medium transition-colors ${location.startsWith("/messages") ? "text-foreground" : "text-muted-foreground hover:text-foreground"}`}
                   data-testid="link-nav-messages"
                 >
-                  Messages
+                  {t("nav.messages")}
                 </Link>
                 <div className="flex items-center gap-3 ml-3">
                   <button
@@ -193,7 +195,7 @@ export function Navbar() {
                     onClick={handleLogout}
                     disabled={logout.isPending}
                     className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-secondary transition-colors disabled:opacity-50"
-                    title="Log out"
+                    title={t("nav.logOut")}
                     data-testid="btn-logout"
                   >
                     <LogOut className="w-5 h-5 text-muted-foreground" />
@@ -249,32 +251,32 @@ export function Navbar() {
                   ))}
                   <div className="flex flex-col gap-3 pt-2">
                     <Link href="/login" onClick={() => setMobileMenuOpen(false)}>
-                      <Button variant="outline" className="w-full h-11 text-base rounded-full">Log in</Button>
+                      <Button variant="outline" className="w-full h-11 text-base rounded-full">{t("nav.logIn")}</Button>
                     </Link>
                     <Link href="/login?tab=register" onClick={() => setMobileMenuOpen(false)}>
-                      <Button className="w-full h-11 text-base rounded-full bg-primary text-primary-foreground">Sign up</Button>
+                      <Button className="w-full h-11 text-base rounded-full bg-primary text-primary-foreground">{t("nav.signUp")}</Button>
                     </Link>
                   </div>
                 </>
               ) : (
                 <>
-                  <Link href="/discover" className="text-base font-medium text-foreground py-1.5 border-b border-border/40" onClick={() => setMobileMenuOpen(false)}>Discover</Link>
+                  <Link href="/discover" className="text-base font-medium text-foreground py-1.5 border-b border-border/40" onClick={() => setMobileMenuOpen(false)}>{t("nav.discover")}</Link>
                   <Link href="/liked" className="text-base font-medium text-foreground py-1.5 border-b border-border/40 flex items-center gap-2" onClick={() => setMobileMenuOpen(false)}>
-                    <Heart className="w-4 h-4 text-primary" /> Liked
+                    <Heart className="w-4 h-4 text-primary" /> {t("nav.liked")}
                   </Link>
-                  <Link href="/community" className="text-base font-medium text-foreground py-1.5 border-b border-border/40" onClick={() => setMobileMenuOpen(false)}>Community</Link>
-                  <Link href="/create-event" className="text-base font-medium text-foreground py-1.5 border-b border-border/40" onClick={() => setMobileMenuOpen(false)}>Create Event</Link>
-                  <Link href="/create-story" className="text-base font-medium text-foreground py-1.5 border-b border-border/40" onClick={() => setMobileMenuOpen(false)}>Share Story</Link>
-                  <Link href="/messages" className="text-base font-medium text-foreground py-1.5 border-b border-border/40" onClick={() => setMobileMenuOpen(false)}>Messages</Link>
-                  <Link href="/profile/me" className="text-base font-medium text-foreground py-1.5 border-b border-border/40" onClick={() => setMobileMenuOpen(false)}>My Profile</Link>
-                  <Link href="/settings" className="text-base font-medium text-foreground py-1.5 border-b border-border/40" onClick={() => setMobileMenuOpen(false)}>Settings</Link>
+                  <Link href="/community" className="text-base font-medium text-foreground py-1.5 border-b border-border/40" onClick={() => setMobileMenuOpen(false)}>{t("nav.community")}</Link>
+                  <Link href="/create-event" className="text-base font-medium text-foreground py-1.5 border-b border-border/40" onClick={() => setMobileMenuOpen(false)}>{t("createEvent.title")}</Link>
+                  <Link href="/create-story" className="text-base font-medium text-foreground py-1.5 border-b border-border/40" onClick={() => setMobileMenuOpen(false)}>{t("story.shareTitle")}</Link>
+                  <Link href="/messages" className="text-base font-medium text-foreground py-1.5 border-b border-border/40" onClick={() => setMobileMenuOpen(false)}>{t("nav.messages")}</Link>
+                  <Link href="/profile/me" className="text-base font-medium text-foreground py-1.5 border-b border-border/40" onClick={() => setMobileMenuOpen(false)}>{t("nav.myProfile")}</Link>
+                  <Link href="/settings" className="text-base font-medium text-foreground py-1.5 border-b border-border/40" onClick={() => setMobileMenuOpen(false)}>{t("nav.settings")}</Link>
                   <button
                     onClick={handleLogout}
                     disabled={logout.isPending}
                     className="text-base font-medium text-foreground py-1.5 flex items-center gap-2 disabled:opacity-50"
                     data-testid="btn-logout-mobile"
                   >
-                    <LogOut className="w-4 h-4" /> Log out
+                    <LogOut className="w-4 h-4" /> {t("nav.logOut")}
                   </button>
                 </>
               )}
