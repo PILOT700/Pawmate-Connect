@@ -176,8 +176,8 @@ export default function Home() {
                       <img src={m.src} alt={altText(m.alt)} className="w-full h-full object-cover" loading="lazy" />
                     </div>
                     <div className="p-3.5">
-                      <h3 className="font-semibold text-sm text-forest">{m.name}, {m.age}</h3>
-                      <p className="text-xs text-foreground/60 mt-0.5">{m.role}</p>
+                      <h3 className="font-semibold text-sm text-forest">{t(m.name)}, {m.age}</h3>
+                      <p className="text-xs text-foreground/60 mt-0.5">{t(m.role)}</p>
                       <p className="flex items-center gap-1 text-xs text-foreground/60 mt-2">
                         <MapPin className="w-3 h-3 text-warm shrink-0" /> {t("home.awayFrom", { distance: m.distanceKm })}
                       </p>

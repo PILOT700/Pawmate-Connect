@@ -618,6 +618,14 @@ export const en = {
     voice2Who: "Laura & Charlie",
     voice3: "Finally a place where pets come first. That makes all the difference.",
     voice3Who: "Mark & Bella",
+    roleTeacher: "Teacher",
+    roleArchitect: "Architect",
+    roleMarketing: "Marketing Manager",
+    roleEntrepreneur: "Entrepreneur",
+    nameOlivia: "Olivia",
+    nameDavid: "David",
+    nameSophie: "Sophie",
+    nameJames: "James",
   },
 
   species: {

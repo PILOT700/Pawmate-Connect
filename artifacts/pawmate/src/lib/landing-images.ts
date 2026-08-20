@@ -75,9 +75,9 @@ export const matchImage: LandingImage = {
 };
 
 export interface LandingMember extends LandingImage {
-  name: string;
+  name: TranslationKey;
   age: number;
-  role: string;
+  role: TranslationKey;
   distanceKm: number;
 }
 
@@ -90,10 +90,10 @@ export interface LandingMember extends LandingImage {
  * a dachshund.
  */
 export const members: LandingMember[] = [
-  { name: "Olivia", age: 48, role: "Teacher", distanceKm: 2, src: `${DIR}/member-1.png`, alt: "landing.oliviaAlt" },
-  { name: "David", age: 52, role: "Architect", distanceKm: 5, src: `${DIR}/member-2.png`, alt: "landing.davidAlt" },
-  { name: "Sophie", age: 50, role: "Marketing Manager", distanceKm: 3, src: `${DIR}/member-3.png`, alt: "landing.sophieAlt" },
-  { name: "James", age: 54, role: "Entrepreneur", distanceKm: 4, src: `${DIR}/member-4.png`, alt: "landing.jamesAlt" },
+  { name: "landing.nameOlivia", age: 48, role: "landing.roleTeacher", distanceKm: 2, src: `${DIR}/member-1.png`, alt: "landing.oliviaAlt" },
+  { name: "landing.nameDavid", age: 52, role: "landing.roleArchitect", distanceKm: 5, src: `${DIR}/member-2.png`, alt: "landing.davidAlt" },
+  { name: "landing.nameSophie", age: 50, role: "landing.roleMarketing", distanceKm: 3, src: `${DIR}/member-3.png`, alt: "landing.sophieAlt" },
+  { name: "landing.nameJames", age: 54, role: "landing.roleEntrepreneur", distanceKm: 4, src: `${DIR}/member-4.png`, alt: "landing.jamesAlt" },
 ];
 
 export interface LandingVoice extends LandingImage {

@@ -618,6 +618,14 @@ export const ru: Dictionary = {
     voice2Who: "Лора и Чарли",
     voice3: "Наконец-то место, где питомец на первом месте. Это меняет всё.",
     voice3Who: "Марк и Белла",
+    roleTeacher: "Учительница",
+    roleArchitect: "Архитектор",
+    roleMarketing: "Маркетолог",
+    roleEntrepreneur: "Предприниматель",
+    nameOlivia: "Оливия",
+    nameDavid: "Дэвид",
+    nameSophie: "Софи",
+    nameJames: "Джеймс",
   },
 
   species: {
