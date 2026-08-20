@@ -23,11 +23,15 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { apiErrorMessage } from "@/lib/api-error";
+import { useT, useTn, useDateFnsLocale } from "@/lib/i18n";
 
 const FALLBACK_IMAGE = "/profile1.png";
 const FALLBACK_PET_IMAGE = "/pet1.png";
 
 export default function LikedProfiles() {
+  const t = useT();
+  const tn = useTn();
+  const dateLocale = useDateFnsLocale();
   const { data, isLoading } = useListSentLikes();
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -49,8 +53,8 @@ export default function LikedProfiles() {
     } catch (err) {
       toast({
         variant: "destructive",
-        title: "Couldn't remove the like",
-        description: apiErrorMessage(err, "Please try again."),
+        title: t("liked.couldNotRemove"),
+        description: apiErrorMessage(err, t("common.tryAgain")),
       });
     } finally {
       setRemovingId(null);
@@ -69,14 +73,14 @@ export default function LikedProfiles() {
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
             <div>
               <h1 className="font-serif text-3xl md:text-4xl font-semibold text-foreground mb-2">
-                Liked Profiles
+                {t("liked.title")}
               </h1>
               <p className="text-muted-foreground text-sm">
-                {liked.length} {liked.length === 1 ? "profile" : "profiles"} liked
+                {tn("liked.profilesLiked", liked.length)}
                 {mutualCount > 0 && (
                   <span className="ml-2 inline-flex items-center gap-1 text-primary font-medium">
                     <Heart className="w-3.5 h-3.5 fill-current" />
-                    {mutualCount} mutual {mutualCount === 1 ? "match" : "matches"}
+                    {tn("liked.mutualMatches", mutualCount)}
                   </span>
                 )}
               </p>
@@ -89,14 +93,14 @@ export default function LikedProfiles() {
                 className={`px-4 py-1.5 text-sm font-medium rounded-full transition-colors ${tab === "all" ? "bg-card shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}
                 data-testid="tab-all-likes"
               >
-                All ({liked.length})
+                {t("liked.tabAll")} ({liked.length})
               </button>
               <button
                 onClick={() => setTab("mutual")}
                 className={`px-4 py-1.5 text-sm font-medium rounded-full transition-colors ${tab === "mutual" ? "bg-card shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}
                 data-testid="tab-mutual-likes"
               >
-                Mutual ({mutualCount})
+                {t("liked.tabMutual")} ({mutualCount})
               </button>
             </div>
           </div>
@@ -123,14 +127,14 @@ export default function LikedProfiles() {
               <PawPrint className="w-10 h-10 text-muted-foreground" />
             </div>
             <h2 className="font-serif text-2xl text-foreground mb-3">
-              {tab === "mutual" ? "No mutual matches yet" : "No liked profiles yet"}
+              {tab === "mutual" ? t("liked.noneMutual") : t("liked.noneYet")}
             </h2>
             <p className="text-muted-foreground mb-8 max-w-sm mx-auto">
-              Head to Discover to start connecting with people who share your love of animals.
+              {t("liked.goDiscover")}
             </p>
             <Link href="/discover" data-testid="link-go-discover">
               <Button className="rounded-full px-8 bg-primary text-primary-foreground">
-                Browse Profiles
+                {t("liked.browse")}
               </Button>
             </Link>
           </motion.div>
@@ -164,7 +168,7 @@ export default function LikedProfiles() {
                       {sentLike.mutualMatch && (
                         <div className="absolute top-3 left-3 bg-primary text-primary-foreground text-[10px] font-semibold px-2.5 py-1 rounded-full flex items-center gap-1 shadow-md">
                           <Heart className="w-2.5 h-2.5 fill-current" />
-                          Mutual match
+                          {t("liked.mutualBadge")}
                         </div>
                       )}
 
@@ -202,7 +206,12 @@ export default function LikedProfiles() {
                       )}
 
                       <p className="text-[10px] text-muted-foreground/60 mt-auto">
-                        Liked {formatDistanceToNow(new Date(sentLike.likedAt), { addSuffix: true })}
+                        {t("liked.likedAgo", {
+                          when: formatDistanceToNow(new Date(sentLike.likedAt), {
+                            addSuffix: true,
+                            locale: dateLocale,
+                          }),
+                        })}
                       </p>
 
                       {/* Actions */}
@@ -213,7 +222,7 @@ export default function LikedProfiles() {
                           className="w-10 h-10 rounded-full border-border hover:bg-destructive/10 hover:border-destructive/30 hover:text-destructive transition-colors flex-shrink-0"
                           onClick={() => setPendingUnlike(sentLike)}
                           disabled={removingId === sentLike.id}
-                          title="Unlike"
+                          title={t("liked.unlike")}
                           data-testid={`btn-unlike-${sentLike.id}`}
                         >
                           <HeartOff className="w-4 h-4" />
@@ -229,7 +238,7 @@ export default function LikedProfiles() {
                             data-testid={`btn-message-${profile.id}`}
                           >
                             <MessageCircle className="w-3.5 h-3.5" />
-                            {sentLike.mutualMatch ? "Send a message" : "Say hello"}
+                            {sentLike.mutualMatch ? t("liked.sendMessage") : t("liked.sayHello")}
                           </Button>
                         </Link>
                       </div>
@@ -246,18 +255,20 @@ export default function LikedProfiles() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              Remove your like{pendingUnlike ? ` for ${pendingUnlike.likedUser.firstName}` : ""}?
+              {pendingUnlike
+                ? t("liked.confirmTitle", { name: pendingUnlike.likedUser.firstName })
+                : t("liked.confirmTitleGeneric")}
             </AlertDialogTitle>
             <AlertDialogDescription>
               {pendingUnlike?.mutualMatch
-                ? "You're matched, so this also ends the match — your conversation and any planned playdates will be deleted for both of you."
-                : "They'll no longer appear in your liked profiles. You can like them again from Discover."}
+                ? t("liked.endsMatch")
+                : t("liked.notMutual")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel data-testid="btn-unlike-cancel">Keep it</AlertDialogCancel>
+            <AlertDialogCancel data-testid="btn-unlike-cancel">{t("liked.keepIt")}</AlertDialogCancel>
             <AlertDialogAction onClick={handleUnlike} data-testid="btn-unlike-confirm">
-              {pendingUnlike?.mutualMatch ? "Unmatch" : "Remove like"}
+              {pendingUnlike?.mutualMatch ? t("liked.unmatch") : t("liked.removeLike")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

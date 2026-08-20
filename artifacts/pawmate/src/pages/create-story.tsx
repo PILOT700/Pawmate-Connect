@@ -11,6 +11,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { useToast } from "@/hooks/use-toast";
 import { apiErrorMessage } from "@/lib/api-error";
 import { uploadImage } from "@/lib/cloudinary";
+import { useT } from "@/lib/i18n";
 import {
   Select,
   SelectContent,
@@ -20,6 +21,7 @@ import {
 } from "@/components/ui/select";
 
 export default function CreateStory() {
+  const t = useT();
   const [, setRoute] = useLocation();
   const { user } = useAuth();
   const { toast } = useToast();
@@ -41,7 +43,7 @@ export default function CreateStory() {
     if (!file) return;
 
     if (!file.type.startsWith("image/")) {
-      setError("Please select an image file");
+      setError(t("story.imagesOnly"));
       return;
     }
 
@@ -59,7 +61,7 @@ export default function CreateStory() {
     setError(null);
 
     if (!image) {
-      setError("Please select an image");
+      setError(t("story.pickImage"));
       return;
     }
 
@@ -77,14 +79,14 @@ export default function CreateStory() {
       });
 
       toast({
-        title: "Success",
-        description: "Story posted successfully!",
+        title: t("common.success"),
+        description: t("story.posted"),
       });
 
       setRoute("/discover");
     } catch (err) {
       setIsUploading(false);
-      setError(apiErrorMessage(err, "Could not create story"));
+      setError(apiErrorMessage(err, t("story.couldNotCreate")));
     }
   };
 
@@ -98,10 +100,10 @@ export default function CreateStory() {
           className="bg-card border border-border rounded-3xl p-8 shadow-xl"
         >
           <h1 className="font-serif text-3xl font-semibold text-foreground mb-2">
-            Share a Story
+            {t("story.shareTitle")}
           </h1>
           <p className="text-muted-foreground mb-8">
-            Capture and share a moment from your pet's day
+            {t("story.shareSubtitle")}
           </p>
 
           {error && (
@@ -114,12 +116,12 @@ export default function CreateStory() {
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Image Upload */}
             <div className="space-y-2">
-              <Label className="text-sm font-medium">Story Image *</Label>
+              <Label className="text-sm font-medium">{t("story.imageLabel")}</Label>
               {imagePreview ? (
                 <div className="relative rounded-xl overflow-hidden">
                   <img
                     src={imagePreview}
-                    alt="Story preview"
+                    alt={t("story.preview")}
                     className="w-full h-64 object-cover"
                   />
                   <button
@@ -138,7 +140,7 @@ export default function CreateStory() {
                   <div className="flex flex-col items-center justify-center pt-5 pb-6">
                     <Upload className="w-6 h-6 text-muted-foreground mb-2" />
                     <p className="text-sm text-muted-foreground">
-                      Click to upload story image
+                      {t("story.uploadHint")}
                     </p>
                   </div>
                   <input
@@ -155,11 +157,11 @@ export default function CreateStory() {
             {/* Caption */}
             <div className="space-y-2">
               <Label htmlFor="caption" className="text-sm font-medium">
-                Caption (Optional)
+                {t("story.captionLabel")}
               </Label>
               <Textarea
                 id="caption"
-                placeholder="Add a caption to your story..."
+                placeholder={t("story.caption")}
                 className="bg-background rounded-xl resize-none"
                 rows={3}
                 value={caption}
@@ -171,11 +173,11 @@ export default function CreateStory() {
             {pets.length > 0 && (
               <div className="space-y-2">
                 <Label htmlFor="pet" className="text-sm font-medium">
-                  Featured Pet (Optional)
+                  {t("story.petLabel")}
                 </Label>
                 <Select value={selectedPetId} onValueChange={setSelectedPetId}>
                   <SelectTrigger className="h-11 bg-background rounded-xl">
-                    <SelectValue placeholder="Select a pet" />
+                    <SelectValue placeholder={t("story.selectPet")} />
                   </SelectTrigger>
                   <SelectContent>
                     {pets.map((pet) => (
@@ -201,7 +203,7 @@ export default function CreateStory() {
                 htmlFor="isPetMoment"
                 className="text-sm font-medium cursor-pointer flex-1"
               >
-                This is a special pet moment
+                {t("story.petMoment")}
               </Label>
             </div>
 
@@ -212,7 +214,7 @@ export default function CreateStory() {
                 disabled={isSubmitting}
                 className="flex-1 h-11 rounded-xl bg-primary text-primary-foreground font-medium"
               >
-                {isUploading ? "Uploading…" : isSubmitting ? "Posting…" : "Post Story"}
+                {isUploading ? t("story.uploading") : isSubmitting ? t("story.posting") : t("story.post")}
               </Button>
               <Button
                 type="button"
@@ -220,7 +222,7 @@ export default function CreateStory() {
                 onClick={() => setRoute("/discover")}
                 className="flex-1 h-11 rounded-xl"
               >
-                Cancel
+                {t("common.cancel")}
               </Button>
             </div>
           </form>

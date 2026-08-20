@@ -101,7 +101,7 @@ export default function Auth() {
                 <Input
                   id="signin-email"
                   type="email"
-                  placeholder="hello@example.com"
+                  placeholder={t("auth.emailPlaceholder")}
                   className="h-11 bg-background rounded-xl"
                   required
                   value={signinEmail}
@@ -158,7 +158,7 @@ export default function Auth() {
                 <Label htmlFor="register-name" className="text-sm font-medium">{t("auth.firstName")}</Label>
                 <Input
                   id="register-name"
-                  placeholder="Sarah"
+                  placeholder={t("auth.namePlaceholder")}
                   className="h-11 bg-background rounded-xl"
                   required
                   value={registerName}
@@ -171,7 +171,7 @@ export default function Auth() {
                 <Input
                   id="register-email"
                   type="email"
-                  placeholder="hello@example.com"
+                  placeholder={t("auth.emailPlaceholder")}
                   className="h-11 bg-background rounded-xl"
                   required
                   value={registerEmail}
@@ -204,9 +204,23 @@ export default function Auth() {
                 </div>
               </div>
               <p className="text-xs text-muted-foreground">
-                By creating an account you agree to our{" "}
-                <Link href="/terms" className="text-primary hover:underline">Terms</Link> and{" "}
-                <Link href="/privacy" className="text-primary hover:underline">Privacy Policy</Link>.
+                {/* Split rather than concatenated: Russian puts the links in a
+                    different order from English, so the sentence has to drive. */}
+                {t("auth.consent")
+                  .split(/(\{\{terms\}\}|\{\{privacy\}\})/)
+                  .map((part, i) =>
+                    part === "{{terms}}" ? (
+                      <Link key={i} href="/terms" className="text-primary hover:underline">
+                        {t("auth.termsWord")}
+                      </Link>
+                    ) : part === "{{privacy}}" ? (
+                      <Link key={i} href="/privacy" className="text-primary hover:underline">
+                        {t("auth.privacyWord")}
+                      </Link>
+                    ) : (
+                      part
+                    ),
+                  )}
               </p>
               <Button
                 type="submit"
@@ -221,7 +235,7 @@ export default function Auth() {
         </Tabs>
 
         <p className="text-center text-xs text-muted-foreground mt-6">
-          <Link href="/" className="hover:text-foreground transition-colors">← Back to home</Link>
+          <Link href="/" className="hover:text-foreground transition-colors">{t("auth.backHome")}</Link>
         </p>
       </motion.div>
     </div>

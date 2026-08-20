@@ -84,7 +84,7 @@ function RequestForm() {
         <Input
           id="reset-email"
           type="email"
-          placeholder="hello@example.com"
+          placeholder={t("auth.emailPlaceholder")}
           className="h-11 bg-background rounded-xl"
           required
           value={email}

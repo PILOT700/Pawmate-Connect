@@ -168,7 +168,7 @@ export function CompatibilityScore({ input }: { input: CompatibilityInput }) {
       {/* Header */}
       <div className="flex items-center gap-2 mb-5">
         <Sparkles className="w-4 h-4 text-primary" />
-        <p className="text-xs font-semibold text-primary uppercase tracking-widest">Pet Compatibility</p>
+        <p className="text-xs font-semibold text-primary uppercase tracking-widest">{t("compat.heading")}</p>
       </div>
 
       {/* Arc + label */}
@@ -183,7 +183,7 @@ export function CompatibilityScore({ input }: { input: CompatibilityInput }) {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5">
               <PawPrint className="w-3.5 h-3.5 text-muted-foreground" />
-              <span className="text-xs text-muted-foreground font-medium">Pet compatibility</span>
+              <span className="text-xs text-muted-foreground font-medium">{t("compat.petCompat")}</span>
             </div>
             <span className="text-xs font-semibold text-foreground">{petScore}%</span>
           </div>
@@ -194,7 +194,7 @@ export function CompatibilityScore({ input }: { input: CompatibilityInput }) {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5">
               <Sun className="w-3.5 h-3.5 text-muted-foreground" />
-              <span className="text-xs text-muted-foreground font-medium">Lifestyle match</span>
+              <span className="text-xs text-muted-foreground font-medium">{t("compat.lifestyle")}</span>
             </div>
             <span className="text-xs font-semibold text-foreground">{lifestyleScore}%</span>
           </div>
@@ -205,7 +205,7 @@ export function CompatibilityScore({ input }: { input: CompatibilityInput }) {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5">
               <Heart className="w-3.5 h-3.5 text-muted-foreground" />
-              <span className="text-xs text-muted-foreground font-medium">What you seek</span>
+              <span className="text-xs text-muted-foreground font-medium">{t("compat.seeking")}</span>
             </div>
             <span className="text-xs font-semibold text-foreground">{intentScore}%</span>
           </div>
@@ -214,7 +214,7 @@ export function CompatibilityScore({ input }: { input: CompatibilityInput }) {
       </div>
 
       <p className="text-[11px] text-muted-foreground/70 text-center mt-5 leading-relaxed">
-        Score based on pet type, lifestyle, and what you're both looking for
+        {t("compat.basis")}
       </p>
     </motion.div>
   );
