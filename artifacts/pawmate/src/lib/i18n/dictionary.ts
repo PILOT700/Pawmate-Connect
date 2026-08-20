@@ -798,6 +798,11 @@ export const en = {
     couldNotMark: "Couldn't mark that as read",
     couldNotMarkAll: "Couldn't mark everything as read",
     discoverMore: "Discover more people →",
+    matchTitle: "New match",
+    matchBody: "You and {{name}} liked each other.",
+    messageTitle: "New message from {{name}}",
+    playdateTitle: "Playdate invite",
+    playdateBody: "{{name}} suggested {{place}}.",
   },
 
   common: {

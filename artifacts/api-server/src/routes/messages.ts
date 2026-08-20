@@ -57,7 +57,9 @@ router.post("/matches/:matchId/messages", requireAuth, async (req, res) => {
       userId: recipientId,
       type: "message",
       title: `New message from ${sender?.firstName ?? "a match"}`,
+      // The body stays the sender's own words in every language.
       body: body.text,
+      ...(sender?.firstName ? { params: { name: sender.firstName } } : {}),
       relatedEntityType: "match",
       relatedEntityId: matchId,
       avatarUrl: sender?.avatarUrl ?? null,

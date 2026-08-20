@@ -25,6 +25,16 @@ import { useToast } from "@/hooks/use-toast";
 import { apiErrorMessage } from "@/lib/api-error";
 import { useT, useFormatters, useDateFnsLocale, type TranslationKey } from "@/lib/i18n";
 import type { Locale as DateFnsLocale } from "date-fns";
+import { PLAYDATE_PLACES, playdatePlaceKey } from "@/lib/playdate-places";
+
+/** Icon and colour per place — the drawing, kept beside the screen that draws. */
+const PLACE_STYLE: Record<string, { icon: typeof TreePine; color: string }> = {
+  park: { icon: TreePine, color: "text-emerald-600 bg-emerald-50 border-emerald-200" },
+  cafe: { icon: Coffee, color: "text-amber-700 bg-amber-50 border-amber-200" },
+  beach: { icon: Waves, color: "text-sky-600 bg-sky-50 border-sky-200" },
+  trail: { icon: Flower2, color: "text-violet-600 bg-violet-50 border-violet-200" },
+  plaza: { icon: Building2, color: "text-slate-600 bg-slate-50 border-slate-200" },
+};
 
 const FALLBACK_IMAGE = "/profile1.png";
 
@@ -97,30 +107,15 @@ const STATUS_STYLE: Record<Playdate["status"], { badge: string; label: Translati
 
 // ─── Playdate tab data ────────────────────────────────────────────────────────
 
-/**
- * `value` is what gets sent to the API and read back on the other person's
- * screen, so it stays English whatever language the sender is using — the two
- * ends of a playdate need not share a language. `label` is what is shown.
- */
-const LOCATIONS: {
-  id: string;
-  value: string;
-  label: TranslationKey;
-  icon: typeof TreePine;
-  color: string;
-}[] = [
-  { id: "park", value: "Dog Park", label: "playdate.locPark", icon: TreePine, color: "text-emerald-600 bg-emerald-50 border-emerald-200" },
-  { id: "cafe", value: "Pet Café", label: "playdate.locCafe", icon: Coffee, color: "text-amber-700 bg-amber-50 border-amber-200" },
-  { id: "beach", value: "Pet Beach", label: "playdate.locBeach", icon: Waves, color: "text-sky-600 bg-sky-50 border-sky-200" },
-  { id: "trail", value: "Nature Trail", label: "playdate.locTrail", icon: Flower2, color: "text-violet-600 bg-violet-50 border-violet-200" },
-  { id: "plaza", value: "City Plaza", label: "playdate.locPlaza", icon: Building2, color: "text-slate-600 bg-slate-50 border-slate-200" },
-];
-
-const LOCATION_LABEL = new Map(LOCATIONS.map((l) => [l.value, l.label]));
+/** The shared table, dressed with the icons and colours this screen draws. */
+const LOCATIONS = PLAYDATE_PLACES.map((place) => ({
+  ...place,
+  ...PLACE_STYLE[place.id]!,
+}));
 
 /** A stored place, translated when it is one of ours and left alone when typed. */
 function placeLabel(place: string, t: Labels): string {
-  const key = LOCATION_LABEL.get(place);
+  const key = playdatePlaceKey(place);
   return key ? t(key) : place;
 }
 

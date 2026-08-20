@@ -2177,6 +2177,15 @@ components:
           type: string
         body:
           type: string
+        params:
+          description: >-
+            The values behind the text, so the client can compose the sentence
+            in the reader's language. Null on rows written before this existed;
+            those fall back to title and body, which are English.
+          type: object
+          additionalProperties:
+            type: string
+          nullable: true
         relatedEntityType:
           type: string
           nullable: true

@@ -802,6 +802,11 @@ export const ru: Dictionary = {
     couldNotMark: "Не удалось отметить прочитанным",
     couldNotMarkAll: "Не удалось отметить все прочитанными",
     discoverMore: "Смотреть анкеты →",
+    matchTitle: "Взаимная симпатия",
+    matchBody: "Вы и {{name}} понравились друг другу.",
+    messageTitle: "Новое сообщение — {{name}}",
+    playdateTitle: "Приглашение на встречу",
+    playdateBody: "{{name}} предлагает встретиться: {{place}}.",
   },
 
   common: {
