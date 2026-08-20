@@ -11,10 +11,16 @@
  *  Change a path below and the page follows. The files in place now:
  *
  *    hero-1200/2000/3200.jpg      cut from an 8K original with `sips -Z`
- *    PawMate_profile_1..4.jpg     wants 800×800 or larger
- *    PawMate_community_summer.jpg wants 1200×1600 or larger
- *    match.png                    wants 600×800 or larger
+ *    member-1..4.png              the four illustrative members, 896×1280
+ *    community.png                the community panel, 896×1280
  *    voice-1..3.png               200×200 is enough
+ *
+ *  These paths once named files that were never committed — profile_1..4.jpg,
+ *  PawMate_community_summer.jpg and match.png — so six pictures on the landing
+ *  page 404'd in production. The names below are the files that actually exist.
+ *  Two of them are stand-ins rather than the intended art: `community.png` is
+ *  byte-for-byte `member-3.png`, and the match card borrows Olivia's picture
+ *  because no match.png was ever supplied.
  *
  *  Any format the browser reads works — .jpg and .webp too. If the extension
  *  changes, this file is the single place to say so.
@@ -52,12 +58,14 @@ export const heroImage: LandingImage = {
 };
 
 export const communityImage: LandingImage = {
-  src: `${DIR}/PawMate_community_summer.jpg`,
-  alt: "A woman sitting outdoors on a blanket with her dog and cat",
+  src: `${DIR}/community.png`,
+  alt: "A border collie running along a sunlit woodland path",
 };
 
+// Borrowed from Olivia's card: the caption beside it says she is the match, and
+// there is no picture of her own. Swap this the moment a real one exists.
 export const matchImage: LandingImage = {
-  src: `${DIR}/match.png`,
+  src: `${DIR}/member-1.png`,
   alt: "",
 };
 
@@ -68,12 +76,19 @@ export interface LandingMember extends LandingImage {
   distanceKm: number;
 }
 
-/** Illustrative members. These are not accounts that exist. */
+/**
+ * Illustrative members. These are not accounts that exist.
+ *
+ * The photographs are of the pets alone — nobody is pictured — so `alt` says
+ * that rather than promising a face. The breeds are what is actually in the
+ * frame: the old text called Sophie's collie a spaniel and James's Siamese cat
+ * a dachshund.
+ */
 export const members: LandingMember[] = [
-  { name: "Olivia", age: 48, role: "Teacher", distanceKm: 2, src: `${DIR}/PawMate_profile_1.jpg`, alt: "Olivia with her golden retriever" },
-  { name: "David", age: 52, role: "Architect", distanceKm: 5, src: `${DIR}/PawMate_profile_2.jpg`, alt: "David holding his cat" },
-  { name: "Sophie", age: 50, role: "Marketing Manager", distanceKm: 3, src: `${DIR}/PawMate_profile_3.jpg`, alt: "Sophie with her spaniel" },
-  { name: "James", age: 54, role: "Entrepreneur", distanceKm: 4, src: `${DIR}/PawMate_profile_4.jpg`, alt: "James with his dachshund" },
+  { name: "Olivia", age: 48, role: "Teacher", distanceKm: 2, src: `${DIR}/member-1.png`, alt: "Olivia's golden retriever running through a sunlit meadow" },
+  { name: "David", age: 52, role: "Architect", distanceKm: 5, src: `${DIR}/member-2.png`, alt: "David's ginger cat lying in a patch of sunlight" },
+  { name: "Sophie", age: 50, role: "Marketing Manager", distanceKm: 3, src: `${DIR}/member-3.png`, alt: "Sophie's border collie running along a woodland path" },
+  { name: "James", age: 54, role: "Entrepreneur", distanceKm: 4, src: `${DIR}/member-4.png`, alt: "James's Siamese cat sitting in the light" },
 ];
 
 export interface LandingVoice extends LandingImage {
