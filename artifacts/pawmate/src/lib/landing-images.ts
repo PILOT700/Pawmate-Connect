@@ -75,9 +75,9 @@ export const matchImage: LandingImage = {
 };
 
 export interface LandingMember extends LandingImage {
-  name: string;
+  name: TranslationKey;
   age: number;
-  role: string;
+  role: TranslationKey;
   distanceKm: number;
 }
 
@@ -90,34 +90,41 @@ export interface LandingMember extends LandingImage {
  * a dachshund.
  */
 export const members: LandingMember[] = [
-  { name: "Olivia", age: 48, role: "Teacher", distanceKm: 2, src: `${DIR}/member-1.png`, alt: "landing.oliviaAlt" },
-  { name: "David", age: 52, role: "Architect", distanceKm: 5, src: `${DIR}/member-2.png`, alt: "landing.davidAlt" },
-  { name: "Sophie", age: 50, role: "Marketing Manager", distanceKm: 3, src: `${DIR}/member-3.png`, alt: "landing.sophieAlt" },
-  { name: "James", age: 54, role: "Entrepreneur", distanceKm: 4, src: `${DIR}/member-4.png`, alt: "landing.jamesAlt" },
+  { name: "landing.nameOlivia", age: 48, role: "landing.roleTeacher", distanceKm: 2, src: `${DIR}/member-1.png`, alt: "landing.oliviaAlt" },
+  { name: "landing.nameDavid", age: 52, role: "landing.roleArchitect", distanceKm: 5, src: `${DIR}/member-2.png`, alt: "landing.davidAlt" },
+  { name: "landing.nameSophie", age: 50, role: "landing.roleMarketing", distanceKm: 3, src: `${DIR}/member-3.png`, alt: "landing.sophieAlt" },
+  { name: "landing.nameJames", age: 54, role: "landing.roleEntrepreneur", distanceKm: 4, src: `${DIR}/member-4.png`, alt: "landing.jamesAlt" },
 ];
 
 export interface LandingVoice extends LandingImage {
-  quote: string;
-  who: string;
+  quote: TranslationKey;
+  who: TranslationKey;
 }
 
-/** Illustrative testimonials. Nobody has said these things. */
+/**
+ * Illustrative testimonials. Nobody has said these things.
+ *
+ * Keys rather than sentences, and the types say so: an English quote written
+ * here would not compile. The names are transliterated rather than replaced,
+ * following `home.matchSubtitle`, where Olivia is Оливия — these are invented
+ * people, but they are still the same invented people in both languages.
+ */
 export const voices: LandingVoice[] = [
   {
-    quote: "I found not only a great companion, but my dog found a new best friend too!",
-    who: "Sarah & Max",
+    quote: "landing.voice1",
+    who: "landing.voice1Who",
     src: `${DIR}/voice-1.png`,
     alt: "",
   },
   {
-    quote: "PawMate brought us together. We fit in perfectly!",
-    who: "Laura & Charlie",
+    quote: "landing.voice2",
+    who: "landing.voice2Who",
     src: `${DIR}/voice-2.png`,
     alt: "",
   },
   {
-    quote: "Finally a place where pets come first. That makes all the difference.",
-    who: "Mark & Bella",
+    quote: "landing.voice3",
+    who: "landing.voice3Who",
     src: `${DIR}/voice-3.png`,
     alt: "",
   },
